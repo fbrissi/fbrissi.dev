@@ -1,0 +1,17 @@
+/.next/
+/out/
+/node_modules/
+/.vercel/
+/dist/
+*.tsbuildinfo
+/.terraform/
+*.tfstate
+*.tfstate.*
+/terraform/.terraform/
+/terraform/*.tfstate
+/terraform/*.tfstate.*
+/terraform/terraform.tfvars
+/.idea/
+/tmp/
+.env.local
+.env*.local

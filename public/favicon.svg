@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Filipe Bojikian Rissi">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#8ab4ff"/>
+      <stop offset="100%" stop-color="#b98cff"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="28" fill="#08101f"/>
+  <circle cx="64" cy="64" r="40" fill="url(#g)" fill-opacity="0.22"/>
+  <path d="M46 86V42h20.5c12.5 0 19 6 19 15.2 0 6.5-3.2 10.8-8.8 12.9L89 86H72.7L61.5 71.4H58.2V86H46zm12.2-24h6.3c5.5 0 8.3-2.3 8.3-5.9 0-3.8-2.8-5.9-8.3-5.9h-6.3V62z" fill="#eff4ff"/>
+</svg>

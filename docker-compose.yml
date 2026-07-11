@@ -1,0 +1,39 @@
+services:
+  app:
+    image: kooldev/node:20
+    command: yarn dev
+    ports:
+      - "3000:3000"
+    environment:
+      ASDF_NODEJS_VERSION: 20
+      # Local development: use Mailpit for email testing
+      MAILPIT_URL: http://mailpit:8025
+    volumes:
+      - .:/app:delegated
+    networks:
+      - kool_local
+      - kool_global
+    depends_on:
+      - mailpit
+
+  # Mailpit - Local email testing (like Mailtrap/MailHog)
+  # Web UI: http://localhost:8025
+  # SMTP: localhost:1025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP server
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_API_CORS: localhost:3000
+    networks:
+      - kool_local
+
+networks:
+  kool_local:
+  kool_global:
+    external: true
+    name: kool_global

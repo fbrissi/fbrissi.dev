@@ -1,0 +1,84 @@
+{
+  "name": "Filipe Bojikian Rissi",
+  "headline": "Staff Software Engineer • Distributed Systems • Cloud Architecture • AWS • Kubernetes • Microservices",
+  "summary": "Staff Software Engineer com mais de 15 anos de experiência projetando e construindo sistemas backend escaláveis, plataformas cloud-native, APIs, integrações e aplicações distribuídas.",
+  "about": "Eu construo software simples de operar, fácil de evoluir, confiável em produção e sustentável para o crescimento de longo prazo do negócio.",
+  "location": "Bauru, São Paulo, Brasil (UTC-3)",
+  "availability": "Aberto a oportunidades remotas",
+  "focusAreas": [
+    "Engenharia Backend",
+    "Arquitetura em Cloud",
+    "Platform Engineering",
+    "Full Stack quando necessário"
+  ],
+  "skills": [
+    {
+      "group": "Linguagens",
+      "items": ["Java", "Kotlin", "Go", "PHP", "JavaScript", "TypeScript", "Python", "Dart", "Bash"]
+    },
+    {
+      "group": "Backend",
+      "items": ["Spring Boot", "Quarkus", "Laravel", "Node.js"]
+    },
+    {
+      "group": "Frontend",
+      "items": ["React", "Vue.js"]
+    },
+    {
+      "group": "Mobile",
+      "items": ["Flutter"]
+    },
+    {
+      "group": "Dados",
+      "items": ["PostgreSQL", "MySQL", "Oracle", "Redis", "MongoDB", "DynamoDB"]
+    },
+    {
+      "group": "Cloud & DevOps",
+      "items": ["Docker", "Kubernetes", "Helm", "Terraform", "AWS", "Google Cloud", "Cloudflare", "GitHub Actions", "GitLab CI", "Linux"]
+    },
+    {
+      "group": "Arquitetura",
+      "items": ["REST APIs", "Microservices", "Event-Driven Architecture", "OAuth2", "OpenID Connect", "Keycloak", "Kafka", "RabbitMQ", "AWS ECS", "AWS EKS", "Amazon S3"]
+    }
+  ],
+  "careerHighlights": [
+    "Mais de 15 anos construindo software corporativo",
+    "Aplicações cloud-native em AWS e Kubernetes",
+    "Backend em primeiro lugar, full stack quando necessário",
+    "APIs, integrações e sistemas distribuídos",
+    "Arquitetura de software e platform engineering",
+    "Liderança técnica e mentoria",
+    "Scrum Foundation Professional Certificate (CertiProf, ago/2019)",
+    "Palestrante: Object Relational Mapping Com JPA (FATEC Bauru, nov/2017)"
+  ],
+  "languages": [
+    "Português — nativo / bilíngue",
+    "Inglês — proficiência profissional"
+  ],
+  "publicLinks": [
+    {
+      "label": "GitHub",
+      "url": "https://github.com/fbrissi"
+    },
+    {
+      "label": "LinkedIn",
+      "url": "https://www.linkedin.com/in/fbrissi/"
+    },
+    {
+      "label": "GitLab",
+      "url": "https://gitlab.com/fbrissi"
+    },
+    {
+      "label": "WhatsApp",
+      "url": "https://wa.me/5514991434121"
+    },
+    {
+      "label": "Commit History",
+      "url": "https://commit-history.com/fbrissi"
+    }
+  ],
+  "contact": {
+    "email": "hello@fbrissi.dev",
+    "note": "Placeholder editável até confirmar um e-mail público."
+  }
+}
