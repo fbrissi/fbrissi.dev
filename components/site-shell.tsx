@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import type { ReactNode } from 'react';
 
+import { GridBackground } from './grid-background';
 import { SiteHeader } from './site-header';
 import { getMessages, getProfile } from '@/lib/site';
 
@@ -44,6 +45,7 @@ export function SiteShell({ locale, activePage, children }: SiteShellProps) {
 
   return (
     <div className="relative min-h-screen px-4 pb-10 pt-8 sm:px-8 sm:pb-10 sm:pt-0" lang={locale}>
+      <GridBackground />
       <div className="relative z-10 mx-auto max-w-screen-xl">
         <SiteHeader locale={locale} activePage={activePage} />
         <main className="mb-12 p-0 sm:mb-20">{children}</main>
