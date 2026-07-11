@@ -34,7 +34,7 @@ export function LanguageSwitcher({ locale, alternatePath, compact = false }: Lan
   const alternateLang = languages[locale === 'en' ? 'pt-BR' : 'en'];
 
   if (compact) {
-    // Versão compacta: apenas bandeira
+    // Compact version: flag only
     return (
       <div className="relative" ref={dropdownRef}>
         <button

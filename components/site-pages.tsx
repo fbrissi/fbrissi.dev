@@ -11,6 +11,7 @@ import { ContactForm } from './contact-form';
 import { Markdown } from './markdown';
 import { SiteShell } from './site-shell';
 import { StructuredData } from './structured-data';
+import { ViewAllLink } from './view-all-link';
 
 type PageProps = {
   locale: Locale;
@@ -31,8 +32,9 @@ type WorkPageProps = PageProps & {
 export function HomePage({ locale }: PageProps) {
   const messages = getMessages(locale);
   const profile = getProfile(locale);
-  const posts = getArticles(locale).slice(0, 2);
-  const featuredProjects = getProjects(locale).slice(0, 3);
+  const posts = getArticles(locale).slice(0, 6);
+  const featuredProjects = getProjects(locale).slice(0, 6);
+  const featuredWorks = getWorks(locale).slice(0, 6);
 
   return (
     <SiteShell locale={locale} activePage="home">
@@ -77,8 +79,9 @@ export function HomePage({ locale }: PageProps) {
       </section>
 
       <section className="mb-16">
-        <div className="mb-8">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <h2 className="text-2xl font-normal tracking-tight">{messages.labels.featuredProjects}</h2>
+          <ViewAllLink href={localizedPath(locale, '/projects')} label={messages.labels.viewAllProjects} />
         </div>
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {featuredProjects.map((project) => (
@@ -87,12 +90,27 @@ export function HomePage({ locale }: PageProps) {
         </div>
       </section>
 
+      {featuredWorks.length > 0 && (
+        <section className="mb-16">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-2xl font-normal tracking-tight">{messages.labels.experience}</h2>
+            <ViewAllLink href={localizedPath(locale, '/works')} label={messages.labels.viewAllWorks} />
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {featuredWorks.map((item) => (
+              <WorksCard key={item.slug} locale={locale} item={item} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {posts.length > 0 && (
         <section className="mb-16">
-          <div className="mb-8">
-          <h2 className="text-2xl font-normal tracking-tight">{messages.labels.articlesPreview}</h2>
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-2xl font-normal tracking-tight">{messages.labels.articlesPreview}</h2>
+            <ViewAllLink href={localizedPath(locale, '/articles')} label={messages.labels.viewAllArticles} />
           </div>
-          <div className="grid gap-6 sm:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {posts.map((post) => (
               <ArticleCard key={post.slug} locale={locale} item={post} />
             ))}

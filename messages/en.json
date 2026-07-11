@@ -35,7 +35,10 @@
     "readArticle": "Read article",
     "viewProfile": "View profile",
     "copyNote": "Editable content lives in JSON and Markdown files, not in React components.",
-    "backToArticles": "Back to articles"
+    "backToArticles": "Back to articles",
+    "viewAllProjects": "View all projects",
+    "viewAllWorks": "View all works",
+    "viewAllArticles": "View all articles"
   },
   "home": {
     "eyebrow": "Public portfolio",

@@ -84,3 +84,173 @@
     margin: 0;
   }
 }
+
+@layer components {
+  .site-header-shell {
+    background-color: transparent;
+    box-shadow: none;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+
+  .site-header-desktop-shell {
+    position: relative;
+    overflow: hidden;
+    height: 280px;
+  }
+
+  .site-header-desktop-stack {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+  }
+
+  .site-header-desktop-avatar {
+    position: relative;
+    display: block;
+    flex-shrink: 0;
+    overflow: hidden;
+    width: 150px;
+    height: 150px;
+    border-radius: 9999px;
+  }
+
+  .site-header-desktop-name {
+    flex-shrink: 0;
+    max-height: 3rem;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .site-header-desktop-nav {
+    flex-shrink: 0;
+    gap: 1.5rem;
+  }
+
+  @media (min-width: 640px) {
+    @supports (animation-timeline: scroll()) {
+      .site-header-shell {
+        animation: site-header-shell-shrink 1ms linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0 240px;
+      }
+
+      .site-header-desktop-shell {
+        animation: site-header-desktop-shell-shrink 1ms linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0 220px;
+      }
+
+      .site-header-desktop-stack {
+        animation: site-header-desktop-stack-shrink 1ms linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0 220px;
+      }
+
+      .site-header-desktop-avatar {
+        animation: site-header-desktop-avatar-shrink 1ms linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0 220px;
+      }
+
+      .site-header-desktop-nav {
+        animation: site-header-desktop-nav-shrink 1ms linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0 220px;
+      }
+
+      .site-header-desktop-name {
+        animation: site-header-desktop-name-shrink 1ms linear both;
+        animation-timeline: scroll(root block);
+        animation-range: 0 160px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .site-header-shell,
+      .site-header-desktop-shell,
+      .site-header-desktop-stack,
+      .site-header-desktop-avatar,
+      .site-header-desktop-name,
+      .site-header-desktop-nav {
+        transition: none !important;
+      }
+    }
+  }
+}
+
+@keyframes site-header-shell-shrink {
+  from {
+    background-color: transparent;
+    box-shadow: none;
+    backdrop-filter: blur(0px);
+    -webkit-backdrop-filter: blur(0px);
+  }
+
+  to {
+    background-color: rgba(10, 10, 10, 0.95);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.15), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+}
+
+@keyframes site-header-desktop-shell-shrink {
+  from {
+    height: 280px;
+  }
+
+  to {
+    height: 96px;
+  }
+}
+
+@keyframes site-header-desktop-stack-shrink {
+  from {
+    gap: 1rem;
+  }
+
+  to {
+    gap: 0.5rem;
+  }
+}
+
+@keyframes site-header-desktop-avatar-shrink {
+  from {
+    width: 150px;
+    height: 150px;
+  }
+
+  to {
+    width: 54px;
+    height: 54px;
+  }
+}
+
+@keyframes site-header-desktop-nav-shrink {
+  from {
+    gap: 1.5rem;
+  }
+
+  to {
+    gap: 1rem;
+  }
+}
+
+@keyframes site-header-desktop-name-shrink {
+  from {
+    max-height: 3rem;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  to {
+    max-height: 0;
+    opacity: 0;
+    transform: translateY(-0.5rem);
+  }
+}
