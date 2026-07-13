@@ -1,17 +1,19 @@
-name = "fbrissi-contact-form"
-main = "workers/contact-form.ts"
+name = "fbrissi-contact-api"
+main = "workers/contact-api.ts"
 compatibility_date = "2024-01-01"
 
-# Worker will be deployed to contact-form.fbrissi.dev or custom subdomain
+# The API Worker accepts the browser request and queues the email for the consumer.
 routes = [
   { pattern = "fbrissi.dev/api/contact", zone_name = "fbrissi.dev" },
   { pattern = "www.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" }
 ]
 
-# Environment variables (set via Cloudflare dashboard or wrangler secrets)
+# Environment variables (set via Cloudflare dashboard or Terraform)
 # wrangler secret put TURNSTILE_SECRET_KEY
-# wrangler secret put CONTACT_EMAIL_TO
-# wrangler secret put CONTACT_EMAIL_FROM
+
+[[queues.producers]]
+binding = "CONTACT_FORM_QUEUE"
+queue = "fbrissi-contact-form"
 
 # Production environment
 [env.production]
@@ -21,12 +23,6 @@ vars = { ENVIRONMENT = "production" }
 [env.preview]
 vars = { ENVIRONMENT = "preview" }
 
-# Local development configuration
-# Run with: wrangler dev
-# Emails will be sent to Mailpit at http://localhost:8025
 [vars]
 ENVIRONMENT = "development"
-MAILPIT_URL = "http://mailpit:8025"
-CONTACT_EMAIL_FROM = "noreply@fbrissi.dev"
-CONTACT_EMAIL_TO = "hello@fbrissi.dev"
 TURNSTILE_SECRET_KEY = "1x0000000000000000000000000000000AA"  # Test key (always passes)

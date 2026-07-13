@@ -12,5 +12,5 @@ const compat = new FlatCompat({
 export default defineConfig([
   ...compat.config(nextVitals),
   ...compat.config(nextTs),
-  globalIgnores(['.next/**', 'out/**', 'dist/**', 'next-env.d.ts'])
+  globalIgnores(['.next/**', 'coverage/**', 'out/**', 'dist/**', 'next-env.d.ts'])
 ]);

@@ -110,20 +110,19 @@ Use `terraform/example.tfvars` as the starting point.
 
 The contact form uses **free** Cloudflare services to send emails without any monthly costs:
 
-- **Cloudflare Email Routing** - forwards emails to your personal address (free)
-- **Cloudflare Workers** - processes form submissions (free: 100k requests/day)
-- **MailChannels** - sends emails via Workers (free for Cloudflare Workers)
+- **Cloudflare Email Binding** - delivers from the consumer Worker to a verified destination (free)
+- **Cloudflare Workers + Queues** - API Worker queues submissions and a separate Worker delivers email asynchronously
 - **Cloudflare Turnstile** - anti-spam protection (free)
-- **Mailpit** - local email testing in development (like Laravel)
+- **LocalStack Community SQS + Mailpit** - local equivalents for the queue and email delivery flow
 
 **Setup Guide**: See [`docs/CONTACT_FORM_SETUP.md`](docs/CONTACT_FORM_SETUP.md) for complete instructions.
 
 **Local Development**:
 
-1. Start services: `kool start` (includes Mailpit)
-2. Mailpit web UI: http://localhost:8025
-3. Test form: http://localhost:3000/contact
-4. Emails appear in Mailpit instantly!
+1. Start services: `kool start` (includes the local API, LocalStack SQS, queue consumer, and Mailpit)
+2. Test form: http://localhost:3000/contact
+3. The API queues the message in LocalStack and the consumer sends it to Mailpit.
+4. Open Mailpit at http://localhost:8025 to inspect delivered messages.
 
 **Production Deployment** (via Terraform):
 
@@ -131,7 +130,7 @@ The contact form uses **free** Cloudflare services to send emails without any mo
 2. Get Turnstile keys from Cloudflare dashboard
 3. Copy `terraform/example.tfvars` to `terraform/terraform.tfvars`
 4. Set all variables (API token, account ID, zone ID, Turnstile keys, emails)
-5. Build Worker: `yarn build:worker`
+5. Build Workers: `yarn build:worker`
 6. Deploy: `terraform apply`
 7. Add Turnstile site key to GitHub secrets: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 

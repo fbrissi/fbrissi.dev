@@ -5,7 +5,6 @@ import { useState, useRef, useEffect } from 'react';
 interface ContactFormProps {
   locale: 'en' | 'pt-BR';
   turnstileSiteKey: string;
-  contactEmail: string;
 }
 
 interface FormState {
@@ -81,9 +80,7 @@ const messages = {
   },
 };
 
-export function ContactForm({ locale, turnstileSiteKey, contactEmail }: ContactFormProps) {
-  const isDevelopment = process.env.NODE_ENV === 'development';
-  const mailpitUrl = process.env.NEXT_PUBLIC_MAILPIT_URL || 'http://localhost:8025';
+export function ContactForm({ locale, turnstileSiteKey }: ContactFormProps) {
   const t = messages[locale].form;
   const [formState, setFormState] = useState<FormState>({
     name: '',
@@ -99,8 +96,6 @@ export function ContactForm({ locale, turnstileSiteKey, contactEmail }: ContactF
 
   // Load Turnstile script
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-
     const script = document.createElement('script');
     script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js';
     script.async = true;
@@ -163,21 +158,14 @@ export function ContactForm({ locale, turnstileSiteKey, contactEmail }: ContactF
     setErrorMessage('');
 
     try {
-      const response = isDevelopment
-        ? await sendToMailpit(mailpitUrl, contactEmail, {
-            name: formState.name,
-            replyTo: formState.email,
-            subject: formState.subject,
-            message: formState.message,
-          })
-        : await fetch('/api/contact', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              ...formState,
-              'cf-turnstile-response': turnstileToken,
-            }),
-          });
+      const response = await fetch(process.env.NEXT_PUBLIC_CONTACT_API_URL ?? '/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...formState,
+          'cf-turnstile-response': turnstileToken,
+        }),
+      });
 
       if (!response.ok) {
         throw new Error('Failed to send message');
@@ -346,60 +334,4 @@ export function ContactForm({ locale, turnstileSiteKey, contactEmail }: ContactF
       </button>
     </form>
   );
-}
-
-async function sendToMailpit(
-  mailpitUrl: string,
-  toEmail: string,
-  data: {
-    name: string;
-    replyTo: string;
-    subject: string;
-    message: string;
-  }
-): Promise<Response> {
-  return fetch(`${mailpitUrl}/api/v1/send`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      From: {
-        Email: 'noreply@fbrissi.dev',
-        Name: 'Contact Form - fbrissi.dev (Local)'
-      },
-      To: [
-        {
-          Email: toEmail
-        }
-      ],
-      ReplyTo: [
-        {
-          Email: data.replyTo,
-          Name: data.name
-        }
-      ],
-      Subject: `[Contact Form - LOCAL] ${data.subject}`,
-      Text: buildPlainTextMessage(data),
-      HTML: buildHtmlMessage(data)
-    })
-  });
-}
-
-function buildPlainTextMessage(data: { name: string; replyTo: string; subject: string; message: string }): string {
-  return `New contact form submission from fbrissi.dev (LOCAL DEVELOPMENT)\n\nName: ${data.name}\nEmail: ${data.replyTo}\nSubject: ${data.subject}\n\nMessage:\n${data.message}\n\n---\nThis message was sent via the contact form at http://localhost:3000/contact`.trim();
-}
-
-function buildHtmlMessage(data: { name: string; replyTo: string; subject: string; message: string }): string {
-  return `<!DOCTYPE html>\n<html>\n<head>\n  <meta charset="utf-8">\n  <style>\n    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }\n    .header { background: #0a0a0a; color: #fafafa; padding: 20px; border-radius: 8px 8px 0 0; }\n    .badge { display: inline-block; background: #f97316; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 10px; }\n    .content { background: #f9f9f9; padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; }\n    .field { margin-bottom: 15px; }\n    .field strong { display: block; color: #f97316; margin-bottom: 5px; }\n    .message { background: white; padding: 15px; border-left: 3px solid #f97316; margin-top: 15px; }\n    .footer { margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666; }\n  </style>\n</head>\n<body>\n  <div class="header">\n    <h2 style="margin: 0;">\n      New Contact Form Submission\n      <span class="badge">LOCAL DEV</span>\n    </h2>\n  </div>\n  <div class="content">\n    <div class="field">\n      <strong>Name:</strong>\n      ${escapeHtml(data.name)}\n    </div>\n    <div class="field">\n      <strong>Email:</strong>\n      <a href="mailto:${escapeHtml(data.replyTo)}">${escapeHtml(data.replyTo)}</a>\n    </div>\n    <div class="field">\n      <strong>Subject:</strong>\n      ${escapeHtml(data.subject)}\n    </div>\n    <div class="message">\n      <strong>Message:</strong>\n      <p>${escapeHtml(data.message).replace(/\n/g, '<br>')}</p>\n    </div>\n    <div class="footer">\n      This message was sent via the contact form at <a href="http://localhost:3000/contact">http://localhost:3000/contact</a>\n    </div>\n  </div>\n</body>\n</html>`.trim();
-}
-
-function escapeHtml(text: string): string {
-  const map: Record<string, string> = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#039;'
-  };
-
-  return text.replace(/[&<>"']/g, (value) => map[value]);
 }

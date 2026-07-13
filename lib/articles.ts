@@ -2,7 +2,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 import matter from 'gray-matter';
-import readingTime from 'reading-time';
 
 import { formatDate, localizedPath, type Locale } from './i18n';
 import { absoluteUrl } from './seo';
@@ -43,10 +42,15 @@ function readArticleFile(locale: Locale, slug: string): Article | null {
     ...frontMatter,
     slug,
     content,
-    readingTime: readingTime(content).text,
+    readingTime: estimateReadingTime(content),
     url: absoluteUrl(localizedPath(locale, `/articles/${slug}`)),
     dateLabel: formatDate(frontMatter.date, locale)
   };
+}
+
+function estimateReadingTime(content: string): string {
+  const wordCount = content.trim().split(/\s+/).filter(Boolean).length;
+  return `${Math.max(1, Math.ceil(wordCount / 200))} min read`;
 }
 
 export function getArticleSlugs(locale: Locale): string[] {

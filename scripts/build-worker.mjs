@@ -1,60 +1,38 @@
 #!/usr/bin/env node
 
 /**
- * Build script for Cloudflare Worker (contact-form.ts)
- * Compiles TypeScript to JavaScript for Terraform deployment
+ * Build Cloudflare Worker modules for Terraform deployment.
  */
 
-import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { mkdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { build } from 'esbuild';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 const rootDir = resolve(__dirname, '..');
 
-// Paths
-const workerTsPath = resolve(rootDir, 'workers/contact-form.ts');
-const workerJsPath = resolve(rootDir, 'dist/contact-form.js');
+const workers = [
+  ['contact-api', 'workers/contact-api.ts'],
+  ['contact-email-consumer', 'workers/contact-email-consumer.ts'],
+];
 
-console.log('📦 Building Cloudflare Worker...');
+console.log('Building Cloudflare Workers...');
 
 try {
-  // Read TypeScript source
-  let tsCode = readFileSync(workerTsPath, 'utf-8');
+  mkdirSync(resolve(rootDir, 'dist'), { recursive: true });
+  await Promise.all(workers.map(([name, entryPoint]) => build({
+    entryPoints: [resolve(rootDir, entryPoint)],
+    outfile: resolve(rootDir, 'dist', `${name}.js`),
+    bundle: true,
+    format: 'esm',
+    platform: 'browser',
+    target: 'es2022',
+  })));
 
-  // Simple TypeScript to JavaScript transformation
-  // Remove type annotations and export interface
-  let jsCode = tsCode
-    // Remove export interface block
-    .replace(/export interface Env \{[\s\S]*?\}/g, '')
-    // Remove type annotations from function parameters
-    .replace(/:\s*string/g, '')
-    .replace(/:\s*Env/g, '')
-    .replace(/:\s*Request/g, '')
-    .replace(/:\s*Response/g, '')
-    .replace(/:\s*Promise<[^>]+>/g, '')
-    .replace(/:\s*TurnstileResponse/g, '')
-    .replace(/:\s*Record<string,\s*string>/g, '')
-    .replace(/:\s*void/g, '')
-    // Remove interface definitions
-    .replace(/interface TurnstileResponse \{[\s\S]*?\}/g, '')
-    .replace(/interface ContactFormData \{[\s\S]*?\}/g, '')
-    // Clean up extra whitespace
-    .replace(/\n\n\n+/g, '\n\n')
-    .trim();
-
-  // Ensure dist directory exists
-  mkdirSync(dirname(workerJsPath), { recursive: true });
-
-  // Write JavaScript output
-  writeFileSync(workerJsPath, jsCode, 'utf-8');
-
-  console.log('✅ Worker built successfully!');
-  console.log(`   Input:  ${workerTsPath}`);
-  console.log(`   Output: ${workerJsPath}`);
-  console.log('   Ready for Terraform deployment');
+  console.log('Workers built successfully. Ready for Terraform deployment.');
 } catch (error) {
-  console.error('❌ Build failed:', error.message);
+  console.error('Worker build failed:', error.message);
   process.exit(1);
 }

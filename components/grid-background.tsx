@@ -9,6 +9,7 @@ const LINE_COLOR = 'rgba(42, 42, 42, 0.5)';
 // Gravity-well style distortion around the cursor, like spacetime bending near a mass.
 const DISTORTION_RADIUS = 260;
 const DISTORTION_STRENGTH = 42;
+const EVENT_HORIZON_RADIUS = 10;
 const SAMPLE_STEP = 8;
 const IDLE_DELAY_MS = 3000;
 const EASE_RATE = 0.12;
@@ -43,8 +44,6 @@ export function GridBackground() {
 
     // Pulls a point toward the mouse, stronger the closer it is (smoothstep falloff).
     function warp(x: number, y: number): [number, number] {
-      if (intensity <= 0.001) return [x, y];
-
       const dx = x - mouseX;
       const dy = y - mouseY;
       const dist = Math.sqrt(dx * dx + dy * dy);
@@ -52,7 +51,10 @@ export function GridBackground() {
 
       const t = 1 - dist / DISTORTION_RADIUS;
       const eased = t * t * (3 - 2 * t);
-      const pull = DISTORTION_STRENGTH * eased * intensity;
+      const pull = Math.min(
+        DISTORTION_STRENGTH * eased * intensity,
+        Math.max(0, dist - EVENT_HORIZON_RADIUS)
+      );
 
       return [x - (dx / dist) * pull, y - (dy / dist) * pull];
     }
@@ -101,6 +103,13 @@ export function GridBackground() {
       ctx!.stroke();
     }
 
+    function drawBlackHole() {
+      ctx!.fillStyle = 'rgba(0, 0, 0, 0.96)';
+      ctx!.beginPath();
+      ctx!.arc(mouseX, mouseY, EVENT_HORIZON_RADIUS, 0, Math.PI * 2);
+      ctx!.fill();
+    }
+
     function draw() {
       ctx!.clearRect(0, 0, width, height);
       ctx!.strokeStyle = LINE_COLOR;
@@ -108,6 +117,7 @@ export function GridBackground() {
 
       for (let x = 0; x <= width; x += CELL_SIZE) drawVerticalLine(x);
       for (let y = 0; y <= height; y += CELL_SIZE) drawHorizontalLine(y);
+      drawBlackHole();
     }
 
     function tick() {

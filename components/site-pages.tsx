@@ -328,7 +328,7 @@ export function ContactPage({ locale }: PageProps) {
       <section className="mb-16">
         <div className="rounded-xl border border-line bg-bg-soft p-8 shadow-lg">
           <h2 className="mb-6 text-2xl font-normal tracking-tight">{messages.pages.contact.formTitle}</h2>
-          <ContactForm locale={locale} turnstileSiteKey={turnstileSiteKey} contactEmail={profile.contact.email} />
+          <ContactForm locale={locale} turnstileSiteKey={turnstileSiteKey} />
         </div>
       </section>
 

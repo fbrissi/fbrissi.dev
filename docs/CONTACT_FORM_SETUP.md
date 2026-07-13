@@ -5,24 +5,27 @@ This guide explains how to set up the contact form with Cloudflare using **Terra
 ## Overview
 
 The contact form uses:
-- **Cloudflare Email Routing** (free) - forwards emails to your personal address
-- **Cloudflare Workers** (free tier: 100k requests/day) - processes form submissions
-- **MailChannels API** (free for Workers) - sends emails
+- **Cloudflare Email Binding** (free) - sends from the consumer Worker to a verified destination
+- **Cloudflare Workers + Queues** (free tier: 100k requests/day) - API Worker validates and queues submissions; a queue consumer Worker delivers email
 - **Cloudflare Turnstile** (free) - anti-spam protection
 - **Terraform** - manages all infrastructure
 
-## Local Development with Mailpit
+## Local Development with LocalStack and Mailpit
 
-For local development, emails are sent to **Mailpit** (like Laravel's Mailpit):
+For local development, the browser calls the local TypeScript API. It publishes to
+LocalStack SQS, and a separate TypeScript consumer sends the resulting email to
+**Mailpit** over SMTP.
 
 - **Web UI**: http://localhost:8025
-- **No configuration needed** - automatically works when you run `kool start`
+- **LocalStack endpoint**: http://localhost:4566
+- **Contact API endpoint**: http://localhost:8787/api/contact
+- **No configuration needed** - all services start with `kool start`
 - Uses Turnstile test key (always passes validation)
 
 ### Start Local Environment
 
 ```bash
-# Start Docker containers (includes Mailpit)
+# Start Docker containers (includes LocalStack, the API, consumer, and Mailpit)
 kool start
 
 # Open Mailpit web UI
@@ -34,7 +37,7 @@ kool run yarn dev
 # Open site
 open http://localhost:3000/contact
 
-# Test the form - emails appear in Mailpit!
+# Test the form - it is queued first, then appears in Mailpit.
 ```
 
 ## Production Setup with Terraform
@@ -58,10 +61,9 @@ open http://localhost:3000/contact
    - Add your personal email address (e.g., `filipe@gmail.com`)
    - Verify it by clicking the confirmation link sent to that address
 
-3. **Create routing rule**:
-   - **Custom address**: `hello@fbrissi.dev`
-   - **Action**: Send to → your personal email
-   - Save the rule
+3. **Verify the destination address**:
+    - Add and verify `f.b.rissi@gmail.com` in Email Routing.
+    - The Worker Email binding is restricted to this verified destination.
 
 ### Step 2: Get Cloudflare Turnstile Keys
 
@@ -104,14 +106,17 @@ custom_domain     = "fbrissi.dev"
 
 # Contact Form
 turnstile_secret_key = "your_turnstile_secret_key"
-contact_email_to     = "hello@fbrissi.dev"
+contact_email_to     = "f.b.rissi@gmail.com"
 contact_email_from   = "noreply@fbrissi.dev"
 ```
 
-### Step 4: Deploy with Terraform
+### Step 4: Build and Deploy with Terraform
 
 ```bash
 cd terraform
+
+# From the repository root, bundle the API and consumer Workers first
+yarn build:worker
 
 # Initialize Terraform
 terraform init
@@ -158,8 +163,9 @@ Push to main branch - GitHub Actions will automatically:
 Terraform manages:
 - ✅ Cloudflare Pages project with GitHub integration
 - ✅ Custom domain configuration
-- ✅ Cloudflare Worker (contact form)
-- ✅ Worker routes (`/api/contact`)
+- ✅ Cloudflare Queue (contact form messages)
+- ✅ Cloudflare API Worker and `/api/contact` routes
+- ✅ Cloudflare queue consumer Worker with retries and an Email binding restricted to `f.b.rissi@gmail.com`
 - ✅ Turnstile widget
 - ✅ Environment variables for Pages builds
 
@@ -174,7 +180,7 @@ Terraform manages:
 2. Open site: http://localhost:3000/contact
 3. Fill form and submit
 4. Check Mailpit: http://localhost:8025
-5. Emails appear instantly with [LOCAL DEV] badge
+5. The API queues the submission in LocalStack; the consumer delivers it to Mailpit with a `LOCAL DEV` badge
 
 ### Production
 
@@ -182,7 +188,7 @@ Terraform manages:
 2. Fill out the form
 3. Complete Turnstile captcha
 4. Submit
-5. Check your personal email (configured in Email Routing)
+5. Check `f.b.rissi@gmail.com`
 
 ## Terraform Commands
 
@@ -209,12 +215,15 @@ terraform output
 terraform destroy
 ```
 
-## Updating the Worker
+## Updating the Workers
 
-Worker code is in `workers/contact-form.ts`. To update:
+The API Worker is in `workers/contact-api.ts`, the consumer Worker is in
+`workers/contact-email-consumer.ts`, and email templates are in
+`workers/templates/contact-email.ts`. To update them:
 
 1. Edit the TypeScript file
-2. Run `terraform apply`
+2. Run `yarn build:worker`
+3. Run `terraform apply`
 3. Terraform will detect changes and redeploy
 
 Alternatively, use Wrangler for faster iteration:
@@ -243,7 +252,7 @@ wrangler deploy
 
 1. **Check Worker logs**:
    ```bash
-   wrangler tail fbrissi-contact-form
+    wrangler tail fbrissi-dev-contact-api
    ```
 
 2. **Verify Worker route**:
@@ -262,22 +271,15 @@ wrangler deploy
 ### Email not received
 
 1. **Verify Email Routing**:
-   - Cloudflare Dashboard → Email → Email Routing
-   - Check that routing rule is active
-   - Verify destination email is confirmed
+    - Cloudflare Dashboard → Email → Email Routing
+    - Verify `f.b.rissi@gmail.com` is confirmed as a destination address
+    - Verify the consumer's `SEND_EMAIL` binding targets that address
 
 2. **Check spam folder**
 
-3. **Test MailChannels manually**:
-   ```bash
-   curl -X POST https://api.mailchannels.net/tx/v1/send \
-     -H "Content-Type: application/json" \
-     -d '{
-       "personalizations": [{"to": [{"email": "your@email.com"}]}],
-       "from": {"email": "test@fbrissi.dev"},
-       "subject": "Test",
-       "content": [{"type": "text/plain", "value": "Test"}]
-     }'
+3. **Check the consumer Worker logs**:
+    ```bash
+    wrangler tail fbrissi-dev-contact-email-consumer
    ```
 
 ### Local development issues
@@ -291,22 +293,23 @@ docker ps | grep mailpit
 kool restart
 ```
 
-**Worker not connecting to Mailpit**:
+**Local queue flow is not delivering**:
 ```bash
-# Check worker logs
-wrangler dev
+# Check API and consumer logs
+kool logs contact-api
+kool logs contact-email-consumer
 
-# Verify environment variable
-echo $MAILPIT_URL
+# Verify LocalStack is healthy
+kool logs localstack
 ```
 
 ## Cost Breakdown
 
 All services used are **free**:
 
-- ✅ **Cloudflare Email Routing**: Free (unlimited routing rules)
+- ✅ **Cloudflare Email Routing**: Free (verified Email binding destinations)
 - ✅ **Cloudflare Workers**: Free tier (100,000 requests/day)
-- ✅ **MailChannels**: Free for Cloudflare Workers
+- ✅ **Cloudflare Email Binding**: Free with Cloudflare Email Routing
 - ✅ **Cloudflare Turnstile**: Free (unlimited verifications)
 - ✅ **Cloudflare Pages**: Free tier (unlimited requests, 500 builds/month)
 - ✅ **Mailpit** (local): Free (open source)
@@ -328,7 +331,7 @@ All services used are **free**:
    - Turnstile prevents automated submissions
 
 4. **CORS**:
-   - Worker accepts requests from any origin
+    - API Worker accepts requests from `https://fbrissi.dev`
    - Adjust `corsHeaders` in Worker if needed
 
 ## Architecture Diagram
@@ -342,33 +345,34 @@ All services used are **free**:
          │ + Turnstile token
          ▼
 ┌─────────────────┐
-│ Cloudflare      │
+│ Cloudflare API  │
 │ Worker          │◄───── Terraform manages
-│ (contact-form)  │
+│ (contact-api)   │
 └────────┬────────┘
-         │
-         ├─────────────┐
-         │             │
-         ▼             ▼
-┌──────────────┐  ┌──────────────┐
-│  Turnstile   │  │ MailChannels │
-│  Validation  │  │   (prod)     │
-└──────────────┘  │     or       │
-                  │  Mailpit     │
-                  │   (local)    │
-                  └──────┬───────┘
-                         │
-                         ▼
-                  ┌──────────────┐
-                  │ Email Routing│◄─── Manual setup
-                  │  (Cloudflare)│
-                  └──────┬───────┘
-                         │
-                         ▼
-                  ┌──────────────┐
-                  │ Your Personal│
-                  │    Email     │
-                  └──────────────┘
+          ├───────────► Turnstile validation
+          │
+          ▼
+┌─────────────────┐
+│ Cloudflare Queue│
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ Email consumer  │
+│ Worker          │
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ Email Binding   │
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ Email Routing   │◄─── Manual setup
+└────────┬────────┘
+         ▼
+┌─────────────────┐
+│ Your Personal   │
+│ Email           │
+└─────────────────┘
 ```
 
 ## References
@@ -376,6 +380,7 @@ All services used are **free**:
 - [Cloudflare Terraform Provider](https://registry.terraform.io/providers/cloudflare/cloudflare/latest/docs)
 - [Cloudflare Email Routing Docs](https://developers.cloudflare.com/email-routing/)
 - [Cloudflare Workers Docs](https://developers.cloudflare.com/workers/)
+- [Cloudflare Queues Docs](https://developers.cloudflare.com/queues/)
 - [Cloudflare Turnstile Docs](https://developers.cloudflare.com/turnstile/)
 - [MailChannels API Docs](https://api.mailchannels.net/tx/v1/documentation)
 - [Mailpit](https://github.com/axllent/mailpit)

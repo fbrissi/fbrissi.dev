@@ -14,9 +14,19 @@ output "custom_domain" {
   value       = var.custom_domain
 }
 
-output "worker_script_name" {
-  description = "Contact form Worker script name"
-  value       = cloudflare_workers_script.contact_form.script_name
+output "contact_api_worker_script_name" {
+  description = "Contact form API Worker script name"
+  value       = cloudflare_workers_script.contact_api.script_name
+}
+
+output "contact_email_consumer_worker_script_name" {
+  description = "Contact email consumer Worker script name"
+  value       = cloudflare_workers_script.contact_email_consumer.script_name
+}
+
+output "contact_form_queue_name" {
+  description = "Contact form queue name"
+  value       = cloudflare_queue.contact_form.queue_name
 }
 
 output "turnstile_site_key" {

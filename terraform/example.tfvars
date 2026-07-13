@@ -22,5 +22,5 @@ custom_domain     = "fbrissi.dev"
 turnstile_secret_key = "your_turnstile_secret_key_here"
 
 # Contact Form - Email addresses
-contact_email_to   = "hello@fbrissi.dev"   # Where to receive form submissions
+contact_email_to   = "f.b.rissi@gmail.com" # Verified Worker Email binding destination
 contact_email_from = "noreply@fbrissi.dev" # From address (must be @fbrissi.dev)

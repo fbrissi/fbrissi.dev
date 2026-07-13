@@ -53,7 +53,8 @@ variable "turnstile_secret_key" {
 
 variable "contact_email_to" {
   type        = string
-  description = "Email address to receive contact form submissions (e.g., hello@fbrissi.dev)"
+  description = "Verified destination for the Worker Email binding"
+  default     = "f.b.rissi@gmail.com"
 }
 
 variable "contact_email_from" {
