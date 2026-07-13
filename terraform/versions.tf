@@ -7,6 +7,15 @@ terraform {
       version = "~> 5.0"
     }
   }
+
+  cloud {
+    hostname     = "app.terraform.io"
+    organization = "fbrissi"
+
+    workspaces {
+      name = "fbrissi-dev"
+    }
+  }
 }
 
 provider "cloudflare" {
