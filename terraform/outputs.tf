@@ -11,7 +11,7 @@ output "pages_project_domains" {
 
 output "custom_domain" {
   description = "Custom domain (if configured)"
-  value       = var.custom_domain
+  value       = local.custom_domain
 }
 
 output "contact_api_worker_script_name" {
@@ -37,5 +37,5 @@ output "turnstile_site_key" {
 
 output "contact_form_api_url" {
   description = "Contact form API endpoint"
-  value       = "https://${var.custom_domain}/api/contact"
+  value       = "https://${local.custom_domain}/api/contact"
 }

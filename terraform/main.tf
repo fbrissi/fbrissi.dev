@@ -1,7 +1,7 @@
 resource "cloudflare_pages_project" "site" {
-  account_id        = var.cloudflare_account_id
-  name              = var.project_name
-  production_branch = var.production_branch
+  account_id        = local.cloudflare_account_id
+  name              = local.project_name
+  production_branch = local.production_branch
 
   build_config = {
     build_caching   = true
@@ -13,13 +13,13 @@ resource "cloudflare_pages_project" "site" {
   source = {
     type = "github"
     config = {
-      owner                          = var.repo_owner
-      owner_id                       = var.owner_id
+      owner                          = local.repo_owner
+      owner_id                       = local.owner_id
       pr_comments_enabled            = true
-      production_branch              = var.production_branch
+      production_branch              = local.production_branch
       production_deployments_enabled = true
-      repo_id                        = var.repo_id
-      repo_name                      = var.repo_name
+      repo_id                        = local.repo_id
+      repo_name                      = local.repo_name
       preview_deployment_setting     = "all"
     }
   }
@@ -46,8 +46,8 @@ resource "cloudflare_pages_project" "site" {
 }
 
 resource "cloudflare_pages_domain" "custom" {
-  count        = var.custom_domain == null ? 0 : 1
-  account_id   = var.cloudflare_account_id
+  count        = local.custom_domain == null ? 0 : 1
+  account_id   = local.cloudflare_account_id
   project_name = cloudflare_pages_project.site.name
-  name         = var.custom_domain
+  name         = local.custom_domain
 }
