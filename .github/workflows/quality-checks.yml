@@ -65,7 +65,6 @@ jobs:
           JUNIT_PATH: ${{ matrix.test_reporter_path }}
           COVERAGE_PATH: ${{ matrix.coverage_summary_path }}
           COVERAGE_HTML_PATH: ${{ matrix.coverage_html_path }}
-          TEST_HTML_PATH: ${{ matrix.test_html_report_path }}
           ARTIFACT_NAME: ${{ matrix.artifact_name }}
         run: |
           get_attr() {
@@ -126,9 +125,6 @@ jobs:
             echo "HTML coverage report is available in the \`$ARTIFACT_NAME\` artifact."
             if [ -n "$COVERAGE_HTML_PATH" ] && [ -f "$COVERAGE_HTML_PATH" ]; then
               echo "Entry point: \`$COVERAGE_HTML_PATH\`."
-            fi
-            if [ -n "$TEST_HTML_PATH" ] && [ -f "$TEST_HTML_PATH" ]; then
-              echo "HTML test report: \`$TEST_HTML_PATH\`."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
 

@@ -89,6 +89,21 @@ Merge the release pull request into `main`. Terraform Cloud applies the configur
 
 After that apply succeeds, the release workflow creates the tag and deploys the site and Workers.
 
+### Recovering a Failed Release
+
+The `Release Orchestrator` workflow starts releases after merged pull requests.
+If that workflow fails after the Terraform Cloud apply, run the `Release` workflow
+manually from GitHub Actions with:
+
+- `version` - the version from the current `main` commit's `CHANGELOG.md` entry
+- `prerelease` - whether to mark the GitHub release as a prerelease
+- `release_notes` - optional; when omitted, the matching `CHANGELOG.md` notes are used
+
+The manual workflow compares the current `main` commit with the previous release
+tag to determine whether Terraform changed, then waits for its Terraform Cloud
+apply before creating the tag. It can also resume a failed run after the tag was
+created, as long as that tag points to the current commit.
+
 ## Infrastructure Managed by Terraform
 
 Terraform manages:
