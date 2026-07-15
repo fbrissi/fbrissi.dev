@@ -41,7 +41,7 @@ jobs:
             test_reporter_path: vitest-report.xml
             coverage_summary_path: coverage/cobertura-coverage.xml
             coverage_html_path: coverage/index.html
-      steps:
+    steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
