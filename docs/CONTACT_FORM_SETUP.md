@@ -65,101 +65,29 @@ open http://localhost:3000/contact
     - Add and verify `f.b.rissi@gmail.com` in Email Routing.
     - The Worker Email binding is restricted to this verified destination.
 
-### Step 2: Get Cloudflare Turnstile Keys
+### Step 2: Configure the Terraform Cloud Integrations
 
-1. Go to [Cloudflare Turnstile](https://dash.cloudflare.com/?to=/:account/turnstile)
-2. Click **Add site**
-3. Configure:
-   - **Site name**: `fbrissi.dev Contact Form`
-   - **Domain**: `fbrissi.dev` (and `www.fbrissi.dev` if needed)
-   - **Widget mode**: Managed
-4. Save and copy:
-   - **Site Key** (this will be output by Terraform)
-   - **Secret Key** (add to terraform.tfvars)
+Terraform creates the Turnstile widget and synchronizes its keys to GitHub Actions.
+No Turnstile key is created or copied manually.
 
-### Step 3: Configure Terraform Variables
+Add these workspace environment variables in Terraform Cloud:
 
-Create `terraform/terraform.tfvars` from the example:
+- `GITHUB_TOKEN` - a fine-grained GitHub token with **Actions: Read and write** repository permission. Mark it sensitive.
 
-```bash
-cp terraform/example.tfvars terraform/terraform.tfvars
-```
+Add this GitHub Actions secret:
 
-Edit `terraform/terraform.tfvars`:
+- `TFC_API_TOKEN` - preferably a Terraform Cloud team token. Create a dedicated team, grant it **Read** access only to the `fbrissi-dev` workspace, and create its token. The release workflow uses it only to wait for the VCS-triggered apply. Mark it secret.
 
-```hcl
-# Cloudflare credentials
-cloudflare_api_token   = "your_api_token"
-cloudflare_account_id  = "your_account_id"
-cloudflare_zone_id     = "your_zone_id"
+Keep **Auto apply** disabled in the Terraform Cloud workspace. After reviewing the automatically generated plan, apply it manually. When a merge changes `terraform/`, the release workflow waits up to six hours for the Terraform Cloud run for that commit to succeed, then creates the tag and deploys. Releases without Terraform changes skip this wait.
 
-# GitHub repository
-repo_owner = "fbrissi"
-repo_name  = "fbrissi.dev"
-repo_id    = "123456789"
-owner_id   = "987654321"
+### Step 3: Provision and Deploy
 
-# Project configuration
-project_name      = "fbrissi-dev"
-production_branch = "main"
-custom_domain     = "fbrissi.dev"
+Merge the release pull request into `main`. Terraform Cloud applies the configuration, which creates the Turnstile widget and configures:
 
-# Contact Form
-turnstile_secret_key = "your_turnstile_secret_key"
-contact_email_to     = "f.b.rissi@gmail.com"
-contact_email_from   = "noreply@fbrissi.dev"
-```
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a GitHub Actions repository variable
+- `TURNSTILE_SECRET_KEY` as a GitHub Actions repository secret
 
-### Step 4: Provision Infrastructure with Terraform
-
-```bash
-cd terraform
-
-# Initialize Terraform
-terraform init
-
-# Preview changes
-terraform plan
-
-# Apply infrastructure
-terraform apply
-
-# Get the Turnstile keys for GitHub secrets
-terraform output turnstile_site_key
-terraform output -raw turnstile_secret_key
-```
-
-### Step 5: Add Secrets to GitHub
-
-The site key and secret key need to be added to GitHub Actions:
-
-```bash
-# Get the keys from Terraform outputs
-terraform output -raw turnstile_site_key
-terraform output -raw turnstile_secret_key
-
-# Add to GitHub:
-# Settings → Secrets and variables → Actions
-# Name: NEXT_PUBLIC_TURNSTILE_SITE_KEY
-# Value: <site key output>
-#
-# Name: TURNSTILE_SECRET_KEY
-# Value: <secret key output>
-```
-
-Or use GitHub CLI:
-
-```bash
-gh secret set NEXT_PUBLIC_TURNSTILE_SITE_KEY --body "$(terraform output -raw turnstile_site_key)"
-gh secret set TURNSTILE_SECRET_KEY --body "$(terraform output -raw turnstile_secret_key)"
-```
-
-### Step 6: Deploy
-
-Push a `v*` tag - GitHub Actions will automatically:
-- Build the site with Turnstile site key
-- Deploy to Cloudflare Pages
-- Deploy the API and email consumer Workers
+After that apply succeeds, the release workflow creates the tag and deploys the site and Workers.
 
 ## Infrastructure Managed by Terraform
 
@@ -189,8 +117,9 @@ terraform state rm \
   cloudflare_workers_route.contact_form_www
 ```
 
-Then apply Terraform to retain the queue and Turnstile infrastructure, configure
-the two Turnstile GitHub secrets, and push a `v*` tag.
+Then apply Terraform to retain the queue and Turnstile infrastructure. Terraform
+synchronizes the Turnstile GitHub Actions variable and secret before the release
+workflow creates the deployment tag.
 
 ## Testing
 
@@ -242,7 +171,7 @@ The API Worker is in `workers/contact-api.ts`, the consumer Worker is in
 `workers/templates/contact-email.ts`. To update them:
 
 1. Edit the TypeScript file
-2. Push a `v*` tag to deploy the updated site and Workers
+2. Merge the release pull request into `main` to create and deploy the release tag
 
 ## Troubleshooting
 

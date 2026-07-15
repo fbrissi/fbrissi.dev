@@ -69,9 +69,95 @@ jobs:
             exit 1
           fi
 
+  wait-for-infrastructure:
+    name: Wait for Infrastructure
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.sha }}
+      - name: Check whether Terraform changed
+        id: terraform
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          if [ "$EVENT_NAME" = 'workflow_dispatch' ]; then
+            BASE_SHA='HEAD^'
+          fi
+
+          if git diff --quiet "$BASE_SHA" HEAD -- terraform; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Wait for Terraform Cloud apply
+        if: ${{ steps.terraform.outputs.changed == 'true' }}
+        env:
+          COMMIT_SHA: ${{ github.sha }}
+          TFC_API_TOKEN: ${{ secrets.TFC_API_TOKEN }}
+          TFC_ORGANIZATION: fbrissi
+          TFC_WORKSPACE: fbrissi-dev
+        run: |
+          set -euo pipefail
+
+          api() {
+            curl --fail-with-body --silent --show-error \
+              --header "Authorization: Bearer $TFC_API_TOKEN" \
+              --header 'Content-Type: application/vnd.api+json' \
+              "$@"
+          }
+
+          workspace=$(api "https://app.terraform.io/api/v2/organizations/$TFC_ORGANIZATION/workspaces/$TFC_WORKSPACE")
+          workspace_id=$(jq --raw-output '.data.id' <<<"$workspace")
+
+          for _ in {1..60}; do
+            runs=$(api --get \
+              --data-urlencode "search[commit]=$COMMIT_SHA" \
+              --data-urlencode 'page[size]=1' \
+              "https://app.terraform.io/api/v2/workspaces/$workspace_id/runs")
+            run_id=$(jq --raw-output '.data[0].id // empty' <<<"$runs")
+
+            if [ -n "$run_id" ]; then
+              break
+            fi
+
+            sleep 10
+          done
+
+          if [ -z "${run_id:-}" ]; then
+            echo "Timed out waiting for Terraform Cloud to start a run for $COMMIT_SHA."
+            exit 1
+          fi
+
+          while :; do
+            run=$(api "https://app.terraform.io/api/v2/runs/$run_id")
+            status=$(jq --raw-output '.data.attributes.status' <<<"$run")
+            echo "Terraform Cloud run $run_id: $status"
+
+            case "$status" in
+              applied|planned_and_finished)
+                exit 0
+                ;;
+              planned|policy_checked|policy_override)
+                echo "Terraform Cloud is waiting for manual apply approval."
+                ;;
+              errored|canceled|force_canceled|discarded|policy_soft_failed)
+                echo "Terraform Cloud did not apply the infrastructure."
+                exit 1
+                ;;
+            esac
+
+            sleep 10
+          done
+
   release:
     name: Create Release
     if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+    needs: wait-for-infrastructure
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.release.outputs.version }}

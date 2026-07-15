@@ -7,6 +7,8 @@ locals {
   project_name      = "fbrissi-dev"
   production_branch = "main"
   custom_domain     = "fbrissi.dev"
+  github_owner      = "fbrissi"
+  github_repository = "fbrissi.dev"
 
   # Contact Form - Email addresses
   contact_email_to   = "f.b.rissi@gmail.com" # Verified Worker Email binding destination
