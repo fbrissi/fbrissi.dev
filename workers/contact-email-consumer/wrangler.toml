@@ -1,0 +1,18 @@
+name = "fbrissi-dev-contact-email-consumer"
+main = "../contact-email-consumer.ts"
+compatibility_date = "2024-01-01"
+
+[[queues.consumers]]
+queue = "fbrissi-dev-contact-form"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 3
+retry_delay = 30
+
+[[send_email]]
+name = "SEND_EMAIL"
+destination_address = "f.b.rissi@gmail.com"
+
+[vars]
+CONTACT_EMAIL_TO = "f.b.rissi@gmail.com"
+CONTACT_EMAIL_FROM = "noreply@fbrissi.dev"

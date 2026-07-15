@@ -110,13 +110,10 @@ contact_email_to     = "f.b.rissi@gmail.com"
 contact_email_from   = "noreply@fbrissi.dev"
 ```
 
-### Step 4: Build and Deploy with Terraform
+### Step 4: Provision Infrastructure with Terraform
 
 ```bash
 cd terraform
-
-# From the repository root, bundle the API and consumer Workers first
-yarn build:worker
 
 # Initialize Terraform
 terraform init
@@ -127,50 +124,73 @@ terraform plan
 # Apply infrastructure
 terraform apply
 
-# Get the Turnstile site key (for GitHub secrets)
+# Get the Turnstile keys for GitHub secrets
 terraform output turnstile_site_key
+terraform output -raw turnstile_secret_key
 ```
 
 ### Step 5: Add Secrets to GitHub
 
-The Turnstile site key needs to be added to GitHub Actions for builds:
+The site key and secret key need to be added to GitHub Actions:
 
 ```bash
-# Get the site key from Terraform output
+# Get the keys from Terraform outputs
 terraform output -raw turnstile_site_key
+terraform output -raw turnstile_secret_key
 
 # Add to GitHub:
 # Settings → Secrets and variables → Actions
 # Name: NEXT_PUBLIC_TURNSTILE_SITE_KEY
-# Value: <paste the output>
+# Value: <site key output>
+#
+# Name: TURNSTILE_SECRET_KEY
+# Value: <secret key output>
 ```
 
 Or use GitHub CLI:
 
 ```bash
 gh secret set NEXT_PUBLIC_TURNSTILE_SITE_KEY --body "$(terraform output -raw turnstile_site_key)"
+gh secret set TURNSTILE_SECRET_KEY --body "$(terraform output -raw turnstile_secret_key)"
 ```
 
 ### Step 6: Deploy
 
-Push to main branch - GitHub Actions will automatically:
+Push a `v*` tag - GitHub Actions will automatically:
 - Build the site with Turnstile site key
 - Deploy to Cloudflare Pages
-- Worker is already deployed by Terraform
+- Deploy the API and email consumer Workers
 
 ## Infrastructure Managed by Terraform
 
 Terraform manages:
-- ✅ Cloudflare Pages project with GitHub integration
+- ✅ Cloudflare Pages project and custom domain
 - ✅ Custom domain configuration
 - ✅ Cloudflare Queue (contact form messages)
-- ✅ Cloudflare API Worker and `/api/contact` routes
-- ✅ Cloudflare queue consumer Worker with retries and an Email binding restricted to `f.b.rissi@gmail.com`
 - ✅ Turnstile widget
-- ✅ Environment variables for Pages builds
+
+GitHub Actions manages the Worker scripts, routes, queue consumer, bindings, and Pages deployments.
 
 **Manual setup** (one-time, not managed by Terraform):
 - Cloudflare Email Routing configuration
+
+### Migrating Existing Infrastructure
+
+If Terraform previously managed the Workers, remove only those resources from
+state before applying this version. This preserves the running Workers until the
+next tag deployment takes ownership of them.
+
+```bash
+terraform state rm \
+  cloudflare_workers_script.contact_api \
+  cloudflare_workers_script.contact_email_consumer \
+  cloudflare_queue_consumer.contact_email \
+  cloudflare_workers_route.contact_form_apex \
+  cloudflare_workers_route.contact_form_www
+```
+
+Then apply Terraform to retain the queue and Turnstile infrastructure, configure
+the two Turnstile GitHub secrets, and push a `v*` tag.
 
 ## Testing
 
@@ -222,19 +242,7 @@ The API Worker is in `workers/contact-api.ts`, the consumer Worker is in
 `workers/templates/contact-email.ts`. To update them:
 
 1. Edit the TypeScript file
-2. Run `yarn build:worker`
-3. Run `terraform apply`
-3. Terraform will detect changes and redeploy
-
-Alternatively, use Wrangler for faster iteration:
-
-```bash
-# Deploy worker directly (bypasses Terraform)
-wrangler deploy
-
-# Warning: Terraform will detect drift on next run
-# Use `terraform apply` to sync state
-```
+2. Push a `v*` tag to deploy the updated site and Workers
 
 ## Troubleshooting
 

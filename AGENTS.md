@@ -324,6 +324,13 @@ Edit `components/site-shell.tsx` (now uses Tailwind classes)
 
 ## Build & Deploy
 
+### Releases
+
+This project follows [Semantic Versioning](https://semver.org/). Every release
+must add exactly one `CHANGELOG.md` entry headed `## vMAJOR.MINOR.PATCH` with
+release notes. Merging that pull request into `main` creates the matching GitHub
+release and tag automatically.
+
 ### Production Build
 ```bash
 kool run yarn build
@@ -331,15 +338,13 @@ kool run yarn build
 Outputs static files to `out/` directory.
 
 ### Deploy
-Automatic deployment via GitHub Actions on push to `main`:
-1. Runs linting & type checking
-2. Builds static site
-3. Deploys to Cloudflare Pages
+GitHub Actions deploys the static site and contact Workers when a `v*` tag is
+pushed. Use the manual Deploy workflow to deploy a specific existing tag.
 
 ### Manual Deploy
 ```bash
-# Via Cloudflare CLI (wrangler)
-npx wrangler pages deploy out --project-name=fbrissi-dev
+# Run the Deploy workflow for an existing release tag
+gh workflow run deploy.yml --ref main -f tag=v1.0.0
 ```
 
 ## Validation Checklist

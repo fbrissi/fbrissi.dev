@@ -14,16 +14,6 @@ output "custom_domain" {
   value       = local.custom_domain
 }
 
-output "contact_api_worker_script_name" {
-  description = "Contact form API Worker script name"
-  value       = cloudflare_workers_script.contact_api.script_name
-}
-
-output "contact_email_consumer_worker_script_name" {
-  description = "Contact email consumer Worker script name"
-  value       = cloudflare_workers_script.contact_email_consumer.script_name
-}
-
 output "contact_form_queue_name" {
   description = "Contact form queue name"
   value       = cloudflare_queue.contact_form.queue_name
@@ -31,6 +21,11 @@ output "contact_form_queue_name" {
 
 output "turnstile_site_key" {
   description = "Turnstile site key (public)"
+  value       = cloudflare_turnstile_widget.contact_form.sitekey
+}
+
+output "turnstile_secret_key" {
+  description = "Turnstile secret key"
   value       = cloudflare_turnstile_widget.contact_form.secret
   sensitive   = true
 }

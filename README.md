@@ -27,6 +27,15 @@ Public portfolio for Filipe Bojikian Rissi.
 - Content collections live in `content/articles/{locale}/`, `content/projects/{locale}/`, and `content/works/{locale}/`
 - SEO handled with the Metadata API, `robots.txt`, `sitemap.xml`, and JSON-LD
 
+## Releases
+
+This project follows [Semantic Versioning](https://semver.org/) and records each
+release in `CHANGELOG.md` using a `## vMAJOR.MINOR.PATCH` heading.
+
+- Pull requests to `main` must add exactly one new release note.
+- Merging a pull request into `main` creates the matching Git tag and GitHub release.
+- Deployments run for pushed `v*` tags or manually for a selected tag.
+
 ## Folder Structure
 
 ```text
@@ -72,6 +81,7 @@ Required secrets:
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+- `TURNSTILE_SECRET_KEY`
 
 Required repository variable:
 
@@ -85,18 +95,17 @@ Optional environment variable:
 
 Configured in `terraform/locals.tf`:
 
-- Cloudflare account and zone IDs
+- Cloudflare account ID
 - Pages project name, production branch, and custom domain
-- Contact form email addresses
 
 ## Cloudflare Setup
 
 ### 1. Cloudflare Pages
 
 1. Provide the Cloudflare API token and account ID to Terraform and GitHub Actions.
-2. Apply `terraform/` to create the Pages project and optional custom domain.
+2. Apply `terraform/` to create the Pages project, custom domain, queue, and Turnstile widget.
 3. Set the repository variable `CLOUDFLARE_PAGES_PROJECT_NAME`.
-4. Deploy production builds by pushing a `v*` tag.
+4. Deploy the Pages site and contact Workers by pushing a `v*` tag or running the Deploy workflow for a specific tag.
 
 ### 2. Contact Form
 
@@ -116,15 +125,15 @@ The contact form uses **free** Cloudflare services to send emails without any mo
 3. The API queues the message in LocalStack and the consumer sends it to Mailpit.
 4. Open Mailpit at http://localhost:8025 to inspect delivered messages.
 
-**Production Deployment** (via Terraform):
+**Production Deployment**:
 
 1. Configure Cloudflare Email Routing manually (one-time)
 2. Get Turnstile keys from Cloudflare dashboard
 3. Copy `terraform/example.tfvars` to `terraform/terraform.tfvars`
 4. Set all variables (API token, account ID, zone ID, Turnstile keys, emails)
-5. Build Workers: `yarn build:worker`
-6. Deploy: `terraform apply`
-7. Add Turnstile site key to GitHub secrets: `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+5. Apply infrastructure: `terraform apply`
+6. Add `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` from Terraform outputs to GitHub secrets
+7. Push a `v*` tag to deploy the site and Workers
 
 **Total cost: $0/month** ✅
 

@@ -1,0 +1,139 @@
+name: Release
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review, closed]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Release version, for example v1.0.0. Defaults to the latest CHANGELOG entry.
+        required: false
+        type: string
+      release_notes:
+        description: Release notes. Defaults to the latest CHANGELOG entry.
+        required: false
+        type: string
+
+permissions:
+  actions: write
+  contents: write
+
+jobs:
+  validate-release-note:
+    name: Validate Release Note
+    if: ${{ github.event_name == 'pull_request' && github.event.action != 'closed' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Validate new release note
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t versions < <(
+            git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- CHANGELOG.md \
+              | sed -nE 's/^\+## (v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p'
+          )
+
+          if [ "${#versions[@]}" -ne 1 ]; then
+            echo 'CHANGELOG.md must add exactly one release heading in the form ## vMAJOR.MINOR.PATCH.'
+            exit 1
+          fi
+
+          version="${versions[0]}"
+
+          if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid Semantic Versioning release version: $version"
+            exit 1
+          fi
+
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "Release tag already exists: $version"
+            exit 1
+          fi
+
+          notes=$(awk -v heading="## $version" '
+            $0 == heading { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md)
+
+          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            echo "Release $version must include release notes."
+            exit 1
+          fi
+
+  release:
+    name: Create Release
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true }}
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: main
+      - name: Resolve release details
+        id: release
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_RELEASE_NOTES: ${{ inputs.release_notes }}
+        run: |
+          set -euo pipefail
+
+          version="$INPUT_VERSION"
+          if [ -z "$version" ]; then
+            version=$(sed -nE 's/^## (v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p' CHANGELOG.md | head -n 1)
+          fi
+
+          if ! [[ "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
+            echo "Invalid Semantic Versioning release version: $version"
+            exit 1
+          fi
+
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "Release tag already exists: $version"
+            exit 1
+          fi
+
+          notes="$INPUT_RELEASE_NOTES"
+          if [ -z "$notes" ]; then
+            notes=$(awk -v heading="## $version" '
+              $0 == heading { found = 1; next }
+              found && /^## / { exit }
+              found { print }
+            ' CHANGELOG.md)
+          fi
+
+          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            echo "Release $version must include release notes."
+            exit 1
+          fi
+
+          printf '%s\n' "$notes" > release-notes.md
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+      - name: Create and push tag
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git tag "$VERSION" -m "Release $VERSION"
+          git push origin "$VERSION"
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: gh release create "$VERSION" --title "Release $VERSION" --notes-file release-notes.md
+      - name: Deploy release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: gh workflow run deploy.yml --ref "$VERSION" -f "tag=$VERSION"
