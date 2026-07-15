@@ -13,6 +13,7 @@ export default defineConfig({
     setupFiles: ['./test/setup.ts'],
     coverage: {
       provider: 'v8',
+      reporter: ['text', 'html', 'cobertura'],
       include: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.ts', 'workers/**/*.ts'],
       exclude: ['**/*.d.ts'],
       thresholds: {

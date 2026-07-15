@@ -71,6 +71,7 @@ Required secrets:
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 
 Required repository variable:
 
@@ -80,31 +81,22 @@ Optional environment variable:
 
 - `NEXT_PUBLIC_SITE_URL` for canonical URLs and metadata generation
 
-## Terraform Variables
+## Terraform Configuration
 
-Defined in `terraform/variables.tf`:
+Configured in `terraform/locals.tf`:
 
-- `cloudflare_api_token`
-- `cloudflare_account_id`
-- `project_name`
-- `production_branch`
-- `repo_owner`
-- `repo_name`
-- `repo_id`
-- `owner_id`
-- `custom_domain`
-
-Use `terraform/example.tfvars` as the starting point.
+- Cloudflare account and zone IDs
+- Pages project name, production branch, and custom domain
+- Contact form email addresses
 
 ## Cloudflare Setup
 
 ### 1. Cloudflare Pages
 
-1. Create a Cloudflare Pages project.
-2. Set the GitHub repository connection.
-3. Provide the Cloudflare API token and account ID to Terraform and GitHub Actions.
-4. Apply `terraform/` to create or manage the Pages project and optional custom domain.
-5. Set the repository variable `CLOUDFLARE_PAGES_PROJECT_NAME`.
+1. Provide the Cloudflare API token and account ID to Terraform and GitHub Actions.
+2. Apply `terraform/` to create the Pages project and optional custom domain.
+3. Set the repository variable `CLOUDFLARE_PAGES_PROJECT_NAME`.
+4. Deploy production builds by pushing a `v*` tag.
 
 ### 2. Contact Form
 

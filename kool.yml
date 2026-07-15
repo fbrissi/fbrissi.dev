@@ -1,6 +1,12 @@
 scripts:
   yarn: kool exec app yarn
-  quality: kool exec app yarn quality
+
   setup:
     - kool docker kooldev/node:20 yarn install
     - kool start
+
+  quality:
+    - kool run yarn lint
+    - kool run yarn typecheck
+    - kool run yarn build
+    - kool run yarn test:coverage

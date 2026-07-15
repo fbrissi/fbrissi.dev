@@ -13,8 +13,7 @@
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "test:coverage": "vitest run --coverage",
-    "quality": "yarn lint && yarn test:coverage"
+    "test:coverage": "vitest run --coverage"
   },
   "resolutions": {
     "postcss": "8.5.16"
