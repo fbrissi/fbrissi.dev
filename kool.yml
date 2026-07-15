@@ -1,8 +1,8 @@
 scripts:
-  yarn: kool exec app yarn
+  yarn: kool docker kooldev/node:20 yarn
 
   setup:
-    - kool docker kooldev/node:20 yarn install
+    - kool run yarn install
     - kool start
 
   quality:
