@@ -9,7 +9,7 @@ scripts:
 
   quality:
     - kool run validate:actionlint
-    - kool run yarn lint
+    - kool run yarn lint:fix
     - kool run yarn typecheck
     - kool run yarn build
     - kool run yarn test:coverage

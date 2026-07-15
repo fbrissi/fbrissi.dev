@@ -11,6 +11,7 @@
     "dev:contact-api": "tsx workers/local/contact-api.ts",
     "dev:contact-email-consumer": "tsx workers/local/contact-email-consumer.ts",
     "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage"
