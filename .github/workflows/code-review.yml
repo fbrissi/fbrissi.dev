@@ -1,0 +1,218 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_run:
+    workflows: [Quality Checks]
+    types: [completed]
+
+concurrency:
+  group: code-review-${{ github.event.pull_request.number || github.event.workflow_run.pull_requests[0].number }}
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  checks: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  register:
+    name: Register Code Review
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft != true }}
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const headSha = context.payload.pull_request.head.sha;
+            const checks = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: headSha,
+              check_name: 'Code Review',
+            });
+
+            const existing = checks.data.check_runs
+              .filter((check) => check.name === 'Code Review')
+              .sort((a, b) => new Date(b.started_at) - new Date(a.started_at))[0];
+
+            if (existing && ['queued', 'in_progress'].includes(existing.status)) {
+              await github.rest.checks.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                check_run_id: existing.id,
+                status: 'queued',
+                output: {
+                  title: 'Waiting for Quality Checks',
+                  summary: 'Code Review will start after Quality Checks succeeds.',
+                },
+              });
+              return;
+            }
+
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Code Review',
+              head_sha: headSha,
+              status: 'queued',
+              details_url: `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            });
+
+  quality-failed:
+    name: Mark Code Review Blocked
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion != 'success' && github.event.workflow_run.pull_requests[0].head.sha != null }}
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const headSha = context.payload.workflow_run.pull_requests[0].head.sha;
+            const checks = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: headSha,
+              check_name: 'Code Review',
+            });
+            const check = checks.data.check_runs.find((item) => item.name === 'Code Review');
+
+            if (!check) {
+              core.warning(`Code Review check was not found for ${headSha}.`);
+              return;
+            }
+
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: check.id,
+              status: 'completed',
+              conclusion: 'failure',
+              output: {
+                title: 'Quality Checks failed',
+                summary: 'Code Review was not executed because Quality Checks did not pass.',
+              },
+            });
+
+  start-review:
+    name: Start Code Review
+    runs-on: ubuntu-24.04
+    if: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.pull_requests[0].head.sha != null }}
+    outputs:
+      check_run_id: ${{ steps.start.outputs.check_run_id }}
+    steps:
+      - uses: actions/github-script@v7
+        id: start
+        with:
+          script: |
+            const headSha = context.payload.workflow_run.pull_requests[0].head.sha;
+            const checks = await github.rest.checks.listForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: headSha,
+              check_name: 'Code Review',
+            });
+            const check = checks.data.check_runs
+              .filter((item) => item.name === 'Code Review')
+              .sort((a, b) => new Date(b.started_at) - new Date(a.started_at))[0];
+
+            if (!check) {
+              const created = await github.rest.checks.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                name: 'Code Review',
+                head_sha: headSha,
+                status: 'in_progress',
+                started_at: new Date().toISOString(),
+              });
+              core.setOutput('check_run_id', created.data.id);
+              return;
+            }
+
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: check.id,
+              status: 'in_progress',
+              started_at: new Date().toISOString(),
+            });
+            core.setOutput('check_run_id', check.id);
+
+  review:
+    name: Run Code Review
+    needs: start-review
+    if: ${{ needs.start-review.result == 'success' }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    environment:
+      name: opencode-review
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.AGENT_APP_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ github.event.workflow_run.pull_requests[0].head.repo.full_name }}
+          ref: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
+          fetch-depth: 0
+
+      - name: Install OpenCode
+        run: |
+          curl -fsSL https://opencode.ai/install | bash -s
+          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+
+      - name: Install OpenCode plugins
+        run: timeout --foreground --kill-after=30s 5m opencode plugin @kompassdev/opencode
+
+      - name: Run OpenCode review
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          OPENAI_API_KEY: ${{ secrets.OPEN_AI_TOKEN }}
+        run: opencode run --model="${{ vars.OPENCODE_MODEL }}" --variant="${{ vars.OPENCODE_VARIANT }}" --thinking --dangerously-skip-permissions --command="pr/review" "${{ github.event.workflow_run.pull_requests[0].number }}"
+
+      - name: Export OpenCode session
+        if: ${{ always() }}
+        run: |
+          session_id="$(opencode session list | awk 'NR > 2 && $1 ~ /^ses_/ { print $1; exit }')"
+
+          if [ -n "$session_id" ]; then
+            echo "OpenCode session: $session_id"
+            opencode export "$session_id"
+          else
+            echo "No OpenCode session found to export"
+          fi
+
+  finish-review:
+    name: Finish Code Review
+    needs: [start-review, review]
+    if: ${{ always() && needs.start-review.result == 'success' && github.event_name == 'workflow_run' && github.event.workflow_run.event == 'pull_request' && github.event.workflow_run.pull_requests[0].head.sha != null }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          REVIEW_RESULT: ${{ needs.review.result }}
+          CHECK_RUN_ID: ${{ needs.start-review.outputs.check_run_id }}
+        with:
+          script: |
+            const conclusion = process.env.REVIEW_RESULT === 'success' ? 'success' : 'failure';
+
+            await github.rest.checks.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              check_run_id: process.env.CHECK_RUN_ID,
+              status: 'completed',
+              conclusion,
+              completed_at: new Date().toISOString(),
+              output: {
+                title: conclusion === 'success' ? 'Code Review completed' : 'Code Review failed',
+                summary: conclusion === 'success'
+                  ? 'OpenCode completed the pull request review.'
+                  : 'OpenCode failed before completing the pull request review.',
+              },
+            });
