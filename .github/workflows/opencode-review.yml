@@ -1,0 +1,65 @@
+name: Code Review
+
+on:
+  workflow_run:
+    workflows: [Quality Checks]
+    types: [completed]
+
+concurrency:
+  group: opencode-review-${{ github.event.workflow_run.pull_requests[0].number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    name: Review Pull Request
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    if: >
+      github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests[0].number != ''
+    environment:
+      name: opencode-review
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.AGENT_APP_ID }}
+          private-key: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Install OpenCode
+        run: |
+          curl -fsSL https://opencode.ai/install | bash -s
+          echo "$HOME/.opencode/bin" >> "$GITHUB_PATH"
+
+      - name: Install OpenCode plugins
+        run: timeout --foreground --kill-after=30s 5m opencode plugin @kompassdev/opencode
+
+      - name: Run OpenCode review
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          OPENAI_API_KEY: ${{ secrets.OPEN_AI_TOKEN }}
+        run: opencode run --model="${{ vars.OPENCODE_MODEL }}" --variant="${{ vars.OPENCODE_VARIANT }}" --thinking --dangerously-skip-permissions --command="pr/review" "${{ github.event.workflow_run.pull_requests[0].number }}"
+
+      - name: Export OpenCode session
+        if: ${{ always() }}
+        run: |
+          session_id="$(opencode session list | awk 'NR > 2 && $1 ~ /^ses_/ { print $1; exit }')"
+
+          if [ -n "$session_id" ]; then
+            echo "OpenCode session: $session_id"
+            opencode export "$session_id"
+          else
+            echo "No OpenCode session found to export"
+          fi
