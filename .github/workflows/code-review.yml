@@ -144,7 +144,7 @@ jobs:
     needs: start-review
     if: ${{ needs.start-review.result == 'success' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     environment:
       name: opencode-review
     steps:
