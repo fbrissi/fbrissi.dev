@@ -76,6 +76,12 @@ jobs:
         with:
           node-version: 20
           cache: yarn
+      - uses: actions/cache@v6
+        with:
+          path: node_modules
+          key: opencode-review-deps-v1-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            opencode-review-deps-v1-
       - run: yarn install --frozen-lockfile
       - name: Run ${{ matrix.name }}
         run: ${{ matrix.command }}

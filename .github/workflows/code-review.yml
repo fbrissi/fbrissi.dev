@@ -144,7 +144,7 @@ jobs:
     needs: start-review
     if: ${{ needs.start-review.result == 'success' }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 30
     environment:
       name: opencode-review
     steps:
@@ -160,6 +160,13 @@ jobs:
           repository: ${{ github.event.workflow_run.pull_requests[0].head.repo.full_name }}
           ref: ${{ github.event.workflow_run.pull_requests[0].head.sha }}
           fetch-depth: 0
+
+      - uses: actions/cache/restore@v6
+        with:
+          path: node_modules
+          key: opencode-review-deps-v1-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            opencode-review-deps-v1-
 
       - name: Install OpenCode
         run: |
