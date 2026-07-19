@@ -1,16 +1,15 @@
+import js from '@eslint/js';
 import { defineConfig, globalIgnores } from 'eslint/config';
-import { FlatCompat } from '@eslint/eslintrc';
-import { dirname } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import nextVitals from 'eslint-config-next/core-web-vitals.js';
-import nextTs from 'eslint-config-next/typescript.js';
-
-const compat = new FlatCompat({
-  baseDirectory: dirname(fileURLToPath(import.meta.url))
-});
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
 
 export default defineConfig([
-  ...compat.config(nextVitals),
-  ...compat.config(nextTs),
-  globalIgnores(['.next/**', 'coverage/**', 'out/**', 'dist/**', 'next-env.d.ts'])
+  js.configs.recommended,
+  ...tseslint.configs.recommended,
+  {
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.node }
+    }
+  },
+  globalIgnores(['coverage/**', 'dist/**'])
 ]);

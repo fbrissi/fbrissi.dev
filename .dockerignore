@@ -1,8 +1,9 @@
 .git
 .idea
-.next
-out
 node_modules
+coverage
+dist
+tmp
 terraform/.terraform
 terraform/*.tfstate
 terraform/*.tfstate.*

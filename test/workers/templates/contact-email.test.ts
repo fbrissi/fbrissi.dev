@@ -30,6 +30,8 @@ describe('contact email templates', () => {
     expect(html).toContain('Ada &amp; &lt;Lovelace&gt; &quot;O&#039;Brien&quot;');
     expect(html).toContain('First line<br>Second &amp; &lt;line&gt;');
     expect(html).toContain('href="mailto:ada@example.com"');
+    expect(html).toContain('<a href="https://fbrissi.dev"');
+    expect(html).toContain('src="https://fbrissi.dev/images/avatar.png"');
     expect(html).toContain('href="https://fbrissi.dev/contact"');
     expect(html).not.toContain('LOCAL DEV');
   });
@@ -38,6 +40,8 @@ describe('contact email templates', () => {
     const html = contactEmailHtml(message, { isLocal: true });
 
     expect(html).toContain('<span class="badge">LOCAL DEV</span>');
+    expect(html).toContain('<a href="http://localhost:3000"');
+    expect(html).toContain('src="http://localhost:3000/images/avatar.png"');
     expect(html).toContain('href="http://localhost:3000/contact"');
   });
 });

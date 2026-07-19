@@ -32,7 +32,9 @@ export function contactEmailHtml(
   { name, email, subject, message }: ContactMessage,
   { isLocal }: ContactEmailTemplateOptions
 ): string {
-  const contactUrl = isLocal ? 'http://localhost:3000/contact' : 'https://fbrissi.dev/contact';
+  const siteUrl = isLocal ? 'http://localhost:3000' : 'https://fbrissi.dev';
+  const contactUrl = `${siteUrl}/contact`;
+  const avatarUrl = `${siteUrl}/images/avatar.png`;
   const localBadge = isLocal ? '<span class="badge">LOCAL DEV</span>' : '';
 
   return `<!DOCTYPE html>
@@ -51,7 +53,10 @@ export function contactEmailHtml(
   </style>
 </head>
 <body>
-  <div class="header"><h2 style="margin: 0;">New Contact Form Submission ${localBadge}</h2></div>
+  <div class="header">
+    <a href="${siteUrl}" style="display: inline-block; margin-right: 16px; vertical-align: middle;"><img src="${avatarUrl}" alt="Filipe Bojikian Rissi" width="64" style="display: block; border: 0;"></a>
+    <h2 style="display: inline-block; margin: 0; vertical-align: middle;">New Contact Form Submission ${localBadge}</h2>
+  </div>
   <div class="content">
     <div class="field"><strong>Name:</strong>${escapeHtml(name)}</div>
     <div class="field"><strong>Email:</strong><a href="mailto:${escapeHtml(email)}">${escapeHtml(email)}</a></div>

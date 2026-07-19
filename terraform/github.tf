@@ -5,7 +5,7 @@ provider "github" {
 # The public key is a repository variable because it is embedded in the static build.
 resource "github_actions_variable" "turnstile_site_key" {
   repository    = local.github_repository
-  variable_name = "NEXT_PUBLIC_TURNSTILE_SITE_KEY"
+  variable_name = "VITE_TURNSTILE_SITE_KEY"
   value         = cloudflare_turnstile_widget.contact_form.sitekey
 }
 

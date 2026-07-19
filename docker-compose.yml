@@ -6,7 +6,7 @@ services:
       - "3000:3000"
     environment:
       ASDF_NODEJS_VERSION: 20
-      NEXT_PUBLIC_CONTACT_API_URL: http://localhost:8787/api/contact
+      VITE_CONTACT_API_URL: http://localhost:8787/api/contact
     volumes:
       - .:/app:delegated
     networks:

@@ -13,6 +13,12 @@ describe('site data', () => {
     expect(getMessages('pt-BR')).toBe(messages['pt-BR']);
     expect(getProfile('en')).toBe(profiles.en);
     expect(getProfile('pt-BR')).toBe(profiles['pt-BR']);
+    expect(getProfile('en')).toMatchObject({
+      headline: 'Staff Software Engineer • Distributed Systems • Cloud Architecture • AWS • Kubernetes • Microservices',
+      summary: expect.stringContaining('15+ years'),
+      about: expect.stringContaining('## Cloud-native engineering')
+    });
+    expect(getProfile('pt-BR').about).toContain('## Engenharia cloud-native');
   });
 
   it('falls back to English data for an unsupported runtime locale', () => {
@@ -21,7 +27,7 @@ describe('site data', () => {
   });
 
   it('uses the configured public site URL when the module is loaded', async () => {
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://preview.example.com');
+    vi.stubEnv('VITE_SITE_URL', 'https://preview.example.com');
     vi.resetModules();
 
     const { siteUrl } = await import('@/lib/site');

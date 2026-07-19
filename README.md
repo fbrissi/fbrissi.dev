@@ -4,8 +4,9 @@ Public portfolio for Filipe Bojikian Rissi.
 
 ## Stack
 
-- Next.js App Router
+- Vite
 - React
+- React Router
 - TypeScript
 - Cloudflare Pages
 - Cloudflare Workers (contact form)
@@ -19,13 +20,13 @@ Public portfolio for Filipe Bojikian Rissi.
 
 ## Architecture
 
-- Static export via `next build` -> `out/`
+- Vite production build output in `dist/`
 - English pages at the root path
 - Portuguese pages under `/pt-br`
 - Content stored in JSON and Markdown files
 - Articles, projects, and works are rendered from Markdown with raw HTML and syntax highlighting
-- Content collections live in `content/articles/{locale}/`, `content/projects/{locale}/`, and `content/works/{locale}/`
-- SEO handled with the Metadata API, `robots.txt`, `sitemap.xml`, and JSON-LD
+- Content collections live in `src/content/{articles,projects,works}/{locale}/`
+- SEO handled with document metadata, `robots.txt`, `sitemap.xml`, and JSON-LD
 
 ## Releases
 
@@ -39,13 +40,24 @@ release in `CHANGELOG.md` using a `## vMAJOR.MINOR.PATCH` heading.
 ## Folder Structure
 
 ```text
-app/
-components/
-content/
-messages/
 public/
+src/
+├── app/                 # Router, metadata, and root component
+├── components/
+│   ├── content/         # Shared content presentation
+│   └── layout/          # Shared site chrome
+├── content/             # Localized Markdown and profile data
+├── features/
+│   └── contact/         # Contact form feature
+├── i18n/messages/       # Localized UI messages
+├── lib/
+├── pages/               # Route-level components
+├── main.tsx
+└── index.css
+index.html
 scripts/
 terraform/
+vite.config.ts
 ```
 
 ## Local Development
@@ -80,16 +92,17 @@ Required secrets:
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
 - `TURNSTILE_SECRET_KEY`
 
 Required repository variable:
 
 - `CLOUDFLARE_PAGES_PROJECT_NAME`
+- `VITE_TURNSTILE_SITE_KEY`
 
 Optional environment variable:
 
-- `NEXT_PUBLIC_SITE_URL` for canonical URLs and metadata generation
+- `VITE_SITE_URL` for canonical URLs and metadata generation
+- `VITE_CONTACT_API_URL` to override the contact API URL
 
 ## Terraform Configuration
 
@@ -132,10 +145,10 @@ The contact form uses **free** Cloudflare services to send emails without any mo
 3. Copy `terraform/example.tfvars` to `terraform/terraform.tfvars`
 4. Set all variables (API token, account ID, zone ID, Turnstile keys, emails)
 5. Apply infrastructure: `terraform apply`
-6. Add `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` from Terraform outputs to GitHub secrets
+6. Add `VITE_TURNSTILE_SITE_KEY` as a repository variable and `TURNSTILE_SECRET_KEY` as a repository secret
 7. Push a `v*` tag to deploy the site and Workers
 
-**Total cost: $0/month** ✅
+**Total cost: $0/month**
 
 ## Validation
 

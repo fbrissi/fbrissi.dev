@@ -1,11 +1,7 @@
-/.next/
-/out/
 /node_modules/
-/.vercel/
 /dist/
 /coverage/
 *.tsbuildinfo
-/.terraform/
 *.tfstate
 *.tfstate.*
 /terraform/.terraform/

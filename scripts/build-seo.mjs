@@ -2,12 +2,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://fbrissi.dev';
+const siteUrl = process.env.VITE_SITE_URL ?? 'https://fbrissi.dev';
 
 const staticRoutes = ['/', '/about', '/articles', '/projects', '/works', '/contact', '/pt-br', '/pt-br/about', '/pt-br/articles', '/pt-br/projects', '/pt-br/works', '/pt-br/contact'];
 
 function readSlugs(collection, locale) {
-  const dir = path.join(root, 'content', collection, locale);
+  const dir = path.join(root, 'src', 'content', collection, locale);
 
   if (!fs.existsSync(dir)) {
     return [];

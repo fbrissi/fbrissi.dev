@@ -1,0 +1,91 @@
+{
+  "site": {
+    "name": "Filipe Bojikian Rissi",
+    "description": "Portfólio bilíngue moderno para um staff software engineer focado em backend, arquitetura em cloud e experiências web simples e prontas para produção.",
+    "tagline": "Staff Software Engineer construindo sistemas práticos, fáceis de operar e evoluir."
+  },
+  "nav": {
+    "primary": "Navegação principal",
+    "home": "Início",
+    "aboutMe": "Sobre mim",
+    "projects": "Projetos",
+    "works": "Trabalhos",
+    "articles": "Artigos",
+    "contact": "Contato",
+    "resume": "Currículo"
+  },
+  "footer": {
+    "copy": "Construído com Vite, React, TypeScript, Cloudflare Pages, Terraform, GitHub Actions e Kool.dev."
+  },
+  "labels": {
+    "featuredProjects": "Projetos em destaque",
+    "careerHighlights": "Destaques de carreira",
+    "skills": "Competências",
+    "articlesPreview": "Últimos Artigos",
+    "latestPosts": "Artigos recentes",
+    "publishedOn": "Publicado em",
+    "readTime": "de leitura",
+    "contact": "Contato",
+    "experience": "Experiência",
+    "languages": "Idiomas",
+    "publicLinks": "Links públicos",
+    "openProject": "Abrir projeto",
+    "readProject": "Ler projeto",
+    "backToProjects": "Voltar aos projetos",
+    "readWork": "Ler trabalho",
+    "backToWorks": "Voltar aos trabalhos",
+    "readArticle": "Ler artigo",
+    "viewProfile": "Ver perfil",
+    "copyNote": "O conteúdo editável vive em arquivos JSON e Markdown, não em componentes React.",
+    "backToArticles": "Voltar aos artigos",
+    "viewAllProjects": "Ver todos os projetos",
+    "viewAllWorks": "Ver todos os trabalhos",
+    "viewAllArticles": "Ver todos os artigos",
+    "downloadResume": "Baixar currículo"
+  },
+  "home": {
+    "eyebrow": "Portfólio público",
+    "intro": "Um portfólio bilíngue enxuto com artigos e deploy estático para Cloudflare Pages.",
+    "ctaPrimary": "Ver projetos",
+    "ctaSecondary": "Entrar em contato",
+    "aboutTitle": "Sobre",
+    "aboutDescription": "Foco em backend, arquitetura de cloud e entrega pragmática de produto.",
+    "skillsTitle": "Competências",
+    "projectsTitle": "Projetos em destaque",
+    "highlightsTitle": "Destaques de carreira",
+    "articlesTitle": "Últimos textos",
+    "contactTitle": "Contato",
+    "contactDescription": "Links públicos e um e-mail editável como placeholder para contato direto.",
+    "aboutCta": "Saiba mais",
+    "findMeOn": "Encontre-me no",
+    "linkConjunction": "e no"
+  },
+  "pages": {
+    "about": {
+      "title": "Sobre",
+      "description": "Histórico, foco, experiência e estilo de trabalho."
+    },
+    "projects": {
+      "title": "Projetos",
+      "description": "Trabalhos públicos selecionados e repositórios representativos."
+    },
+    "works": {
+      "title": "Experiência Profissional",
+      "description": "Experiência em engenharia de software, plataformas cloud, sistemas distribuídos, liderança técnica e desenvolvimento full-stack desde 2009."
+    },
+    "articles": {
+      "title": "Artigos",
+      "description": "Notas curtas e fáceis de manter em Markdown."
+    },
+    "contact": {
+      "title": "Contato",
+      "description": "Links públicos e formas de falar comigo.",
+      "formTitle": "Envie uma mensagem",
+      "alternativeTitle": "Outras formas de falar comigo"
+    }
+  },
+  "articles": {
+    "title": "Artigos",
+    "description": "Textos curtos em Markdown, fáceis de manter."
+  }
+}

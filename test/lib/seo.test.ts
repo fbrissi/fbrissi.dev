@@ -7,14 +7,14 @@ describe('seo', () => {
   });
 
   it('resolves absolute URLs against the configured site URL', async () => {
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://preview.example.com/base/');
+    vi.stubEnv('VITE_SITE_URL', 'https://preview.example.com/base/');
     const { absoluteUrl } = await import('@/lib/seo');
 
     expect(absoluteUrl('/articles/example')).toBe('https://preview.example.com/articles/example');
   });
 
   it('creates English metadata with the default social image', async () => {
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://example.com');
+    vi.stubEnv('VITE_SITE_URL', 'https://example.com');
     const { createPageMetadata } = await import('@/lib/seo');
 
     expect(
@@ -45,7 +45,7 @@ describe('seo', () => {
   });
 
   it('creates Portuguese metadata with a supplied social image', async () => {
-    vi.stubEnv('NEXT_PUBLIC_SITE_URL', 'https://example.com');
+    vi.stubEnv('VITE_SITE_URL', 'https://example.com');
     const { createPageMetadata } = await import('@/lib/seo');
 
     expect(

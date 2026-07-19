@@ -31,7 +31,7 @@ kool start
 # Open Mailpit web UI
 open http://localhost:8025
 
-# Start Next.js dev server
+# Start Vite dev server
 kool run yarn dev
 
 # Open site
@@ -84,7 +84,7 @@ Keep **Auto apply** disabled in the Terraform Cloud workspace. After reviewing t
 
 Merge the release pull request into `main`. Terraform Cloud applies the configuration, which creates the Turnstile widget and configures:
 
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a GitHub Actions repository variable
+- `VITE_TURNSTILE_SITE_KEY` as a GitHub Actions repository variable
 - `TURNSTILE_SECRET_KEY` as a GitHub Actions repository secret
 
 After that apply succeeds, the release workflow creates the tag and deploys the site and Workers.
@@ -111,11 +111,12 @@ Terraform manages:
 - ✅ Custom domain configuration
 - ✅ Cloudflare Queue (contact form messages)
 - ✅ Turnstile widget
+- ✅ `contact@fbrissi.dev` forwarding rule
 
 GitHub Actions manages the Worker scripts, routes, queue consumer, bindings, and Pages deployments.
 
 **Manual setup** (one-time, not managed by Terraform):
-- Cloudflare Email Routing configuration
+- Enable Cloudflare Email Routing and verify `f.b.rissi@gmail.com` as a destination
 
 ### Migrating Existing Infrastructure
 

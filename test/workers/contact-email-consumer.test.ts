@@ -32,7 +32,7 @@ afterEach(() => {
 describe('contact email consumer worker', () => {
   it('sends a multipart production email with the template variants', async () => {
     vi.stubGlobal('EmailMessage', MockEmailMessage);
-    vi.spyOn(crypto, 'randomUUID').mockReturnValue('boundary-id');
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue('boundary-id' as ReturnType<typeof crypto.randomUUID>);
     const env = createEnv();
     const retry = vi.fn();
 
@@ -55,7 +55,7 @@ describe('contact email consumer worker', () => {
 
   it('sanitizes newlines from email headers', async () => {
     vi.stubGlobal('EmailMessage', MockEmailMessage);
-    vi.spyOn(crypto, 'randomUUID').mockReturnValue('safe-boundary');
+    vi.spyOn(crypto, 'randomUUID').mockReturnValue('safe-boundary' as ReturnType<typeof crypto.randomUUID>);
     const env = createEnv();
 
     await contactEmailConsumer.queue({

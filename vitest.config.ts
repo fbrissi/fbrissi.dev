@@ -6,7 +6,10 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig({
   resolve: {
-    alias: { '@': rootDir },
+    alias: [
+      { find: '@/workers', replacement: path.join(rootDir, 'workers') },
+      { find: '@', replacement: path.join(rootDir, 'src') },
+    ],
   },
   test: {
     environment: 'jsdom',
@@ -14,8 +17,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html', 'cobertura'],
-      include: ['app/**/*.{ts,tsx}', 'components/**/*.{ts,tsx}', 'lib/**/*.ts', 'workers/**/*.ts'],
-      exclude: ['**/*.d.ts'],
+      include: ['src/**/*.{ts,tsx}', 'workers/**/*.ts'],
+      exclude: ['**/*.d.ts', 'src/main.tsx', 'workers/contact-message.ts'],
       thresholds: {
         branches: 100,
         functions: 100,

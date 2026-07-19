@@ -1,0 +1,86 @@
+{
+  "name": "Filipe Bojikian Rissi",
+  "location": "Bauru, São Paulo, Brazil (UTC-3)",
+  "availability": "Open to remote opportunities",
+  "focusAreas": [
+    "Backend Engineering",
+    "Cloud Architecture",
+    "Platform Engineering",
+    "Full Stack when needed"
+  ],
+  "skills": [
+    {
+      "group": "Languages",
+      "items": ["Java", "Kotlin", "Go", "PHP", "JavaScript", "TypeScript", "Python", "Dart", "Bash"]
+    },
+    {
+      "group": "Backend",
+      "items": ["Spring Boot", "Quarkus", "Laravel", "Node.js"]
+    },
+    {
+      "group": "Frontend",
+      "items": ["React", "Vue.js"]
+    },
+    {
+      "group": "Mobile",
+      "items": ["Flutter"]
+    },
+    {
+      "group": "Data",
+      "items": ["PostgreSQL", "MySQL", "Oracle", "Redis", "MongoDB", "DynamoDB"]
+    },
+    {
+      "group": "Cloud & DevOps",
+      "items": ["Docker", "Kubernetes", "Helm", "Terraform", "AWS", "Google Cloud", "Cloudflare", "GitHub Actions", "GitLab CI", "Linux"]
+    },
+    {
+      "group": "Architecture",
+      "items": ["REST APIs", "Microservices", "Event-Driven Architecture", "OAuth2", "OpenID Connect", "Keycloak", "Kafka", "RabbitMQ", "AWS ECS", "AWS EKS", "Amazon S3"]
+    }
+  ],
+  "careerHighlights": [
+    "15+ years building enterprise software",
+    "Cloud-native applications on AWS and Kubernetes",
+    "Backend-first, full stack when needed",
+    "APIs, integrations, and distributed systems",
+    "Software architecture and platform engineering",
+    "Technical leadership and mentoring",
+    "Scrum Foundation Professional Certificate (CertiProf, Aug 2019)",
+    "Public presenter: Object Relational Mapping Com JPA (FATEC Bauru, Nov 2017)"
+  ],
+  "languages": [
+    "Portuguese — native / bilingual",
+    "English — professional working proficiency"
+  ],
+  "publicLinks": [
+    {
+      "label": "GitHub",
+      "url": "https://github.com/fbrissi"
+    },
+    {
+      "label": "LinkedIn",
+      "url": "https://www.linkedin.com/in/fbrissi/"
+    },
+    {
+      "label": "GitLab",
+      "url": "https://gitlab.com/fbrissi"
+    },
+    {
+      "label": "WhatsApp",
+      "url": "https://wa.me/5514991434121"
+    },
+    {
+      "label": "Commit History",
+      "url": "https://commit-history.com/fbrissi"
+    }
+  ],
+  "contact": {
+    "email": "contact@fbrissi.dev",
+    "note": "Email me directly and I will get back to you as soon as possible.",
+    "whatsapp": {
+      "phone": "+55 (14) 99143-4121",
+      "url": "https://wa.me/5514991434121",
+      "note": "Send me a message on WhatsApp."
+    }
+  }
+}
