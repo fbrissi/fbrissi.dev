@@ -4,7 +4,11 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.stubGlobal('React', React);
-afterEach(cleanup);
+afterEach(() => {
+  cleanup();
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+});
 
 function render(ui: React.ReactNode) {
   return renderComponent(ui, { wrapper: MemoryRouter });
@@ -13,7 +17,7 @@ function render(ui: React.ReactNode) {
 vi.mock('@/components/layout/site-shell', () => ({
   SiteShell: ({ children, locale, activePage }: { children: React.ReactNode; locale: string; activePage: string }) => <main data-locale={locale} data-page={activePage}>{children}</main>,
 }));
-vi.mock('@/features/contact/contact-form', () => ({ ContactForm: ({ locale }: { locale: string }) => <p>Contact form ({locale})</p> }));
+vi.mock('@/features/contact/contact-form', () => ({ ContactForm: ({ locale, turnstileSiteKey }: { locale: string; turnstileSiteKey: string }) => <p data-site-key={turnstileSiteKey}>Contact form ({locale})</p> }));
 
 import { AboutPage } from '@/pages/about-page';
 import { ArticlePage } from '@/pages/article-page';
@@ -27,6 +31,7 @@ import { ProjectsPage } from '@/pages/projects-page';
 import { WorkPage } from '@/pages/work-page';
 import { WorksPage } from '@/pages/works-page';
 import { getArticles } from '@/lib/articles';
+import * as articles from '@/lib/articles';
 import { getContributions } from '@/lib/contributions';
 import { getProjects } from '@/lib/projects';
 import { getWorks } from '@/lib/works';
@@ -74,6 +79,35 @@ describe('composed site pages', () => {
   it('returns no content for unknown detail slugs', () => {
     const { container } = render(<><ProjectPage locale="en" slug="missing" /><ContributionPage locale="en" slug="missing" /><WorkPage locale="en" slug="missing" /><ArticlePage locale="en" slug="missing" /></>);
     expect(container).toBeEmptyDOMElement();
+  });
+
+  it('renders articles with optional image metadata omitted', () => {
+    const article = getArticles('en')[0];
+    vi.spyOn(articles, 'getArticle').mockReturnValue({ ...article, image: undefined, imageAlt: undefined });
+    const { container, rerender } = render(<ArticlePage locale="en" slug={article.slug} />);
+
+    expect(container.querySelector('img')).not.toBeInTheDocument();
+    expect(container.querySelector('script[type="application/ld+json"]')).not.toHaveTextContent('"image"');
+
+    vi.mocked(articles.getArticle).mockReturnValue({ ...article, image: '/article.svg', imageAlt: undefined });
+    rerender(<ArticlePage locale="en" slug={article.slug} />);
+    expect(container.querySelector('img[src="/article.svg"]')).toHaveAttribute('alt', '');
+  });
+
+  it('renders localized work labels and a configured Turnstile key', () => {
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'site-key');
+    const work = getWorks('pt-BR')[0];
+    render(<><WorkPage locale="pt-BR" slug={work.slug} /><ContactPage locale="en" /></>);
+
+    expect(screen.getByRole('link', { name: 'Site oficial' })).toBeInTheDocument();
+    expect(screen.getByLabelText('Competências')).toBeInTheDocument();
+    expect(screen.getByText('Contact form (en)')).toHaveAttribute('data-site-key', 'site-key');
+  });
+
+  it('renders the contact form without a Turnstile key', () => {
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', undefined);
+    render(<ContactPage locale="en" />);
+    expect(screen.getByText('Contact form (en)')).toHaveAttribute('data-site-key', '');
   });
 
   it('renders contact and about page content in Portuguese', () => {

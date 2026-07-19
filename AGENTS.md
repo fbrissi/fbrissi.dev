@@ -39,6 +39,10 @@ vite.config.ts                Vite configuration
 
 Use Kool for Yarn commands. Do not run Yarn directly on the host.
 
+### Node Dependency Safety
+
+Before recommending, adding, or installing any new Node.js dependency or development dependency, you MUST load and follow the `safe-node-package` skill. Do not choose an npm package name from memory and do not modify `package.json` or `yarn.lock` until the skill's identity, trust, compatibility, and security checks approve the exact package and version.
+
 ```bash
 kool run setup
 kool start

@@ -32,11 +32,13 @@ afterEach(() => {
 
 describe('content components', () => {
   it('renders localized cards with their destination links', () => {
-    render(
+    const { container } = render(
       <>
         <ProjectCard locale="pt-BR" item={{ slug: 'project', title: 'Project', description: 'Description', stack: ['Vite'], url: 'https://example.com', content: '' }} />
         <WorksCard locale="en" item={{ slug: 'work', company: 'Company', title: 'Engineer', summary: 'Summary', dateRange: '2024', location: 'Remote', employmentType: 'Full-time', companyUrl: 'https://example.com', logo: '/logo.png', skills: [], startDate: '2024-01', content: '' }} />
         <ArticleCard locale="en" item={{ slug: 'article', title: 'Article', description: 'Description', date: '2024-01-01', dateLabel: 'Jan 1', readingTime: '1 min read', content: '', url: 'https://example.com', image: '/article.svg', imageAlt: 'Secure article' }} />
+        <ArticleCard locale="en" item={{ slug: 'altless', title: 'Altless Article', description: 'Description', date: '2024-01-01', dateLabel: 'Jan 1', readingTime: '1 min read', content: '', url: 'https://example.com', image: '/altless.svg' }} />
+        <ArticleCard locale="en" item={{ slug: 'plain', title: 'Plain Article', description: 'Description', date: '2024-01-01', dateLabel: 'Jan 1', readingTime: '1 min read', content: '', url: 'https://example.com' }} />
         <ContributionCard locale="en" item={{ slug: 'contribution', title: 'Contribution', repository: 'org/repo', repositoryUrl: 'https://github.com/org/repo', description: 'Upstream fix', period: '2024', tags: ['Java'], evidence: [{ label: 'PR #1', url: 'https://github.com/org/repo/pull/1' }], content: '' }} />
       </>
     );
@@ -44,13 +46,15 @@ describe('content components', () => {
     expect(screen.getByRole('link', { name: /project/i })).toHaveAttribute('href', '/pt-br/projects/project');
     expect(screen.getByRole('img', { name: /prévia do projeto project/i })).toHaveAttribute('src', expect.stringContaining('portifolio.png'));
     expect(screen.getByRole('link', { name: /company/i })).toHaveAttribute('href', '/works/work');
-    expect(screen.getByRole('link', { name: /article/i })).toHaveAttribute('href', '/articles/article');
+    expect(container.querySelector('a[href="/articles/article"]')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Secure article' })).toHaveAttribute('src', '/article.svg');
+    expect(container.querySelector('img[src="/altless.svg"]')).toHaveAttribute('alt', '');
+    expect(screen.getByText('Article Image')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /org\/repo.*Contribution.*Upstream fix/ })).toHaveAttribute('href', '/open-source/contribution');
     expect(screen.getByRole('link', { name: 'Read contribution' })).toHaveAttribute('href', '/open-source/contribution');
     expect(screen.getByRole('link', { name: /PR #1/ })).toHaveAttribute('href', 'https://github.com/org/repo/pull/1');
     expect(screen.getByText('Vite')).toBeInTheDocument();
-    expect(screen.getByText('1 min read')).toBeInTheDocument();
+    expect(screen.getAllByText('1 min read')).toHaveLength(3);
   });
 
   it('renders markdown, sections, structured data, and view-all links', () => {
@@ -80,7 +84,21 @@ describe('interactive components', () => {
     expect(screen.getByRole('menuitem', { name: /english/i })).toHaveAttribute('href', '/resume/filipe-bojikian-rissi-resume-en.pdf');
     expect(screen.getByRole('menuitem', { name: /português/i })).toHaveAttribute('href', '/resume/filipe-bojikian-rissi-curriculo-pt-br.pdf');
 
+    const englishResume = screen.getByRole('menuitem', { name: /english/i });
+    englishResume.addEventListener('click', (event) => event.preventDefault(), { once: true });
+    fireEvent.click(englishResume);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    fireEvent.click(button);
     fireEvent.keyDown(document, { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+
+    fireEvent.click(button);
+    fireEvent.mouseDown(button);
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole('menu'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    fireEvent.mouseDown(document.body);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 

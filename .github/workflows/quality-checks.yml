@@ -52,6 +52,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: dependency-audit
+            command: npm audit --audit-level=high --no-package-lock
           - name: lint
             command: yarn lint
           - name: typecheck

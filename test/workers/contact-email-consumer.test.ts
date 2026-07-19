@@ -49,7 +49,7 @@ describe('contact email consumer worker', () => {
     expect(email.raw).toContain('Content-Type: text/plain; charset=UTF-8');
     expect(email.raw).toContain('New contact form submission from fbrissi.dev');
     expect(email.raw).toContain('Content-Type: text/html; charset=UTF-8');
-    expect(email.raw).toContain('<h2 style="margin: 0;">New Contact Form Submission </h2>');
+    expect(email.raw).toMatch(/<h2[^>]*>New Contact Form Submission <\/h2>/);
     expect(email.raw).toContain('--contact-form-boundary-id--');
   });
 

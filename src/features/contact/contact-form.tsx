@@ -209,9 +209,6 @@ export function ContactForm({ locale, turnstileSiteKey }: ContactFormProps) {
     setStatus('idle');
     setErrorMessage('');
     setTurnstileToken('');
-    if (window.turnstile && turnstileWidgetId.current) {
-      window.turnstile.reset(turnstileWidgetId.current);
-    }
   };
 
   if (status === 'success') {

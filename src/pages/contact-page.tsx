@@ -6,7 +6,7 @@ import { getMessages, getProfile } from '@/lib/site';
 export function ContactPage({ locale }: { locale: Locale }) {
   const messages = getMessages(locale);
   const profile = getProfile(locale);
-  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '';
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '';
 
   return (
     <SiteShell locale={locale} activePage="contact">
