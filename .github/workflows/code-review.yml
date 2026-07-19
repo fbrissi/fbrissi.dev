@@ -162,11 +162,27 @@ jobs:
           fetch-depth: 0
 
       - uses: actions/cache/restore@v6
+        id: dependency-cache
         with:
           path: node_modules
           key: opencode-review-deps-v1-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            opencode-review-deps-v1-
+
+      - uses: actions/setup-node@v4
+        if: ${{ steps.dependency-cache.outputs.cache-hit != 'true' }}
+        with:
+          node-version: 20
+          cache: yarn
+
+      - name: Install dependencies
+        if: ${{ steps.dependency-cache.outputs.cache-hit != 'true' }}
+        run: yarn install --frozen-lockfile
+
+      - name: Save dependency cache
+        if: ${{ steps.dependency-cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: node_modules
+          key: ${{ steps.dependency-cache.outputs.cache-primary-key }}
 
       - name: Install OpenCode
         run: |
