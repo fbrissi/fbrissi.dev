@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-      - develop
       - 'release/**'
   workflow_dispatch:
   schedule:
@@ -21,36 +20,33 @@ permissions:
   pull-requests: read
 
 jobs:
-  detect-duplicate:
-    name: Detect duplicate
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.context.outputs.should_run }}
+  warm-cache:
+    name: Warm Dependency Cache
+    runs-on: ubuntu-24.04
     steps:
-      - name: Check for an open pull request
-        id: context
-        uses: actions/github-script@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
-          script: |
-            if (context.eventName !== 'push') {
-              core.setOutput('should_run', 'true')
-              return
-            }
-
-            const branch = context.ref.replace('refs/heads/', '')
-            const { data: pullRequests } = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              head: `${context.repo.owner}:${branch}`,
-              state: 'open',
-            })
-
-            core.setOutput('should_run', String(pullRequests.length === 0))
+          node-version: 20
+          cache: yarn
+      - id: cache
+        uses: actions/cache/restore@v6
+        with:
+          path: node_modules
+          key: opencode-review-deps-v1-${{ hashFiles('yarn.lock') }}
+          restore-keys: |
+            opencode-review-deps-v1-
+      - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        run: yarn install --frozen-lockfile
+      - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: node_modules
+          key: opencode-review-deps-v1-${{ hashFiles('yarn.lock') }}
 
   quality:
     name: Quality / ${{ matrix.name }}
-    needs: detect-duplicate
-    if: ${{ needs.detect-duplicate.outputs.should_run == 'true' }}
+    needs: warm-cache
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -76,12 +72,6 @@ jobs:
         with:
           node-version: 20
           cache: yarn
-      - uses: actions/cache@v6
-        with:
-          path: node_modules
-          key: opencode-review-deps-v1-${{ hashFiles('yarn.lock') }}
-          restore-keys: |
-            opencode-review-deps-v1-
       - run: yarn install --frozen-lockfile
       - name: Run ${{ matrix.name }}
         run: ${{ matrix.command }}
@@ -165,8 +155,7 @@ jobs:
 
   terraform:
     name: Terraform
-    needs: detect-duplicate
-    if: ${{ needs.detect-duplicate.outputs.should_run == 'true' }}
+    needs: warm-cache
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -181,8 +170,8 @@ jobs:
   quality-jobs:
     name: Quality Checks
     runs-on: ubuntu-latest
-    needs: [detect-duplicate, quality, terraform]
-    if: ${{ always() && needs.detect-duplicate.outputs.should_run == 'true' }}
+    needs: [quality, terraform]
+    if: ${{ always() }}
     steps:
       - name: Validate quality results
         env:
