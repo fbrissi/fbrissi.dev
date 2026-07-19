@@ -1,6 +1,9 @@
 /node_modules/
 /dist/
 /coverage/
+/public/resume/
+/public/robots.txt
+/public/sitemap.xml
 *.tsbuildinfo
 *.tfstate
 *.tfstate.*

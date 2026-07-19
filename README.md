@@ -24,9 +24,9 @@ Public portfolio for Filipe Bojikian Rissi.
 - English pages at the root path
 - Portuguese pages under `/pt-br`
 - Content stored in JSON and Markdown files
-- Articles, projects, and works are rendered from Markdown with raw HTML and syntax highlighting
-- Content collections live in `src/content/{articles,projects,works}/{locale}/`
-- SEO handled with document metadata, `robots.txt`, `sitemap.xml`, and JSON-LD
+- Articles, contributions, projects, and works are rendered from Markdown with raw HTML and syntax highlighting
+- Content collections live in `src/content/{articles,contributions,projects,works}/{locale}/`
+- SEO handled with document metadata, generated `robots.txt` and `sitemap.xml`, and JSON-LD
 
 ## Releases
 
@@ -71,6 +71,8 @@ kool run yarn lint
 kool run yarn typecheck
 kool run yarn build
 ```
+
+`yarn dev` and `yarn build` automatically generate the resume PDFs, `robots.txt`, and `sitemap.xml` from their source content. These outputs are ignored by Git; run `kool run yarn generate` only when they are needed without starting or building the application.
 
 ## Docker
 
