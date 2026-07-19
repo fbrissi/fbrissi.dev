@@ -9,6 +9,7 @@
     "home": "Início",
     "aboutMe": "Sobre mim",
     "projects": "Projetos",
+    "openSource": "Open Source",
     "works": "Trabalhos",
     "articles": "Artigos",
     "contact": "Contato",
@@ -19,6 +20,7 @@
   },
   "labels": {
     "featuredProjects": "Projetos em destaque",
+    "featuredContributions": "Contribuições Open Source",
     "careerHighlights": "Destaques de carreira",
     "skills": "Competências",
     "articlesPreview": "Últimos Artigos",
@@ -38,9 +40,13 @@
     "viewProfile": "Ver perfil",
     "copyNote": "O conteúdo editável vive em arquivos JSON e Markdown, não em componentes React.",
     "backToArticles": "Voltar aos artigos",
+    "readContribution": "Ver contribuição",
+    "backToContributions": "Voltar para open source",
+    "openRepository": "Abrir repositório",
     "viewAllProjects": "Ver todos os projetos",
     "viewAllWorks": "Ver todos os trabalhos",
     "viewAllArticles": "Ver todos os artigos",
+    "viewAllContributions": "Ver todas as contribuições",
     "downloadResume": "Baixar currículo"
   },
   "home": {
@@ -68,6 +74,11 @@
     "projects": {
       "title": "Projetos",
       "description": "Trabalhos públicos selecionados e repositórios representativos."
+    },
+    "openSource": {
+      "eyebrow": "Trabalho no upstream",
+      "title": "Contribuições Open Source",
+      "description": "Correções e funcionalidades que contribuí para projetos open source consolidados, com links para os pull requests e commits no upstream."
     },
     "works": {
       "title": "Experiência Profissional",

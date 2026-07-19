@@ -19,12 +19,15 @@ import { AboutPage } from '@/pages/about-page';
 import { ArticlePage } from '@/pages/article-page';
 import { ArticlesPage } from '@/pages/articles-page';
 import { ContactPage } from '@/pages/contact-page';
+import { ContributionPage } from '@/pages/contribution-page';
+import { ContributionsPage } from '@/pages/contributions-page';
 import { HomePage } from '@/pages/home-page';
 import { ProjectPage } from '@/pages/project-page';
 import { ProjectsPage } from '@/pages/projects-page';
 import { WorkPage } from '@/pages/work-page';
 import { WorksPage } from '@/pages/works-page';
 import { getArticles } from '@/lib/articles';
+import { getContributions } from '@/lib/contributions';
 import { getProjects } from '@/lib/projects';
 import { getWorks } from '@/lib/works';
 
@@ -46,6 +49,7 @@ describe('composed site pages', () => {
 
   it.each([
     ['projects', ProjectsPage, getProjects('en')[0].title],
+    ['contributions', ContributionsPage, getContributions('en')[0].title],
     ['works', WorksPage, getWorks('en')[0].company],
     ['articles', ArticlesPage, getArticles('en')[0].title],
   ] as const)('renders the %s index with its content cards', (_name, Page, cardTitle) => {
@@ -55,18 +59,20 @@ describe('composed site pages', () => {
 
   it('renders detail pages, structured data, and localized return links', () => {
     const project = getProjects('pt-BR')[0];
+    const contribution = getContributions('pt-BR')[0];
     const work = getWorks('en')[0];
     const article = getArticles('en')[0];
-    const { container } = render(<><ProjectPage locale="pt-BR" slug={project.slug} /><WorkPage locale="en" slug={work.slug} /><ArticlePage locale="en" slug={article.slug} /></>);
+    const { container } = render(<><ProjectPage locale="pt-BR" slug={project.slug} /><ContributionPage locale="pt-BR" slug={contribution.slug} /><WorkPage locale="en" slug={work.slug} /><ArticlePage locale="en" slug={article.slug} /></>);
 
     expect(screen.getByRole('link', { name: /voltar aos projetos/i })).toHaveAttribute('href', '/pt-br/projects');
+    expect(screen.getByRole('link', { name: /voltar para open source/i })).toHaveAttribute('href', '/pt-br/open-source');
     expect(screen.getAllByText(work.company).length).toBeGreaterThan(0);
     expect(screen.getAllByText(article.title).length).toBeGreaterThan(0);
     expect(Array.from(container.querySelectorAll('script[type="application/ld+json"]')).some((script) => script.textContent?.includes(article.title))).toBe(true);
   });
 
   it('returns no content for unknown detail slugs', () => {
-    const { container } = render(<><ProjectPage locale="en" slug="missing" /><WorkPage locale="en" slug="missing" /><ArticlePage locale="en" slug="missing" /></>);
+    const { container } = render(<><ProjectPage locale="en" slug="missing" /><ContributionPage locale="en" slug="missing" /><WorkPage locale="en" slug="missing" /><ArticlePage locale="en" slug="missing" /></>);
     expect(container).toBeEmptyDOMElement();
   });
 

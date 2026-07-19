@@ -1,20 +1,21 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 import profileImage from '@/assets/images/profile.png';
-import { getAlternateLocale, localizedPath, type Locale } from '@/lib/i18n';
+import { getAlternateLocale, localizedPath, normalizeRoute, type Locale } from '@/lib/i18n';
 import { getMessages, getProfile } from '@/lib/site';
 import { LanguageSwitcher } from './language-switcher';
 import { ResumeDownloadMenu } from './resume-download-menu';
 
 type SiteHeaderProps = {
   locale: Locale;
-  activePage: 'home' | 'about' | 'projects' | 'works' | 'articles' | 'contact';
+  activePage: 'home' | 'about' | 'projects' | 'openSource' | 'works' | 'articles' | 'contact';
 };
 
 const navItems = [
   { key: 'home', labelKey: 'home', path: '/' },
   { key: 'projects', labelKey: 'projects', path: '/projects' },
+  { key: 'openSource', labelKey: 'openSource', path: '/open-source' },
   { key: 'works', labelKey: 'works', path: '/works' },
   { key: 'articles', labelKey: 'articles', path: '/articles' },
   { key: 'contact', labelKey: 'contact', path: '/contact' }
@@ -22,11 +23,12 @@ const navItems = [
 
 export function SiteHeader({ locale, activePage }: SiteHeaderProps) {
   const [isScrolled, setIsScrolled] = useState(() => window.scrollY > 24);
+  const location = useLocation();
   const messages = getMessages(locale);
   const profile = getProfile(locale);
   const alternateLocale = getAlternateLocale(locale);
 
-  const currentPath = navItems.find((item) => item.key === activePage)?.path ?? '/';
+  const currentPath = normalizeRoute(location.pathname);
 
   useEffect(() => {
     function handleScroll() {

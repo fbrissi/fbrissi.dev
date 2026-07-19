@@ -9,6 +9,8 @@ vi.mock('@/pages/about-page', () => ({ AboutPage: ({ locale }: { locale: string 
 vi.mock('@/pages/articles-page', () => ({ ArticlesPage: ({ locale }: { locale: string }) => <div>articles:{locale}</div> }));
 vi.mock('@/pages/article-page', () => ({ ArticlePage: ({ locale, slug }: { locale: string; slug: string }) => <div>article:{locale}:{slug}</div> }));
 vi.mock('@/pages/contact-page', () => ({ ContactPage: ({ locale }: { locale: string }) => <div>contact:{locale}</div> }));
+vi.mock('@/pages/contributions-page', () => ({ ContributionsPage: ({ locale }: { locale: string }) => <div>contributions:{locale}</div> }));
+vi.mock('@/pages/contribution-page', () => ({ ContributionPage: ({ locale, slug }: { locale: string; slug: string }) => <div>contribution:{locale}:{slug}</div> }));
 vi.mock('@/pages/projects-page', () => ({ ProjectsPage: ({ locale }: { locale: string }) => <div>projects:{locale}</div> }));
 vi.mock('@/pages/project-page', () => ({ ProjectPage: ({ locale, slug }: { locale: string; slug: string }) => <div>project:{locale}:{slug}</div> }));
 vi.mock('@/pages/works-page', () => ({ WorksPage: ({ locale }: { locale: string }) => <div>works:{locale}</div> }));
@@ -31,6 +33,7 @@ describe('application routes', () => {
     ['/about', 'about:en'],
     ['/articles', 'articles:en'],
     ['/contact', 'contact:en'],
+    ['/open-source', 'contributions:en'],
     ['/projects', 'projects:en'],
     ['/works', 'works:en'],
     ['/pt-br', 'home:pt-BR'],
@@ -42,9 +45,11 @@ describe('application routes', () => {
 
   it.each([
     ['/articles/registry-lookup-with-digital-certificates', 'article:en:registry-lookup-with-digital-certificates'],
+    ['/open-source/keycloak', 'contribution:en:keycloak'],
     ['/projects/fbrissi-dev', 'project:en:fbrissi-dev'],
     ['/works/mega-bilheteria', 'work:en:mega-bilheteria'],
     ['/pt-br/articles/consulta-de-cadastros-com-certificacao-digital', 'article:pt-BR:consulta-de-cadastros-com-certificacao-digital'],
+    ['/pt-br/open-source/keycloak', 'contribution:pt-BR:keycloak'],
     ['/pt-br/projects/fbrissi-dev', 'project:pt-BR:fbrissi-dev'],
     ['/pt-br/works/mega-bilheteria', 'work:pt-BR:mega-bilheteria']
   ])('renders detail route %s', (pathname, content) => {
@@ -72,6 +77,7 @@ describe('application routes', () => {
   it.each([
     ['/missing', 'Back home', '/'],
     ['/articles/missing', 'Back home', '/'],
+    ['/open-source/missing', 'Back home', '/'],
     ['/projects/missing', 'Back home', '/'],
     ['/works/missing', 'Back home', '/'],
     ['/pt-br/missing', 'Voltar para o início', '/pt-br']

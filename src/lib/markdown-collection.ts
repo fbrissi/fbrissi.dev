@@ -1,7 +1,7 @@
 import type { Locale } from './i18n';
 import { parseMarkdown } from './markdown';
 
-const markdownSources = import.meta.glob<string>('/src/content/{projects,works}/**/*.md', {
+const markdownSources = import.meta.glob<string>('/src/content/{contributions,projects,works}/**/*.md', {
   query: '?raw',
   import: 'default',
   eager: true

@@ -7,7 +7,7 @@ import { getMessages, getProfile } from '@/lib/site';
 
 type SiteShellProps = {
   locale: 'en' | 'pt-BR';
-  activePage: 'home' | 'about' | 'projects' | 'works' | 'articles' | 'contact';
+  activePage: 'home' | 'about' | 'projects' | 'openSource' | 'works' | 'articles' | 'contact';
   children: ReactNode;
 };
 
@@ -18,9 +18,9 @@ export function SiteShell({ locale, activePage, children }: SiteShellProps) {
   useEffect(() => {
     let timeoutId: ReturnType<typeof setTimeout>;
 
-    function handleMouseMove(e: MouseEvent) {
-      const x = (e.clientX / window.innerWidth) * 100;
-      const y = (e.clientY / window.innerHeight) * 100;
+    function activateAt(clientX: number, clientY: number) {
+      const x = (clientX / window.innerWidth) * 100;
+      const y = (clientY / window.innerHeight) * 100;
       
       document.body.style.setProperty('--mouse-x', `${x}%`);
       document.body.style.setProperty('--mouse-y', `${y}%`);
@@ -33,10 +33,23 @@ export function SiteShell({ locale, activePage, children }: SiteShellProps) {
       }, 3000);
     }
 
+    function handleMouseMove(event: MouseEvent) {
+      activateAt(event.clientX, event.clientY);
+    }
+
+    function handleTouch(event: TouchEvent) {
+      const touch = event.touches[0];
+      if (touch) activateAt(touch.clientX, touch.clientY);
+    }
+
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchstart', handleTouch, { passive: true });
+    window.addEventListener('touchmove', handleTouch, { passive: true });
     
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchstart', handleTouch);
+      window.removeEventListener('touchmove', handleTouch);
       clearTimeout(timeoutId);
     };
   }, []);

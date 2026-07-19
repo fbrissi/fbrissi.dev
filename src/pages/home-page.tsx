@@ -1,10 +1,12 @@
 import portfolioImage from '@/assets/images/portifolio.png';
 import { ArticleCard, ProjectCard, WorksCard } from '@/components/content/content-cards';
+import { ContributionCard } from '@/components/content/contribution-card';
 import { Markdown } from '@/components/content/markdown';
 import { StructuredData } from '@/components/content/structured-data';
 import { ViewAllLink } from '@/components/content/view-all-link';
 import { SiteShell } from '@/components/layout/site-shell';
 import { getArticles } from '@/lib/articles';
+import { getContributions } from '@/lib/contributions';
 import { localizedPath, type Locale } from '@/lib/i18n';
 import { getProjects } from '@/lib/projects';
 import { getMessages, getProfile } from '@/lib/site';
@@ -15,6 +17,7 @@ export function HomePage({ locale }: { locale: Locale }) {
   const profile = getProfile(locale);
   const posts = getArticles(locale).slice(0, 6);
   const featuredProjects = getProjects(locale).slice(0, 6);
+  const featuredContributions = getContributions(locale).filter((contribution) => contribution.featured).slice(0, 4);
   const featuredWorks = getWorks(locale).slice(0, 6);
 
   return (
@@ -84,6 +87,18 @@ export function HomePage({ locale }: { locale: Locale }) {
           {featuredProjects.map((project) => <ProjectCard key={project.slug} locale={locale} item={project} />)}
         </div>
       </section>
+
+      {featuredContributions.length > 0 && (
+        <section className="mb-16">
+          <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+            <h2 className="text-2xl font-normal tracking-tight">{messages.labels.featuredContributions}</h2>
+            <ViewAllLink href={localizedPath(locale, '/open-source')} label={messages.labels.viewAllContributions} />
+          </div>
+          <div className="grid gap-6 sm:grid-cols-2">
+            {featuredContributions.map((contribution) => <ContributionCard key={contribution.slug} locale={locale} item={contribution} />)}
+          </div>
+        </section>
+      )}
 
       {featuredWorks.length > 0 && (
         <section className="mb-16">

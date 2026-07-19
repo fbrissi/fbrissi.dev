@@ -9,6 +9,17 @@ import {
 describe('markdown collections', () => {
   it('loads known collection slugs through Vite', () => {
     expect(getMarkdownCollectionSlugs('projects', 'en')).toEqual(['fbrissi-dev']);
+    expect(getMarkdownCollectionSlugs('contributions', 'en')).toEqual([
+      'apache-commons-net',
+      'infinispan',
+      'jgroups-aws',
+      'keycloak',
+      'kool-dev',
+      'laravel',
+      'pentaho-data-integration',
+      'primefaces',
+      'wirechat'
+    ]);
     expect(getMarkdownCollectionSlugs('works', 'pt-BR')).toEqual([
       'exlink',
       'ferrasi',
@@ -36,5 +47,6 @@ describe('markdown collections', () => {
 
   it('returns all items in a collection', () => {
     expect(getMarkdownCollectionItems('works', 'en')).toHaveLength(8);
+    expect(getMarkdownCollectionItems('contributions', 'pt-BR')).toHaveLength(9);
   });
 });

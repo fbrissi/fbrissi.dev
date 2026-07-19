@@ -9,6 +9,7 @@
     "home": "Home",
     "aboutMe": "About me",
     "projects": "Projects",
+    "openSource": "Open Source",
     "works": "Works",
     "articles": "Articles",
     "contact": "Contact",
@@ -19,6 +20,7 @@
   },
   "labels": {
     "featuredProjects": "Featured Projects",
+    "featuredContributions": "Open Source Contributions",
     "careerHighlights": "Career Highlights",
     "skills": "Skills",
     "articlesPreview": "Latest Articles",
@@ -38,9 +40,13 @@
     "viewProfile": "View profile",
     "copyNote": "Editable content lives in JSON and Markdown files, not in React components.",
     "backToArticles": "Back to articles",
+    "readContribution": "Read contribution",
+    "backToContributions": "Back to open source",
+    "openRepository": "Open repository",
     "viewAllProjects": "View all projects",
     "viewAllWorks": "View all works",
     "viewAllArticles": "View all articles",
+    "viewAllContributions": "View all contributions",
     "downloadResume": "Download resume"
   },
   "home": {
@@ -68,6 +74,11 @@
     "projects": {
       "title": "Projects",
       "description": "Selected public works and representative repositories."
+    },
+    "openSource": {
+      "eyebrow": "Upstream work",
+      "title": "Open Source Contributions",
+      "description": "Selected fixes and features contributed to established open-source projects, with links to the upstream pull requests and commits."
     },
     "works": {
       "title": "Professional Experience",

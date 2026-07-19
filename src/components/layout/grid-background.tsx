@@ -126,9 +126,9 @@ export function GridBackground() {
       rafId = requestAnimationFrame(tick);
     }
 
-    function handleMouseMove(event: MouseEvent) {
-      mouseX = event.clientX;
-      mouseY = event.clientY;
+    function activateAt(clientX: number, clientY: number) {
+      mouseX = clientX;
+      mouseY = clientY;
       targetIntensity = 1;
 
       clearTimeout(idleTimeout);
@@ -137,18 +137,31 @@ export function GridBackground() {
       }, IDLE_DELAY_MS);
     }
 
+    function handleMouseMove(event: MouseEvent) {
+      activateAt(event.clientX, event.clientY);
+    }
+
+    function handleTouch(event: TouchEvent) {
+      const touch = event.touches[0];
+      if (touch) activateAt(touch.clientX, touch.clientY);
+    }
+
     resize();
     draw();
     rafId = requestAnimationFrame(tick);
 
     window.addEventListener('resize', resize);
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchstart', handleTouch, { passive: true });
+    window.addEventListener('touchmove', handleTouch, { passive: true });
 
     return () => {
       cancelAnimationFrame(rafId);
       clearTimeout(idleTimeout);
       window.removeEventListener('resize', resize);
       window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('touchstart', handleTouch);
+      window.removeEventListener('touchmove', handleTouch);
     };
   }, []);
 

@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ArticleCard, ProjectCard, WorksCard } from '@/components/content/content-cards';
+import { ContributionCard } from '@/components/content/contribution-card';
 import { Markdown } from '@/components/content/markdown';
 import { StructuredData } from '@/components/content/structured-data';
 import { ViewAllLink } from '@/components/content/view-all-link';
@@ -36,6 +37,7 @@ describe('content components', () => {
         <ProjectCard locale="pt-BR" item={{ slug: 'project', title: 'Project', description: 'Description', stack: ['Vite'], url: 'https://example.com', content: '' }} />
         <WorksCard locale="en" item={{ slug: 'work', company: 'Company', title: 'Engineer', summary: 'Summary', dateRange: '2024', location: 'Remote', employmentType: 'Full-time', companyUrl: 'https://example.com', logo: '/logo.png', skills: [], startDate: '2024-01', content: '' }} />
         <ArticleCard locale="en" item={{ slug: 'article', title: 'Article', description: 'Description', date: '2024-01-01', dateLabel: 'Jan 1', readingTime: '1 min read', content: '', url: 'https://example.com', image: '/article.svg', imageAlt: 'Secure article' }} />
+        <ContributionCard locale="en" item={{ slug: 'contribution', title: 'Contribution', repository: 'org/repo', repositoryUrl: 'https://github.com/org/repo', description: 'Upstream fix', period: '2024', tags: ['Java'], evidence: [{ label: 'PR #1', url: 'https://github.com/org/repo/pull/1' }], content: '' }} />
       </>
     );
 
@@ -44,6 +46,9 @@ describe('content components', () => {
     expect(screen.getByRole('link', { name: /company/i })).toHaveAttribute('href', '/works/work');
     expect(screen.getByRole('link', { name: /article/i })).toHaveAttribute('href', '/articles/article');
     expect(screen.getByRole('img', { name: 'Secure article' })).toHaveAttribute('src', '/article.svg');
+    expect(screen.getByRole('link', { name: /org\/repo.*Contribution.*Upstream fix/ })).toHaveAttribute('href', '/open-source/contribution');
+    expect(screen.getByRole('link', { name: 'Read contribution' })).toHaveAttribute('href', '/open-source/contribution');
+    expect(screen.getByRole('link', { name: /PR #1/ })).toHaveAttribute('href', 'https://github.com/org/repo/pull/1');
     expect(screen.getByText('Vite')).toBeInTheDocument();
     expect(screen.getByText('1 min read')).toBeInTheDocument();
   });
@@ -196,9 +201,14 @@ describe('site chrome', () => {
 
     expect(screen.getAllByRole('link', { name: 'Home' }).every((link) => link.getAttribute('href') === '/')).toBe(true);
     expect(screen.getAllByRole('link', { name: 'Projects' }).every((link) => link.getAttribute('href') === '/projects')).toBe(true);
+    expect(screen.getAllByRole('link', { name: 'Open Source' }).every((link) => link.getAttribute('href') === '/open-source')).toBe(true);
     expect(screen.getByText('Page content')).toBeInTheDocument();
     fireEvent.mouseMove(window, { clientX: 100, clientY: 100 });
     expect(document.body).toHaveClass('mouse-active');
+    fireEvent.touchMove(window, { touches: [{ clientX: 200, clientY: 300 }] });
+    expect(document.body.style.getPropertyValue('--mouse-x')).not.toBe('');
+    expect(document.body.style.getPropertyValue('--mouse-y')).not.toBe('');
+    fireEvent.touchMove(window, { touches: [] });
     unmount();
   });
 
@@ -244,6 +254,9 @@ describe('site chrome', () => {
     Object.defineProperty(window, 'devicePixelRatio', { configurable: true, value: 0 });
     fireEvent.resize(window);
     fireEvent.mouseMove(window, { clientX: 100, clientY: 100 });
+    fireEvent.touchStart(window, { touches: [{ clientX: 150, clientY: 200 }] });
+    fireEvent.touchMove(window, { touches: [{ clientX: 175, clientY: 225 }] });
+    fireEvent.touchMove(window, { touches: [] });
     act(() => frames.shift()?.(0));
     expect(context.lineTo).toHaveBeenCalledWith(expect.any(Number), expect.any(Number));
     act(() => vi.advanceTimersByTime(3000));
