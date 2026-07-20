@@ -12,6 +12,7 @@
 /terraform/*.tfstate.*
 /terraform/terraform.tfvars
 /.idea/
+/.vite/
 /tmp/
 .env.local
 .env*.local

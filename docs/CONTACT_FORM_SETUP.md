@@ -72,7 +72,12 @@ No Turnstile key is created or copied manually.
 
 Add these workspace environment variables in Terraform Cloud:
 
-- `GITHUB_TOKEN` - a fine-grained GitHub token with **Actions: Read and write** repository permission. Mark it sensitive.
+- `CLOUDFLARE_API_TOKEN` - a Cloudflare API token with edit access to Pages,
+  Queues, Turnstile, and Email Routing for this account and zone. Mark it
+  sensitive.
+- `GITHUB_TOKEN` - a fine-grained GitHub token with access to the
+  `fbrissi/fbrissi.dev` repository and **Variables: Read and write** and
+  **Secrets: Read and write** repository permissions. Mark it sensitive.
 
 Add this GitHub Actions secret:
 
@@ -193,13 +198,11 @@ The API Worker is in `workers/contact-api.ts`, the consumer Worker is in
 
 ### Terraform errors
 
-**Error: "zone_id is required"**
-- Add `cloudflare_zone_id` to `terraform.tfvars`
-- Find Zone ID in Cloudflare Dashboard → Overview
-
-**Error: "turnstile widget not found"**
-- Create Turnstile widget first (Step 2)
-- Add secret key to `terraform.tfvars`
+**Error: "Missing X-Auth-Key, X-Auth-Email or Authorization headers"**
+- Add `CLOUDFLARE_API_TOKEN` as a sensitive environment variable in the
+  `fbrissi-dev` Terraform Cloud workspace, then start a new run.
+- A GitHub Actions secret with the same name is not available to Terraform
+  Cloud automatically.
 
 ### Form submission fails
 
@@ -272,8 +275,8 @@ All services used are **free**:
 ## Security Notes
 
 1. **Never commit secrets**:
-   - `terraform.tfvars` is in `.gitignore`
-   - Use Terraform variables for sensitive data
+   - Store provider credentials as sensitive Terraform Cloud workspace
+     environment variables.
 
 2. **Turnstile protection**:
    - Blocks bots and spam
