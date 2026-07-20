@@ -54,6 +54,7 @@ const messages = {
       errorEmail: 'Email me directly',
       required: 'This field is required',
       invalidEmail: 'Please enter a valid email address',
+      captchaRequired: 'Please complete the captcha verification',
     },
   },
   'pt-BR': {
@@ -76,6 +77,7 @@ const messages = {
       errorEmail: 'Me envie um e-mail',
       required: 'Este campo é obrigatório',
       invalidEmail: 'Por favor, insira um endereço de e-mail válido',
+      captchaRequired: 'Por favor, conclua a verificação do captcha',
     },
   },
 };
@@ -164,7 +166,7 @@ export function ContactForm({ locale, turnstileSiteKey }: ContactFormProps) {
     }
 
     if (!turnstileToken) {
-      setErrorMessage('Please complete the captcha verification');
+      setErrorMessage(t.captchaRequired);
       return;
     }
 
@@ -335,6 +337,8 @@ export function ContactForm({ locale, turnstileSiteKey }: ContactFormProps) {
 
       {/* Cloudflare Turnstile */}
       <div ref={turnstileRef} className="flex justify-center" />
+
+      {errorMessage && <p role="alert" className="text-center text-sm text-red-500">{errorMessage}</p>}
 
       <button
         type="submit"

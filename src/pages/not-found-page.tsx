@@ -1,3 +1,5 @@
+import { Link } from 'react-router';
+
 import { SiteShell } from '@/components/layout/site-shell';
 import { localizedPath, type Locale } from '@/lib/i18n';
 
@@ -16,4 +18,3 @@ export function NotFoundPage({ locale }: { locale: Locale }) {
     </SiteShell>
   );
 }
-import { Link } from 'react-router';

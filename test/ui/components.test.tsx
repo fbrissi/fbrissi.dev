@@ -203,6 +203,20 @@ describe('interactive components', () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
+  it('localizes captcha validation errors', () => {
+    render(<ContactForm locale="pt-BR" turnstileSiteKey="" />);
+    fireEvent.change(screen.getByLabelText('Nome'), { target: { value: 'Filipe' } });
+    fireEvent.change(screen.getByLabelText('E-mail'), { target: { value: 'filipe@example.com' } });
+    fireEvent.change(screen.getByLabelText('Assunto'), { target: { value: 'Olá' } });
+    fireEvent.change(screen.getByLabelText('Mensagem'), { target: { value: 'Mensagem' } });
+    const submitButton = screen.getByRole('button', { name: 'Enviar mensagem' });
+    (submitButton as HTMLButtonElement).disabled = false;
+
+    fireEvent.click(submitButton);
+
+    expect(screen.getByText('Por favor, conclua a verificação do captcha')).toBeInTheDocument();
+  });
+
   it('does not initialize Turnstile without a site key', () => {
     render(<ContactForm locale="en" turnstileSiteKey="" />);
 
