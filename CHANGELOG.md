@@ -8,6 +8,7 @@ All notable changes to this project are documented here. Release versions follow
 ### Fixed
 
 - Disabled the public `workers.dev` route for the queue-only contact email consumer.
+- Added the missing proxied DNS record for the Pages custom domain.
 
 ## v0.1.0
 
