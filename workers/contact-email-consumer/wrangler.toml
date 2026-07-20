@@ -1,6 +1,7 @@
 name = "fbrissi-dev-contact-email-consumer"
 main = "../contact-email-consumer.ts"
 compatibility_date = "2024-01-01"
+workers_dev = false
 
 [[queues.consumers]]
 queue = "fbrissi-dev-contact-form"
