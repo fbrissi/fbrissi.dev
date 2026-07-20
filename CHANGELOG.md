@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.1.4
+
+### Fixed
+
+- Remove unnecessary `.pages.dev` suffix in outputs and DNS records
+
 ## v0.1.3
 
 ### Fixed

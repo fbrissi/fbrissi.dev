@@ -17,7 +17,7 @@ resource "cloudflare_dns_record" "site" {
   count   = local.custom_domain == null ? 0 : 1
   zone_id = local.cloudflare_zone_id
   name    = local.custom_domain
-  content = "${cloudflare_pages_project.site.subdomain}.pages.dev"
+  content = cloudflare_pages_project.site.subdomain
   type    = "CNAME"
   proxied = true
   ttl     = 1
