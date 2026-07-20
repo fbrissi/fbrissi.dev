@@ -69,6 +69,7 @@ describe('local contact API', () => {
   it.each([
     { ...validForm, name: ' ' },
     { ...validForm, email: 'invalid' },
+    { ...validForm, email: 'ada@example.com>' },
     { ...validForm, subject: '' },
     { ...validForm, message: ' ' },
     { ...validForm, 'cf-turnstile-response': '' },

@@ -14,6 +14,7 @@ type SiteHeaderProps = {
 
 const navItems = [
   { key: 'home', labelKey: 'home', path: '/' },
+  { key: 'about', labelKey: 'aboutMe', path: '/about' },
   { key: 'projects', labelKey: 'projects', path: '/projects' },
   { key: 'openSource', labelKey: 'openSource', path: '/open-source' },
   { key: 'works', labelKey: 'works', path: '/works' },

@@ -44,7 +44,7 @@ createServer(async (request, response) => {
 }).listen(port, () => console.log(`Contact API listening on ${port}`));
 
 function isValidForm(form: Partial<ContactFormRequest>): form is ContactFormRequest {
-  return Boolean(form.name?.trim() && form.email?.trim() && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) && form.subject?.trim() && form.message?.trim() && form['cf-turnstile-response']);
+  return Boolean(form.name?.trim() && form.email?.trim() && /^[^\s@<>(),;:"[\]]+@[^\s@<>(),;:"[\]]+\.[^\s@<>(),;:"[\]]+$/.test(form.email) && form.subject?.trim() && form.message?.trim() && form['cf-turnstile-response']);
 }
 
 const corsHeaders = { 'Access-Control-Allow-Origin': 'http://localhost:3000', 'Access-Control-Allow-Methods': 'POST, OPTIONS', 'Access-Control-Allow-Headers': 'Content-Type' };

@@ -61,7 +61,7 @@ describe('contact email consumer worker', () => {
     await contactEmailConsumer.queue({
       messages: [{
         body: {
-          name: 'Ada\r\nBcc: attacker@example.com',
+          name: 'Ada "Countess"\r\nBcc: attacker@example.com',
           email: 'ada@example.com\r\nBcc: attacker@example.com',
           subject: 'Hello\r\nBcc: attacker@example.com',
           message: 'Body',
@@ -71,7 +71,7 @@ describe('contact email consumer worker', () => {
     }, env);
 
     const email = env.SEND_EMAIL.send.mock.calls[0][0] as MockEmailMessage;
-    expect(email.raw).toContain('Reply-To: Ada  Bcc: attacker@example.com <ada@example.comBcc: attacker@example.com>');
+    expect(email.raw).toContain('Reply-To: "Ada \\"Countess\\"  Bcc: attacker@example.com" <ada@example.comBcc: attacker@example.com>');
     expect(email.raw).toContain('Subject: [Contact Form] Hello  Bcc: attacker@example.com');
     expect(email.raw.split('\r\n\r\n')[0]).not.toContain('\r\nBcc: attacker@example.com');
   });

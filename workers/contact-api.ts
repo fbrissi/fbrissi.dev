@@ -53,7 +53,7 @@ function isValidForm(form: Partial<ContactFormRequest>): form is ContactFormRequ
   return Boolean(
     form.name?.trim() &&
     form.email?.trim() &&
-    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email) &&
+    /^[^\s@<>(),;:"[\]]+@[^\s@<>(),;:"[\]]+\.[^\s@<>(),;:"[\]]+$/.test(form.email) &&
     form.subject?.trim() &&
     form.message?.trim() &&
     form['cf-turnstile-response']

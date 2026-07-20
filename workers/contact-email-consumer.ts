@@ -45,14 +45,14 @@ async function sendEmail(env: Env, message: ContactMessage): Promise<void> {
 
 function buildRawEmail(env: Env, message: ContactMessage): string {
   const boundary = `contact-form-${crypto.randomUUID()}`;
-  const replyToName = message.name.replace(/[\r\n]/g, ' ');
+  const replyToName = message.name.replace(/[\r\n]/g, ' ').replace(/([\\"])/g, '\\$1');
   const replyToEmail = message.email.replace(/[\r\n]/g, '');
   const subject = contactEmailSubject(message, { isLocal: false }).replace(/[\r\n]/g, ' ');
 
   return [
     `From: Contact Form <${env.CONTACT_EMAIL_FROM}>`,
     `To: ${env.CONTACT_EMAIL_TO}`,
-    `Reply-To: ${replyToName} <${replyToEmail}>`,
+    `Reply-To: "${replyToName}" <${replyToEmail}>`,
     `Subject: ${subject}`,
     'MIME-Version: 1.0',
     `Content-Type: multipart/alternative; boundary="${boundary}"`,

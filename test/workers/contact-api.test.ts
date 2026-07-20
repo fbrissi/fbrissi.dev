@@ -53,6 +53,7 @@ describe('contact API worker', () => {
     ['a whitespace-only name', { ...validForm, name: '   ' }],
     ['a missing email', { ...validForm, email: '' }],
     ['an invalid email address', { ...validForm, email: 'not-an-email' }],
+    ['an email address with header delimiters', { ...validForm, email: 'ada@example.com>' }],
     ['a missing subject', { ...validForm, subject: '' }],
     ['a whitespace-only message', { ...validForm, message: '  ' }],
     ['a missing captcha token', { ...validForm, 'cf-turnstile-response': '' }],
