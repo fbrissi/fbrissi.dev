@@ -9,6 +9,8 @@ resource "cloudflare_pages_domain" "custom" {
   account_id   = local.cloudflare_account_id
   project_name = cloudflare_pages_project.site.name
   name         = local.custom_domain
+
+  depends_on = [cloudflare_dns_record.site]
 }
 
 resource "cloudflare_dns_record" "site" {
@@ -20,5 +22,5 @@ resource "cloudflare_dns_record" "site" {
   proxied = true
   ttl     = 1
 
-  depends_on = [cloudflare_pages_domain.custom]
+  depends_on = [cloudflare_pages_project.site]
 }
