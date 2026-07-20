@@ -72,7 +72,7 @@ jobs:
     name: Wait for Infrastructure
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 720
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
         with:
