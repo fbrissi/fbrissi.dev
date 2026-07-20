@@ -1,12 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import contactEmailConsumer from '@/workers/contact-email-consumer';
 
-class MockEmailMessage {
-  constructor(
-    readonly from: string,
-    readonly to: string,
-    readonly raw: string
-  ) {}
+interface MockEmailMessage {
+  from: string;
+  to: string;
+  raw: string;
 }
 
 const message = {
@@ -31,7 +29,6 @@ afterEach(() => {
 
 describe('contact email consumer worker', () => {
   it('sends a multipart production email with the template variants', async () => {
-    vi.stubGlobal('EmailMessage', MockEmailMessage);
     vi.spyOn(crypto, 'randomUUID').mockReturnValue('boundary-id' as ReturnType<typeof crypto.randomUUID>);
     const env = createEnv();
     const retry = vi.fn();
@@ -54,7 +51,6 @@ describe('contact email consumer worker', () => {
   });
 
   it('sanitizes newlines from email headers', async () => {
-    vi.stubGlobal('EmailMessage', MockEmailMessage);
     vi.spyOn(crypto, 'randomUUID').mockReturnValue('safe-boundary' as ReturnType<typeof crypto.randomUUID>);
     const env = createEnv();
 
@@ -77,7 +73,6 @@ describe('contact email consumer worker', () => {
   });
 
   it('retries failed messages and continues processing the batch', async () => {
-    vi.stubGlobal('EmailMessage', MockEmailMessage);
     const error = new Error('email service unavailable');
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const env = createEnv();

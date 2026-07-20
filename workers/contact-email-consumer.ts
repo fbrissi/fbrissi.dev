@@ -1,3 +1,4 @@
+import { EmailMessage } from 'cloudflare:email';
 import type { ContactMessage } from './contact-message';
 import { contactEmailHtml, contactEmailSubject, contactEmailText } from './templates/contact-email';
 
@@ -5,10 +6,6 @@ export interface Env {
   CONTACT_EMAIL_TO: string;
   CONTACT_EMAIL_FROM: string;
   SEND_EMAIL: { send: (message: EmailMessage) => Promise<void> };
-}
-
-declare class EmailMessage {
-  constructor(from: string, to: string, raw: string);
 }
 
 interface QueueMessage {
