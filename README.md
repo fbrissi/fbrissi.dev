@@ -117,7 +117,7 @@ Configured in `terraform/locals.tf`:
 
 ### 1. Cloudflare Pages
 
-1. Provide the Cloudflare API token and account ID to Terraform and GitHub Actions.
+1. Add `CLOUDFLARE_API_TOKEN` as a sensitive Terraform Cloud workspace environment variable and as a GitHub Actions secret.
 2. Apply `terraform/` to create the Pages project, custom domain, queue, and Turnstile widget.
 3. Set the repository variable `CLOUDFLARE_PAGES_PROJECT_NAME`.
 4. Deploy the Pages site and contact Workers by pushing a `v*` tag or running the Deploy workflow for a specific tag.
@@ -143,12 +143,9 @@ The contact form uses **free** Cloudflare services to send emails without any mo
 **Production Deployment**:
 
 1. Configure Cloudflare Email Routing manually (one-time)
-2. Get Turnstile keys from Cloudflare dashboard
-3. Copy `terraform/example.tfvars` to `terraform/terraform.tfvars`
-4. Set all variables (API token, account ID, zone ID, Turnstile keys, emails)
-5. Apply infrastructure: `terraform apply`
-6. Add `VITE_TURNSTILE_SITE_KEY` as a repository variable and `TURNSTILE_SECRET_KEY` as a repository secret
-7. Push a `v*` tag to deploy the site and Workers
+2. Configure the Terraform Cloud and GitHub integrations in the setup guide
+3. Review and apply the VCS-triggered Terraform Cloud run
+4. Let the release workflow create the tag and deploy the site and Workers
 
 **Total cost: $0/month**
 
