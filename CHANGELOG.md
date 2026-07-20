@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.1.2
+
+### Fixed
+
+- Published tagged Cloudflare Pages releases as production deployments.
+
 ## v0.1.1
 
 ### Fixed
