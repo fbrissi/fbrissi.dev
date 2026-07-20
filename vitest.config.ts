@@ -7,6 +7,7 @@ const rootDir = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   resolve: {
     alias: [
+      { find: 'cloudflare:email', replacement: path.join(rootDir, 'test/mocks/cloudflare-email.ts') },
       { find: '@/workers', replacement: path.join(rootDir, 'workers') },
       { find: '@', replacement: path.join(rootDir, 'src') },
     ],

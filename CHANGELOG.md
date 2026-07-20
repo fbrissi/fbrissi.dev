@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.1.5
+
+### Fixed
+
+- fix: add mock for `cloudflare:email` in tests and update worker imports
+
 ## v0.1.4
 
 ### Fixed
