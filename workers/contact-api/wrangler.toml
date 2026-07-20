@@ -1,0 +1,12 @@
+name = "fbrissi-dev-contact-api"
+main = "../contact-api.ts"
+compatibility_date = "2024-01-01"
+
+routes = [
+  { pattern = "fbrissi.dev/api/contact", zone_name = "fbrissi.dev" },
+  { pattern = "www.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" }
+]
+
+[[queues.producers]]
+binding = "CONTACT_FORM_QUEUE"
+queue = "fbrissi-dev-contact-form"

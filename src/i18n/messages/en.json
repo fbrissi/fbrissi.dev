@@ -1,0 +1,102 @@
+{
+  "site": {
+    "name": "Filipe Bojikian Rissi",
+    "description": "Modern bilingual portfolio for a staff software engineer focused on backend systems, cloud architecture, and simple production-ready web experiences.",
+    "tagline": "Staff Software Engineer building practical systems that are easy to operate and evolve."
+  },
+  "nav": {
+    "primary": "Primary navigation",
+    "home": "Home",
+    "aboutMe": "About me",
+    "projects": "Projects",
+    "openSource": "Open Source",
+    "works": "Works",
+    "articles": "Articles",
+    "contact": "Contact",
+    "resume": "Resume"
+  },
+  "footer": {
+    "copy": "Built with Vite, React, TypeScript, Cloudflare Pages, Terraform, GitHub Actions, and Kool.dev."
+  },
+  "labels": {
+    "featuredProjects": "Featured Projects",
+    "featuredContributions": "Open Source Contributions",
+    "careerHighlights": "Career Highlights",
+    "skills": "Skills",
+    "articlesPreview": "Latest Articles",
+    "latestPosts": "Latest articles",
+    "publishedOn": "Published on",
+    "readTime": "read",
+    "contact": "Contact",
+    "experience": "Experience",
+    "languages": "Languages",
+    "publicLinks": "Public Links",
+    "openProject": "Open project",
+    "readProject": "Read project",
+    "backToProjects": "Back to projects",
+    "readWork": "Read work",
+    "backToWorks": "Back to works",
+    "readArticle": "Read article",
+    "viewProfile": "View profile",
+    "copyNote": "Editable content lives in JSON and Markdown files, not in React components.",
+    "backToArticles": "Back to articles",
+    "readContribution": "Read contribution",
+    "backToContributions": "Back to open source",
+    "openRepository": "Open repository",
+    "viewAllProjects": "View all projects",
+    "viewAllWorks": "View all works",
+    "viewAllArticles": "View all articles",
+    "viewAllContributions": "View all contributions",
+    "downloadResume": "Download resume"
+  },
+  "home": {
+    "eyebrow": "Public portfolio",
+    "intro": "A clean, bilingual portfolio with articles and a static Cloudflare Pages deployment path.",
+    "ctaPrimary": "View projects",
+    "ctaSecondary": "Contact me",
+    "aboutTitle": "About",
+    "aboutDescription": "Focused on backend systems, cloud architecture, and pragmatic product delivery.",
+    "skillsTitle": "Skills",
+    "projectsTitle": "Featured projects",
+    "highlightsTitle": "Career highlights",
+    "articlesTitle": "Latest writing",
+    "contactTitle": "Contact",
+    "contactDescription": "Public links and an editable email placeholder for direct contact.",
+    "aboutCta": "Learn more",
+    "findMeOn": "Find me on",
+    "linkConjunction": "and"
+  },
+  "pages": {
+    "about": {
+      "title": "About",
+      "description": "Background, focus areas, experience, and working style."
+    },
+    "projects": {
+      "title": "Projects",
+      "description": "Selected public works and representative repositories."
+    },
+    "openSource": {
+      "eyebrow": "Upstream work",
+      "title": "Open Source Contributions",
+      "description": "Selected fixes and features contributed to established open-source projects, with links to the upstream pull requests and commits."
+    },
+    "works": {
+      "title": "Professional Experience",
+      "description": "Software engineering experience spanning cloud platforms, distributed systems, technical leadership, and full-stack development since 2009."
+    },
+    "articles": {
+      "title": "Articles",
+      "description": "Notes on software engineering, content, and deployment."
+    },
+    "contact": {
+      "title": "Contact",
+      "description": "Public links and ways to get in touch.",
+      "formTitle": "Send me a message",
+      "alternativeTitle": "Other ways to reach me"
+    }
+  },
+  "articles": {
+    "title": "Articles",
+    "description": "Short, maintainable posts in Markdown."
+  }
+}

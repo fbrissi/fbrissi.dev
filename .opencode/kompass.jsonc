@@ -1,0 +1,17 @@
+{
+    "$schema": "https://raw.githubusercontent.com/kompassdev/kompass/main/kompass.schema.json",
+    "defaults": {
+        "baseBranch": "master"
+    },
+    "shared": {
+        "prApprove": true
+    },
+    "tools": {
+        "ticket_load": {
+            "enabled": false
+        },
+        "ticket_sync": {
+            "enabled": false
+        }
+    }
+}

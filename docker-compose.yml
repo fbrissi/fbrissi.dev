@@ -1,0 +1,89 @@
+services:
+  app:
+    image: kooldev/node:20
+    command: yarn dev
+    ports:
+      - "3000:3000"
+    environment:
+      ASDF_NODEJS_VERSION: 20
+      VITE_CONTACT_API_URL: http://localhost:8787/api/contact
+    volumes:
+      - .:/app:delegated
+    networks:
+      - kool_local
+      - kool_global
+    depends_on:
+      - mailpit
+      - contact-api
+
+  contact-api:
+    image: kooldev/node:20
+    command: yarn dev:contact-api
+    environment:
+      ASDF_NODEJS_VERSION: 20
+      LOCALSTACK_ENDPOINT: http://localstack:4566
+    ports:
+      - "8787:8787"
+    volumes:
+      - .:/app:delegated
+    networks:
+      - kool_local
+    depends_on:
+      localstack:
+        condition: service_healthy
+
+  contact-email-consumer:
+    image: kooldev/node:20
+    command: yarn dev:contact-email-consumer
+    environment:
+      ASDF_NODEJS_VERSION: 20
+      LOCALSTACK_ENDPOINT: http://localstack:4566
+      MAILPIT_SMTP_HOST: mailpit
+      MAILPIT_SMTP_PORT: 1025
+      CONTACT_EMAIL_FROM: noreply@fbrissi.dev
+      CONTACT_EMAIL_TO: f.b.rissi@gmail.com
+    volumes:
+      - .:/app:delegated
+    networks:
+      - kool_local
+    depends_on:
+      localstack:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  localstack:
+    image: localstack/localstack:3.8.1
+    environment:
+      SERVICES: sqs
+    ports:
+      - "4566:4566"
+    networks:
+      - kool_local
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:4566/_localstack/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  # Mailpit - Local email testing (like Mailtrap/MailHog)
+  # Web UI: http://localhost:8025
+  # SMTP: localhost:1025
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"  # Web UI
+      - "1025:1025"  # SMTP server
+    environment:
+      MP_MAX_MESSAGES: 500
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+      MP_API_CORS: localhost:3000
+    networks:
+      - kool_local
+
+networks:
+  kool_local:
+  kool_global:
+    external: true
+    name: kool_global
