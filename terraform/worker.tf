@@ -35,6 +35,6 @@ resource "cloudflare_dns_record" "dmarc" {
   zone_id = local.cloudflare_zone_id
   name    = "_dmarc"
   type    = "TXT"
-  content = "v=DMARC1; p=none; rua=mailto:${local.contact_email_to}"
+  content = "\"v=DMARC1; p=none; rua=mailto:${local.contact_email_to}\""
   ttl     = 1
 }
