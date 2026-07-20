@@ -72,7 +72,7 @@ jobs:
     name: Wait for Infrastructure
     needs: validate
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 720
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,7 +112,7 @@ jobs:
           workspace=$(api "https://app.terraform.io/api/v2/organizations/$TFC_ORGANIZATION/workspaces/$TFC_WORKSPACE")
           workspace_id=$(jq --raw-output '.data.id' <<<"$workspace")
 
-          for _ in {1..60}; do
+          for _ in {1..180}; do
             runs=$(api --get \
               --data-urlencode "search[commit]=$COMMIT_SHA" \
               --data-urlencode 'page[size]=1' \

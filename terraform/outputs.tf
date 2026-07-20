@@ -1,7 +1,7 @@
 # Outputs for reference
 output "pages_project_subdomain" {
   description = "Cloudflare Pages project subdomain"
-  value       = "${cloudflare_pages_project.site.subdomain}.pages.dev"
+  value       = cloudflare_pages_project.site.subdomain
 }
 
 output "pages_project_domains" {

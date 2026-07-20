@@ -43,13 +43,24 @@ jobs:
       - run: yarn build
         env:
           VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
-      - uses: cloudflare/pages-action@v1
+      - name: Deploy Cloudflare Pages
+        id: pages
+        uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           projectName: ${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME }}
           directory: dist
           branch: main
+      - name: Add production URLs to summary
+        run: |
+          {
+            echo '## Production deployment'
+            echo
+            echo '- Site: https://fbrissi.dev'
+            echo '- Pages production: https://fbrissi-dev.pages.dev'
+            echo '- Pages deployment: ${{ steps.pages.outputs.url }}'
+          } >> "$GITHUB_STEP_SUMMARY"
       - name: Deploy contact API Worker
         uses: cloudflare/wrangler-action@v3
         with:

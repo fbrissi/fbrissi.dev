@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.1.3
+
+### Fixed
+
+- Extended the Terraform Cloud apply wait window for release workflows.
+
 ## v0.1.2
 
 ### Fixed
