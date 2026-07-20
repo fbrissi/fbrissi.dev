@@ -1,6 +1,7 @@
 name = "fbrissi-dev-contact-api"
 main = "../contact-api.ts"
 compatibility_date = "2024-01-01"
+observability.enabled = true
 
 routes = [
   { pattern = "fbrissi.dev/api/contact", zone_name = "fbrissi.dev" },

@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.1.4
+
+### Fixed
+
+- chore: enable observability in contact-api and email-consumer workers
+
 ## v0.1.3
 
 ### Fixed
