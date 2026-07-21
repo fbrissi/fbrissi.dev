@@ -18,8 +18,8 @@ const message = {
 function createEnv() {
   return {
     CONTACT_EMAIL_FROM: 'sender@fbrissi.dev',
-    CONTACT_EMAIL_TO: 'filipe@fbrissi.dev',
-    CONTACT_EMAIL_DISPLAY_TO: 'filipe@fbrissi.dev',
+    CONTACT_EMAIL_TO: 'f.b.rissi@gmail.com',
+    CONTACT_EMAIL_DISPLAY_TO: 'contact@fbrissi.dev',
     SEND_EMAIL: { send: vi.fn().mockResolvedValue(undefined) },
   };
 }
@@ -44,8 +44,8 @@ describe('contact email consumer worker', () => {
 
     const ownerEmail = env.SEND_EMAIL.send.mock.calls[0][0] as MockEmailMessage;
     expect(ownerEmail.from).toBe('sender@fbrissi.dev');
-    expect(ownerEmail.to).toBe('filipe@fbrissi.dev');
-    expect(ownerEmail.raw).toContain('From: Contact Form <sender@fbrissi.dev>\r\nTo: filipe@fbrissi.dev');
+    expect(ownerEmail.to).toBe('f.b.rissi@gmail.com');
+    expect(ownerEmail.raw).toContain('From: Contact Form <sender@fbrissi.dev>\r\nTo: contact@fbrissi.dev');
     expect(ownerEmail.raw).toContain('Reply-To: "Ada Lovelace" <ada@example.com>');
     expect(ownerEmail.raw).toContain('Subject: [Contact Form] Hello');
     expect(ownerEmail.raw).toContain('boundary="contact-form-boundary-id"');

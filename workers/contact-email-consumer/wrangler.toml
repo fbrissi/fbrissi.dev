@@ -13,7 +13,6 @@ retry_delay = 30
 
 [[send_email]]
 name = "SEND_EMAIL"
-allowed_destination_addresses = ["f.b.rissi@gmail.com"]
 
 [vars]
 CONTACT_EMAIL_TO = "f.b.rissi@gmail.com"
