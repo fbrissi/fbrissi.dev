@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   detectBrowserLocale,
@@ -134,6 +134,61 @@ describe('i18n', () => {
       const storage = makeStorage();
       resolveLocaleRedirectPath('/articles/some-slug', { languages: ['pt-BR'], storage });
       expect(getPreferredLocale(storage)).toBe('en');
+    });
+
+    it('returns null and does not throw when localStorage is unavailable', () => {
+      const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+      Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('blocked'); }, configurable: true });
+      try {
+        expect(() => resolveLocaleRedirectPath('/', { languages: ['en'] })).not.toThrow();
+      } finally {
+        if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+      }
+    });
+  });
+
+  describe('getBrowserLanguages fallbacks', () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it('defaults to en when navigator throws', () => {
+      vi.stubGlobal('navigator', undefined);
+      const storage = makeStorage();
+      expect(resolveLocaleRedirectPath('/', { storage })).toBeNull();
+      expect(getPreferredLocale(storage)).toBe('en');
+    });
+
+    it('falls back to navigator.language when navigator.languages is empty', () => {
+      vi.stubGlobal('navigator', { languages: [], language: 'pt-BR' });
+      const storage = makeStorage();
+      expect(resolveLocaleRedirectPath('/', { storage })).toBe('/pt-br');
+    });
+
+    it('uses navigator.languages when non-empty', () => {
+      vi.stubGlobal('navigator', { languages: ['pt-BR', 'en'], language: 'pt-BR' });
+      const storage = makeStorage();
+      expect(resolveLocaleRedirectPath('/', { storage })).toBe('/pt-br');
+    });
+
+    it('falls back to navigator.language when navigator.languages is undefined', () => {
+      vi.stubGlobal('navigator', { languages: undefined, language: 'pt-BR' });
+      const storage = makeStorage();
+      expect(resolveLocaleRedirectPath('/', { storage })).toBe('/pt-br');
+    });
+
+    it('defaults to en when navigator.languages is empty and navigator.language is falsy', () => {
+      vi.stubGlobal('navigator', { languages: [], language: '' });
+      const storage = makeStorage();
+      expect(resolveLocaleRedirectPath('/', { storage })).toBeNull();
+    });
+
+    it('returns null and does not throw when localStorage throws', () => {
+      const descriptor = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+      Object.defineProperty(globalThis, 'localStorage', { get() { throw new Error('blocked'); }, configurable: true });
+      try {
+        expect(() => resolveLocaleRedirectPath('/', { languages: ['en'] })).not.toThrow();
+      } finally {
+        if (descriptor) Object.defineProperty(globalThis, 'localStorage', descriptor);
+      }
     });
   });
 });

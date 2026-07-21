@@ -101,16 +101,18 @@ export function formatDate(date: string, locale: Locale): string {
 
 function getBrowserStorage(): Storage | null {
   try {
-    return typeof localStorage === 'undefined' ? null : localStorage;
+    return localStorage;
   } catch {
     return null;
   }
 }
 
 function getBrowserLanguages(): readonly string[] {
-  if (typeof navigator === 'undefined') {
+  try {
+    const langs = Array.from(navigator.languages ?? []);
+    if (langs.length > 0) return langs;
+    return navigator.language ? [navigator.language] : [];
+  } catch {
     return [];
   }
-
-  return navigator.languages?.length ? navigator.languages : [navigator.language].filter(Boolean);
 }
