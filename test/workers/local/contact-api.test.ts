@@ -30,6 +30,7 @@ const validForm = {
   subject: ' Hello ',
   message: ' Test message ',
   'cf-turnstile-response': 'token',
+  locale: 'en',
 };
 
 async function request(method: string, url: string, body = '') {
@@ -86,7 +87,7 @@ describe('local contact API', () => {
 
     expect(mocks.SendMessageCommand).toHaveBeenCalledWith({
       QueueUrl: 'http://localstack:4566/queue/contact',
-      MessageBody: JSON.stringify({ name: 'Ada Lovelace', email: 'ada@example.com', subject: 'Hello', message: 'Test message' }),
+      MessageBody: JSON.stringify({ name: 'Ada Lovelace', email: 'ada@example.com', subject: 'Hello', message: 'Test message', locale: 'en' }),
     });
     expect(response.writeHead).toHaveBeenCalledWith(202, expect.any(Object));
     expect(response.end).toHaveBeenCalledWith(JSON.stringify({ success: true, message: 'Message queued successfully' }));

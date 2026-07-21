@@ -1,6 +1,11 @@
 import { DeleteMessageCommand, ReceiveMessageCommand } from '@aws-sdk/client-sqs';
 import nodemailer from 'nodemailer';
-import type { ContactMessage } from '../contact-message';
+import { resolveContactLocale, type ContactMessage } from '../contact-message';
+import {
+  contactConfirmationEmailHtml,
+  contactConfirmationEmailSubject,
+  contactConfirmationEmailText,
+} from '../templates/contact-confirmation-email';
 import { contactEmailHtml, contactEmailSubject, contactEmailText } from '../templates/contact-email';
 import { getContactQueueUrl, sqs } from './queue';
 
@@ -27,7 +32,9 @@ async function consume(): Promise<void> {
       if (!message.Body || !message.ReceiptHandle) continue;
 
       try {
-        await deliver(JSON.parse(message.Body) as ContactMessage);
+        const rawMessage = JSON.parse(message.Body) as ContactMessage;
+        const normalizedMessage: ContactMessage = { ...rawMessage, locale: resolveContactLocale(rawMessage.locale) };
+        await deliver(normalizedMessage);
         await sqs.send(new DeleteMessageCommand({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }));
       } catch (error) {
         console.error('Unable to deliver queued contact form email:', error);
@@ -37,14 +44,33 @@ async function consume(): Promise<void> {
 }
 
 async function deliver(message: ContactMessage): Promise<void> {
+  const from = process.env.CONTACT_EMAIL_FROM ?? 'noreply@fbrissi.dev';
+
   await transporter.sendMail({
-    from: process.env.CONTACT_EMAIL_FROM ?? 'noreply@fbrissi.dev',
+    from,
     to: process.env.CONTACT_EMAIL_TO ?? 'hello@fbrissi.dev',
     replyTo: { address: message.email, name: message.name },
     subject: contactEmailSubject(message, { isLocal: true }),
     text: contactEmailText(message, { isLocal: true }),
     html: contactEmailHtml(message, { isLocal: true }),
   });
+
+  try {
+    await transporter.sendMail({
+      from: { address: from, name: 'Filipe' },
+      to: message.email,
+      replyTo: from,
+      subject: contactConfirmationEmailSubject(message, { isLocal: true }),
+      text: contactConfirmationEmailText(message, { isLocal: true }),
+      html: contactConfirmationEmailHtml(message, { isLocal: true }),
+      headers: {
+        'Auto-Submitted': 'auto-replied',
+        'X-Auto-Response-Suppress': 'All',
+      },
+    });
+  } catch (error) {
+    console.error('Unable to deliver contact form confirmation email:', error);
+  }
 }
 
 consume().catch((error) => {

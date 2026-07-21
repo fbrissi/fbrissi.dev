@@ -18,7 +18,7 @@ type PageMetadataInput = {
 
 export type PageMetadata = ReturnType<typeof createPageMetadata>;
 
-export function createPageMetadata({ locale, pathname, title, description, image = '/og-image.svg', keywords = [] }: PageMetadataInput) {
+export function createPageMetadata({ locale, pathname, title, description, image = '/images/og/og-image-avatar.png', keywords = [] }: PageMetadataInput) {
   const alternateLocale = getAlternateLocale(locale);
   const currentPath = localizedPath(locale, pathname);
   const messages = getMessages(locale);

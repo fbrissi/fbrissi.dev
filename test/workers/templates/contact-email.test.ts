@@ -6,6 +6,7 @@ const message = {
   email: 'ada@example.com',
   subject: 'Question',
   message: 'First line\nSecond & <line>',
+  locale: 'en' as const,
 };
 
 describe('contact email templates', () => {

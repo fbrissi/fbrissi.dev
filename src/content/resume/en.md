@@ -2,7 +2,9 @@
 
 **Senior Software Engineer | Distributed Systems | Cloud Architecture | AWS | Kubernetes | Microservices**
 
-[f.b.rissi@gmail.com](mailto:f.b.rissi@gmail.com) | [+55 (14) 99143-4121](tel:+5514991434121) | Bauru - SP, Brazil | [linkedin.com/in/fbrissi](https://linkedin.com/in/fbrissi/)
+[contact@fbrissi.dev](mailto:contact@fbrissi.dev) | [+55 (14) 99143-4121](https://wa.me/+5514991434121) | [https://fbrissi.dev/](https://fbrissi.dev/) | [https://linkedin.com/in/fbrissi/](https://linkedin.com/in/fbrissi/)
+
+Bauru — SP, Brazil
 
 ## Summary
 
@@ -126,17 +128,17 @@ React Native, Flutter, Kotlin, Swift
 
 **Technologies & Skills:** Go, Golang, Kubernetes, AWS, AWS S3, Redis, Docker, Microservices, Distributed Systems, DevOps, Cloud Infrastructure, Legacy System Modernization, Automated Testing, Mobile Integration, Payment SDKs, Google Play Store, Apple App Store.
 
-## Open Source Contributions
+## Open Source Contributions {pagebreak}
 
-- [Apache](https://github.com/apache)
-- [Laravel](https://github.com/laravel/laravel)
-- [Kool Dev](https://github.com/kool-dev)
-- [JGroups AWS](https://github.com/jgroups-extras/jgroups-aws)
-- [Infinispan](https://github.com/infinispan/infinispan)
-- [Keycloak](https://github.com/keycloak/keycloak)
-- [Pentaho Data Integration (PDI)](https://github.com/pentaho/pentaho-kettle)
-- [PrimeFaces Core](https://github.com/primefaces/primefaces)
-- [WireChat](https://github.com/wirechat/wirechat)
+- [Apache](https://fbrissi.dev/open-source/apache-commons-net)
+- [Laravel](https://fbrissi.dev/open-source/laravel)
+- [Kool Dev](https://fbrissi.dev/open-source/kool-dev)
+- [JGroups AWS](https://fbrissi.dev/open-source/jgroups-aws)
+- [Infinispan](https://fbrissi.dev/open-source/infinispan)
+- [Keycloak](https://fbrissi.dev/open-source/keycloak)
+- [Pentaho Data Integration (PDI)](https://fbrissi.dev/open-source/pentaho-data-integration)
+- [PrimeFaces Core](https://fbrissi.dev/open-source/primefaces)
+- [WireChat](https://fbrissi.dev/open-source/wirechat)
 
 ## Education
 

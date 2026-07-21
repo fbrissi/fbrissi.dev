@@ -14,4 +14,6 @@ locals {
   contact_email_to     = "f.b.rissi@gmail.com" # Verified Worker Email binding destination
   contact_email_from   = "noreply@fbrissi.dev" # From address (must be @fbrissi.dev)
   public_contact_email = "contact@fbrissi.dev"
+  # Alias kept so Portuguese-style typos still reach the inbox
+  public_contact_email_aliases = ["contato@fbrissi.dev"]
 }

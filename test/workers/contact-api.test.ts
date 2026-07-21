@@ -13,6 +13,7 @@ const validForm = {
   subject: '  Hello  ',
   message: '  Test message  ',
   'cf-turnstile-response': 'captcha-token',
+  locale: 'en',
 };
 
 function createEnv() {
@@ -94,6 +95,7 @@ describe('contact API worker', () => {
       email: 'ada@example.com',
       subject: 'Hello',
       message: 'Test message',
+      locale: 'en',
     });
   });
 

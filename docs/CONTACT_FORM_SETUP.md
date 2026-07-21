@@ -117,6 +117,7 @@ Terraform manages:
 - ✅ Cloudflare Queue (contact form messages)
 - ✅ Turnstile widget
 - ✅ `contact@fbrissi.dev` forwarding rule
+- ✅ `contato@fbrissi.dev` alias forwarding rule
 
 GitHub Actions manages the Worker scripts, routes, queue consumer, bindings, and Pages deployments.
 

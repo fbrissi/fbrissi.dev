@@ -41,7 +41,7 @@ services:
       MAILPIT_SMTP_HOST: mailpit
       MAILPIT_SMTP_PORT: 1025
       CONTACT_EMAIL_FROM: noreply@fbrissi.dev
-      CONTACT_EMAIL_TO: f.b.rissi@gmail.com
+      CONTACT_EMAIL_TO: contact@fbrissi.dev
     volumes:
       - .:/app:delegated
     networks:

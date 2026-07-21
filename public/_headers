@@ -1,0 +1,17 @@
+# Hashed Vite bundles — safe to cache forever
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# Resumes change on deploy — always revalidate
+/resume/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Brand/social images may update without a path change
+/images/og/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/images/icons/*
+  Cache-Control: public, max-age=0, must-revalidate
+
+/images/avatar.png
+  Cache-Control: public, max-age=0, must-revalidate
