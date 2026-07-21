@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router';
-import { type Locale } from '@/lib/i18n';
+import { getAlternateLocale, setPreferredLocale, type Locale } from '@/lib/i18n';
 
 type LanguageSwitcherProps = {
   locale: Locale;
@@ -29,7 +29,13 @@ export function LanguageSwitcher({ locale, alternatePath, compact = false }: Lan
   }, []);
 
   const currentLang = languages[locale];
-  const alternateLang = languages[locale === 'en' ? 'pt-BR' : 'en'];
+  const alternateLocale = getAlternateLocale(locale);
+  const alternateLang = languages[alternateLocale];
+
+  const selectAlternateLocale = () => {
+    setPreferredLocale(alternateLocale);
+    setIsOpen(false);
+  };
 
   if (compact) {
     // Compact version: flag only
@@ -49,7 +55,7 @@ export function LanguageSwitcher({ locale, alternatePath, compact = false }: Lan
             <Link
               to={alternatePath}
               className="flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-200 hover:bg-bg-soft hover:text-accent"
-              onClick={() => setIsOpen(false)}
+              onClick={selectAlternateLocale}
             >
               <span className="text-base leading-none">{alternateLang.flag}</span>
               <span className="font-light">{alternateLang.label}</span>
@@ -93,7 +99,7 @@ export function LanguageSwitcher({ locale, alternatePath, compact = false }: Lan
           <Link
             to={alternatePath}
             className="flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-200 hover:bg-bg-soft hover:text-accent"
-            onClick={() => setIsOpen(false)}
+            onClick={selectAlternateLocale}
           >
             <span className="text-base leading-none">{alternateLang.flag}</span>
             <span className="font-light">{alternateLang.label}</span>

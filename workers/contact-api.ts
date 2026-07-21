@@ -1,4 +1,4 @@
-import type { ContactFormRequest, ContactMessage } from './contact-message';
+import { resolveContactLocale, type ContactFormRequest, type ContactMessage } from './contact-message';
 
 export interface Env {
   CONTACT_FORM_QUEUE: { send: (message: ContactMessage) => Promise<void> };
@@ -37,6 +37,7 @@ const contactApi = {
         email: form.email.trim(),
         subject: form.subject.trim(),
         message: form.message.trim(),
+        locale: resolveContactLocale(form.locale),
       });
 
       return json({ success: true, message: 'Message queued successfully' }, 202);

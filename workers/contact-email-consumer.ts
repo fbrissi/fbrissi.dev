@@ -1,5 +1,10 @@
 import { EmailMessage } from 'cloudflare:email';
 import type { ContactMessage } from './contact-message';
+import {
+  contactConfirmationEmailHtml,
+  contactConfirmationEmailSubject,
+  contactConfirmationEmailText,
+} from './templates/contact-confirmation-email';
 import { contactEmailHtml, contactEmailSubject, contactEmailText } from './templates/contact-email';
 
 export interface Env {
@@ -21,7 +26,7 @@ const contactEmailConsumer = {
   async queue(batch: QueueBatch, env: Env): Promise<void> {
     for (const message of batch.messages) {
       try {
-        await sendEmail(env, message.body);
+        await sendEmails(env, message.body);
       } catch (error) {
         console.error('Unable to deliver contact form email:', error);
         message.retry();
@@ -32,18 +37,29 @@ const contactEmailConsumer = {
 
 export default contactEmailConsumer;
 
-async function sendEmail(env: Env, message: ContactMessage): Promise<void> {
+async function sendEmails(env: Env, message: ContactMessage): Promise<void> {
   await env.SEND_EMAIL.send(new EmailMessage(
     env.CONTACT_EMAIL_FROM,
     env.CONTACT_EMAIL_TO,
-    buildRawEmail(env, message)
+    buildOwnerRawEmail(env, message)
   ));
+
+  try {
+    const confirmationTo = sanitizeHeaderValue(message.email);
+    await env.SEND_EMAIL.send(new EmailMessage(
+      env.CONTACT_EMAIL_FROM,
+      confirmationTo,
+      buildConfirmationRawEmail(env, message, confirmationTo)
+    ));
+  } catch (error) {
+    console.error('Unable to deliver contact form confirmation email:', error);
+  }
 }
 
-function buildRawEmail(env: Env, message: ContactMessage): string {
+function buildOwnerRawEmail(env: Env, message: ContactMessage): string {
   const boundary = `contact-form-${crypto.randomUUID()}`;
   const replyToName = message.name.replace(/[\r\n]/g, ' ').replace(/([\\"])/g, '\\$1');
-  const replyToEmail = message.email.replace(/[\r\n]/g, '');
+  const replyToEmail = sanitizeHeaderValue(message.email);
   const subject = contactEmailSubject(message, { isLocal: false }).replace(/[\r\n]/g, ' ');
 
   return [
@@ -68,4 +84,38 @@ function buildRawEmail(env: Env, message: ContactMessage): string {
     '',
     `--${boundary}--`,
   ].join('\r\n');
+}
+
+function buildConfirmationRawEmail(env: Env, message: ContactMessage, to: string): string {
+  const boundary = `contact-confirmation-${crypto.randomUUID()}`;
+  const subject = contactConfirmationEmailSubject(message, { isLocal: false }).replace(/[\r\n]/g, ' ');
+
+  return [
+    `From: Filipe <${env.CONTACT_EMAIL_FROM}>`,
+    `To: ${to}`,
+    `Reply-To: ${env.CONTACT_EMAIL_FROM}`,
+    `Subject: ${subject}`,
+    'Auto-Submitted: auto-replied',
+    'X-Auto-Response-Suppress: All',
+    'MIME-Version: 1.0',
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    '',
+    `--${boundary}`,
+    'Content-Type: text/plain; charset=UTF-8',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    contactConfirmationEmailText(message, { isLocal: false }),
+    '',
+    `--${boundary}`,
+    'Content-Type: text/html; charset=UTF-8',
+    'Content-Transfer-Encoding: 8bit',
+    '',
+    contactConfirmationEmailHtml(message, { isLocal: false }),
+    '',
+    `--${boundary}--`,
+  ].join('\r\n');
+}
+
+function sanitizeHeaderValue(value: string): string {
+  return value.replace(/[\r\n]/g, '');
 }

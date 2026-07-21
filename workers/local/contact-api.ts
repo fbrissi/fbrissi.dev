@@ -1,6 +1,6 @@
 import { SendMessageCommand } from '@aws-sdk/client-sqs';
 import { createServer, type IncomingMessage } from 'node:http';
-import type { ContactFormRequest } from '../contact-message';
+import { resolveContactLocale, type ContactFormRequest } from '../contact-message';
 import { getContactQueueUrl, sqs } from './queue';
 
 const port = Number(process.env.CONTACT_API_PORT ?? 8787);
@@ -22,6 +22,7 @@ async function handler(request: Request): Promise<Response> {
         email: form.email.trim(),
         subject: form.subject.trim(),
         message: form.message.trim(),
+        locale: resolveContactLocale(form.locale),
       }),
     }));
 

@@ -47,7 +47,8 @@ const messages = {
       submit: 'Send message',
       submitting: 'Sending...',
       successTitle: 'Message sent!',
-      successMessage: 'Thank you for reaching out. I\'ll get back to you as soon as possible.',
+      successMessage: 'Thank you for reaching out. You will receive a confirmation email shortly, and I\'ll get back to you as soon as possible.',
+      successOk: 'OK',
       errorTitle: 'Something went wrong',
       errorMessage: 'Failed to send your message. Please try again or contact me directly via email.',
       errorRetry: 'Try again',
@@ -70,7 +71,8 @@ const messages = {
       submit: 'Enviar mensagem',
       submitting: 'Enviando...',
       successTitle: 'Mensagem enviada!',
-      successMessage: 'Obrigado por entrar em contato. Responderei assim que possível.',
+      successMessage: 'Obrigado por entrar em contato. Você receberá um e-mail de confirmação em breve, e responderei assim que possível.',
+      successOk: 'OK',
       errorTitle: 'Algo deu errado',
       errorMessage: 'Falha ao enviar sua mensagem. Tente novamente ou entre em contato diretamente por e-mail.',
       errorRetry: 'Tentar novamente',
@@ -179,6 +181,7 @@ export function ContactForm({ locale, turnstileSiteKey }: ContactFormProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...formState,
+          locale,
           'cf-turnstile-response': turnstileToken,
         }),
       });
@@ -229,7 +232,7 @@ export function ContactForm({ locale, turnstileSiteKey }: ContactFormProps) {
             onClick={resetForm}
             className="mt-4 rounded-lg bg-accent px-6 py-3 font-light tracking-wide text-bg transition-all duration-250 hover:bg-accent-hover hover:shadow-lg hover:shadow-accent-glow"
           >
-            {t.errorRetry}
+            {t.successOk}
           </button>
         </div>
       </div>

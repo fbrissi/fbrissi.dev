@@ -30,6 +30,26 @@ resource "cloudflare_email_routing_rule" "public_contact" {
   }]
 }
 
+# Alias addresses (e.g. contato@) forward to the same verified inbox.
+resource "cloudflare_email_routing_rule" "public_contact_alias" {
+  for_each = toset(local.public_contact_email_aliases)
+
+  zone_id = local.cloudflare_zone_id
+  name    = "Forward ${each.value} to the verified contact inbox"
+  enabled = true
+
+  matchers = [{
+    type  = "literal"
+    field = "to"
+    value = each.value
+  }]
+
+  actions = [{
+    type  = "forward"
+    value = [local.contact_email_to]
+  }]
+}
+
 # Monitor authentication failures for messages sent from the domain.
 resource "cloudflare_dns_record" "dmarc" {
   zone_id = local.cloudflare_zone_id
