@@ -1,6 +1,6 @@
 import { DeleteMessageCommand, ReceiveMessageCommand } from '@aws-sdk/client-sqs';
 import nodemailer from 'nodemailer';
-import type { ContactMessage } from '../contact-message';
+import { resolveContactLocale, type ContactMessage } from '../contact-message';
 import {
   contactConfirmationEmailHtml,
   contactConfirmationEmailSubject,
@@ -32,7 +32,9 @@ async function consume(): Promise<void> {
       if (!message.Body || !message.ReceiptHandle) continue;
 
       try {
-        await deliver(JSON.parse(message.Body) as ContactMessage);
+        const rawMessage = JSON.parse(message.Body) as ContactMessage;
+        const normalizedMessage: ContactMessage = { ...rawMessage, locale: resolveContactLocale(rawMessage.locale) };
+        await deliver(normalizedMessage);
         await sqs.send(new DeleteMessageCommand({ QueueUrl: queueUrl, ReceiptHandle: message.ReceiptHandle }));
       } catch (error) {
         console.error('Unable to deliver queued contact form email:', error);
