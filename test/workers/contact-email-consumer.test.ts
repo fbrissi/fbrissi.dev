@@ -19,6 +19,7 @@ function createEnv() {
   return {
     CONTACT_EMAIL_FROM: 'sender@fbrissi.dev',
     CONTACT_EMAIL_TO: 'filipe@fbrissi.dev',
+    CONTACT_EMAIL_DISPLAY_TO: 'filipe@fbrissi.dev',
     SEND_EMAIL: { send: vi.fn().mockResolvedValue(undefined) },
   };
 }
