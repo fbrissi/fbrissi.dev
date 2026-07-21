@@ -7,6 +7,10 @@ All notable changes to this project are documented here. Release versions follow
 
 ### Added
 
+- feat: refresh résumé content and PDF builder with pagination and heading hierarchy support
+- feat: use avatar image as site favicon and apple-touch-icon
+- feat: refresh Open Graph image to match current brand and avatar
+- feat: add Cloudflare Pages `_headers` cache policy for assets, resumes, and brand images
 - feat: send automated confirmation email to form submitter after contact form submission
 - feat: localize confirmation email body based on form locale (EN/PT-BR)
 - feat: add Reply-To `noreply@fbrissi.dev` header to confirmation email
@@ -17,25 +21,13 @@ All notable changes to this project are documented here. Release versions follow
 
 ### Changed
 
+- chore: route contact email to `contact@fbrissi.dev` across local worker and email consumer config
+- chore: point résumé open-source entries to portfolio pages only
 - chore: remove `destination_address` restriction from `send_email` binding to allow sending to form submitters
 - chore: add `locale` field to contact message queue payload; contact form POSTs locale
 - chore: update success message to inform user a confirmation email will be sent
 - chore: rename success button from "Try again" to "OK"
 - chore: use `contact@fbrissi.dev` consistently (replace `contato@` in templates)
-
-## v0.1.6
-
-### Added
-
-- feat: refresh résumé content and PDF builder with pagination and heading hierarchy support
-- feat: use avatar image as site favicon and apple-touch-icon
-- feat: refresh Open Graph image to match current brand and avatar
-- feat: add Cloudflare Pages `_headers` cache policy for assets, resumes, and brand images
-
-### Changed
-
-- chore: route contact email to `contact@fbrissi.dev` across local worker and email consumer config
-- chore: point résumé open-source entries to portfolio pages only
 
 ## v0.1.5
 
