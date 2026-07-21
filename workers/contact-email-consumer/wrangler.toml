@@ -16,5 +16,5 @@ name = "SEND_EMAIL"
 destination_address = "f.b.rissi@gmail.com"
 
 [vars]
-CONTACT_EMAIL_TO = "f.b.rissi@gmail.com"
+CONTACT_EMAIL_TO = "contact@fbrissi.dev"
 CONTACT_EMAIL_FROM = "noreply@fbrissi.dev"
