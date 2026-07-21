@@ -8,10 +8,14 @@ All notable changes to this project are documented here. Release versions follow
 ### Added
 
 - feat: refresh résumé content and PDF builder with pagination and heading hierarchy support
+- feat: use avatar image as site favicon and apple-touch-icon
+- feat: refresh Open Graph image to match current brand and avatar
+- feat: add Cloudflare Pages `_headers` cache policy for assets, resumes, and brand images
 
 ### Changed
 
 - chore: route contact email to `contact@fbrissi.dev` across local worker and email consumer config
+- chore: point résumé open-source entries to portfolio pages only
 
 ## v0.1.5
 
