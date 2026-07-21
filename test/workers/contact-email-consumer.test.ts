@@ -132,4 +132,20 @@ describe('contact email consumer worker', () => {
     expect(consoleError).toHaveBeenCalledWith('Unable to deliver contact form confirmation email:', error);
     expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(2);
   });
+
+  it('defaults to English when locale is missing (legacy payload)', async () => {
+    vi.spyOn(crypto, 'randomUUID')
+      .mockReturnValueOnce('boundary-legacy' as ReturnType<typeof crypto.randomUUID>)
+      .mockReturnValueOnce('confirmation-legacy' as ReturnType<typeof crypto.randomUUID>);
+    const env = createEnv();
+    const retry = vi.fn();
+    const legacyMessage = { name: 'Ada Lovelace', email: 'ada@example.com', subject: 'Hello', message: 'Body' } as unknown as Parameters<typeof contactEmailConsumer.queue>[0]['messages'][number]['body'];
+
+    await contactEmailConsumer.queue({ messages: [{ body: legacyMessage, retry }] }, env);
+
+    expect(retry).not.toHaveBeenCalled();
+    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(2);
+    const confirmationEmail = env.SEND_EMAIL.send.mock.calls[1][0] as MockEmailMessage;
+    expect(confirmationEmail.raw).toContain('I received your message about "Hello"');
+  });
 });

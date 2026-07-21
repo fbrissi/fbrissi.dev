@@ -1,5 +1,6 @@
 import { EmailMessage } from 'cloudflare:email';
 import type { ContactMessage } from './contact-message';
+import { resolveContactLocale } from './contact-message';
 import {
   contactConfirmationEmailHtml,
   contactConfirmationEmailSubject,
@@ -37,7 +38,8 @@ const contactEmailConsumer = {
 
 export default contactEmailConsumer;
 
-async function sendEmails(env: Env, message: ContactMessage): Promise<void> {
+async function sendEmails(env: Env, rawMessage: ContactMessage): Promise<void> {
+  const message: ContactMessage = { ...rawMessage, locale: resolveContactLocale(rawMessage.locale) };
   await env.SEND_EMAIL.send(new EmailMessage(
     env.CONTACT_EMAIL_FROM,
     env.CONTACT_EMAIL_TO,
