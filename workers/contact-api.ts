@@ -48,7 +48,7 @@ const contactApi = {
       );
       if (!turnstile.success) return json({ error: 'Captcha verification failed' }, 400, request);
 
-      const isSandbox = request.headers.get('Origin') === 'https://sandbox.fbrissi.dev';
+      const isSandbox = new URL(request.url).hostname === 'sandbox.fbrissi.dev';
       const queue = isSandbox ? env.CONTACT_FORM_SANDBOX_QUEUE : env.CONTACT_FORM_QUEUE;
       await queue.send({
         name: form.name.trim(),

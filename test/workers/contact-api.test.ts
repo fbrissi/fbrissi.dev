@@ -124,12 +124,12 @@ describe('contact API worker', () => {
     });
   });
 
-  it('identifies sandbox submissions and allows the sandbox origin', async () => {
+  it('identifies sandbox submissions from the request host', async () => {
     const verify = vi.fn().mockResolvedValue(Response.json({ success: true }));
     vi.stubGlobal('fetch', verify);
     const env = createEnv();
 
-    const response = await contactApi.fetch(new Request('https://fbrissi.dev/api/contact', {
+    const response = await contactApi.fetch(new Request('https://sandbox.fbrissi.dev/api/contact', {
       method: 'POST',
       headers: { Origin: 'https://sandbox.fbrissi.dev' },
       body: JSON.stringify(validForm),
@@ -138,6 +138,21 @@ describe('contact API worker', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://sandbox.fbrissi.dev');
     expect(env.CONTACT_FORM_SANDBOX_QUEUE.send).toHaveBeenCalledWith(expect.objectContaining({ environment: 'sandbox' }));
     expect(env.CONTACT_FORM_QUEUE.send).not.toHaveBeenCalled();
+  });
+
+  it('does not let the origin header select the sandbox queue', async () => {
+    const verify = vi.fn().mockResolvedValue(Response.json({ success: true }));
+    vi.stubGlobal('fetch', verify);
+    const env = createEnv();
+
+    await contactApi.fetch(new Request('https://fbrissi.dev/api/contact', {
+      method: 'POST',
+      headers: { Origin: 'https://sandbox.fbrissi.dev' },
+      body: JSON.stringify(validForm),
+    }), env);
+
+    expect(env.CONTACT_FORM_QUEUE.send).toHaveBeenCalledWith(expect.objectContaining({ environment: 'production' }));
+    expect(env.CONTACT_FORM_SANDBOX_QUEUE.send).not.toHaveBeenCalled();
   });
 
   it('normalizes the email used for rate limiting', async () => {
