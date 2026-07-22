@@ -44,7 +44,7 @@ async function consume(): Promise<void> {
 }
 
 async function deliver(message: ContactMessage): Promise<void> {
-  const from = process.env.CONTACT_EMAIL_FROM ?? 'noreply@fbrissi.dev';
+  const from = process.env.CONTACT_EMAIL_FROM ?? 'no-reply@fbrissi.dev';
 
   await transporter.sendMail({
     from,

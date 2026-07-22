@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render as renderComponent, screen } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router';
+import axios from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ArticleCard, ProjectCard, WorksCard } from '@/components/content/content-cards';
@@ -15,14 +15,17 @@ import { SiteHeader } from '@/components/layout/site-header';
 import { SiteShell } from '@/components/layout/site-shell';
 import { ContactForm } from '@/features/contact/contact-form';
 
+vi.mock('axios', () => ({ default: { post: vi.fn() } }));
+
 vi.stubGlobal('React', React);
 
 function render(ui: React.ReactNode) {
-  return renderComponent(ui, { wrapper: MemoryRouter });
+  return renderComponent(ui);
 }
 
 afterEach(() => {
   cleanup();
+  vi.clearAllMocks();
   vi.restoreAllMocks();
   vi.unstubAllEnvs();
   delete window.turnstile;
@@ -74,6 +77,18 @@ describe('content components', () => {
 
 });
 
+describe('site shell environment label', () => {
+  it('hides the label for production builds', async () => {
+    vi.stubEnv('APP_ENV', 'production');
+    vi.resetModules();
+
+    const { SiteShell: ProductionSiteShell } = await import('@/components/layout/site-shell');
+    render(<ProductionSiteShell locale="en" activePage="home"><p>Production content</p></ProductionSiteShell>);
+
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+});
+
 describe('interactive components', () => {
   it('downloads either localized resume from the resume menu', () => {
     render(<ResumeDownloadMenu locale="pt-BR" />);
@@ -123,8 +138,7 @@ describe('interactive components', () => {
   });
 
   it('submits a verified contact form and shows the success state', async () => {
-    const fetchMock = vi.fn().mockResolvedValue({ ok: true });
-    vi.stubGlobal('fetch', fetchMock);
+    vi.mocked(axios.post).mockResolvedValue({} as never);
     vi.stubEnv('VITE_CONTACT_API_URL', 'https://contact.example.com');
     const renderWidget = vi.fn((_element, options) => {
       options.callback('verified-token');
@@ -140,7 +154,7 @@ describe('interactive components', () => {
 
     expect(await screen.findByRole('heading', { name: 'Message sent!' })).toBeInTheDocument();
     expect(screen.getByText(/your message was received/i)).toBeInTheDocument();
-    expect(fetchMock).toHaveBeenCalledWith('https://contact.example.com', expect.objectContaining({ method: 'POST' }));
+    expect(axios.post).toHaveBeenCalledWith('https://contact.example.com', expect.objectContaining({ locale: 'en' }));
     expect(window.turnstile.reset).toHaveBeenCalledWith('widget');
 
     fireEvent.click(screen.getByRole('button', { name: 'OK' }));
@@ -154,7 +168,7 @@ describe('interactive components', () => {
     unmount();
 
     window.turnstile = { render: vi.fn((_element, options) => { options.callback('token'); return 'widget'; }), reset: vi.fn(), remove: vi.fn() };
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+    vi.mocked(axios.post).mockRejectedValue(new Error('Failed to send message'));
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const { container } = render(<ContactForm locale="en" turnstileSiteKey="site-key" />);
     const scripts = container.ownerDocument.head.querySelectorAll('script[src*="turnstile"]');
@@ -172,8 +186,6 @@ describe('interactive components', () => {
   });
 
   it('reports validation and captcha failures without submitting', () => {
-    const fetchMock = vi.fn();
-    vi.stubGlobal('fetch', fetchMock);
     const renderWidget = vi.fn((_element, options) => {
       options.callback('token');
       options['error-callback']?.();
@@ -201,7 +213,21 @@ describe('interactive components', () => {
 
     fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Message' } });
     fireEvent.submit(form);
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(axios.post).not.toHaveBeenCalled();
+  });
+
+  it('reports an invalid email separately from missing fields', () => {
+    window.turnstile = { render: vi.fn((_element, options) => { options.callback('token'); return 'widget'; }), reset: vi.fn(), remove: vi.fn() };
+    render(<ContactForm locale="en" turnstileSiteKey="site-key" />);
+    const form = screen.getByRole('button', { name: 'Send message' }).closest('form')!;
+    form.noValidate = true;
+    fireEvent.change(screen.getByLabelText('Name'), { target: { value: 'Filipe' } });
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'filipe@mailcom' } });
+    fireEvent.change(screen.getByLabelText('Subject'), { target: { value: 'Hello' } });
+    fireEvent.change(screen.getByLabelText('Message'), { target: { value: 'Message' } });
+    fireEvent.submit(form);
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Please enter a valid email address');
   });
 
   it('localizes captcha validation errors', () => {

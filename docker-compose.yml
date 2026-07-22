@@ -6,7 +6,7 @@ services:
       - "3000:3000"
     environment:
       ASDF_NODEJS_VERSION: 20
-      VITE_CONTACT_API_URL: http://localhost:8787/api/contact
+      NEXT_PUBLIC_CONTACT_API_URL: http://localhost:8787/api/contact
     volumes:
       - .:/app:delegated
     networks:
@@ -40,7 +40,7 @@ services:
       LOCALSTACK_ENDPOINT: http://localstack:4566
       MAILPIT_SMTP_HOST: mailpit
       MAILPIT_SMTP_PORT: 1025
-      CONTACT_EMAIL_FROM: noreply@fbrissi.dev
+      CONTACT_EMAIL_FROM: no-reply@fbrissi.dev
       CONTACT_EMAIL_TO: contact@fbrissi.dev
     volumes:
       - .:/app:delegated
@@ -74,6 +74,8 @@ services:
     ports:
       - "8025:8025"  # Web UI
       - "1025:1025"  # SMTP server
+    volumes:
+      - mailpit_data:/data
     environment:
       MP_MAX_MESSAGES: 500
       MP_SMTP_AUTH_ACCEPT_ANY: 1
@@ -87,3 +89,6 @@ networks:
   kool_global:
     external: true
     name: kool_global
+
+volumes:
+  mailpit_data:

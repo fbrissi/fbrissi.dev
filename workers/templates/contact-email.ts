@@ -2,18 +2,20 @@ import type { ContactMessage } from '../contact-message';
 
 interface ContactEmailTemplateOptions {
   isLocal: boolean;
+  isSandbox?: boolean;
 }
 
-export function contactEmailSubject({ subject }: ContactMessage, { isLocal }: ContactEmailTemplateOptions): string {
-  return `[Contact Form${isLocal ? ' - LOCAL' : ''}] ${subject}`;
+export function contactEmailSubject({ subject }: ContactMessage, { isLocal, isSandbox = false }: ContactEmailTemplateOptions): string {
+  const environment = isLocal ? 'LOCAL' : isSandbox ? 'SANDBOX' : '';
+  return `[Contact Form${environment ? ` - ${environment}` : ''}] ${subject}`;
 }
 
 export function contactEmailText(
   { name, email, subject, message }: ContactMessage,
-  { isLocal }: ContactEmailTemplateOptions
+  { isLocal, isSandbox = false }: ContactEmailTemplateOptions
 ): string {
   const contactUrl = isLocal ? 'http://localhost:3000/contact' : 'https://fbrissi.dev/contact';
-  const environment = isLocal ? ' (LOCAL DEVELOPMENT)' : '';
+  const environment = isLocal ? ' (LOCAL DEVELOPMENT)' : isSandbox ? ' (SANDBOX)' : '';
 
   return `New contact form submission from fbrissi.dev${environment}
 
@@ -30,12 +32,12 @@ This message was sent via the contact form at ${contactUrl}`;
 
 export function contactEmailHtml(
   { name, email, subject, message }: ContactMessage,
-  { isLocal }: ContactEmailTemplateOptions
+  { isLocal, isSandbox = false }: ContactEmailTemplateOptions
 ): string {
   const siteUrl = isLocal ? 'http://localhost:3000' : 'https://fbrissi.dev';
   const contactUrl = `${siteUrl}/contact`;
   const avatarUrl = `${siteUrl}/images/avatar.png`;
-  const localBadge = isLocal ? '<span class="badge">LOCAL DEV</span>' : '';
+  const localBadge = isLocal ? '<span class="badge">LOCAL</span>' : isSandbox ? '<span class="badge">SANDBOX</span>' : '';
 
   return `<!DOCTYPE html>
 <html>

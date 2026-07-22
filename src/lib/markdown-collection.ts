@@ -1,11 +1,6 @@
 import type { Locale } from './i18n';
 import { parseMarkdown } from './markdown';
-
-const markdownSources = import.meta.glob<string>('/src/content/{contributions,projects,works}/**/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true
-});
+import { markdownSources } from '@/generated/content-data';
 
 export type MarkdownCollectionItem<TFrontMatter extends Record<string, unknown>> = TFrontMatter & {
   slug: string;
@@ -13,10 +8,10 @@ export type MarkdownCollectionItem<TFrontMatter extends Record<string, unknown>>
 };
 
 export function getMarkdownCollectionSlugs(collection: string, locale: Locale): string[] {
-  const prefix = `/src/content/${collection}/${locale}/`;
+  const prefix = `${collection}/${locale}/`;
   return Object.keys(markdownSources)
     .filter((fileName) => fileName.startsWith(prefix))
-    .map((fileName) => fileName.slice(prefix.length).replace(/\.md$/, ''))
+    .map((fileName) => fileName.slice(prefix.length))
     .sort();
 }
 
@@ -25,7 +20,7 @@ export function readMarkdownCollectionItem<TFrontMatter extends Record<string, u
   locale: Locale,
   slug: string
 ): MarkdownCollectionItem<TFrontMatter> | null {
-  const source = markdownSources[`/src/content/${collection}/${locale}/${slug}.md`];
+  const source = markdownSources[`${collection}/${locale}/${slug}` as keyof typeof markdownSources];
   if (!source) {
     return null;
   }

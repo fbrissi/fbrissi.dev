@@ -4,9 +4,8 @@ Public portfolio for Filipe Bojikian Rissi.
 
 ## Stack
 
-- Vite
+- Next.js (static export)
 - React
-- React Router
 - TypeScript
 - Cloudflare Pages
 - Cloudflare Workers (contact form)
@@ -20,13 +19,13 @@ Public portfolio for Filipe Bojikian Rissi.
 
 ## Architecture
 
-- Vite production build output in `dist/`
+- Next.js static export output in `out/`
 - English pages at the root path
 - Portuguese pages under `/pt-br`
 - Content stored in JSON and Markdown files
 - Articles, contributions, projects, and works are rendered from Markdown with raw HTML and syntax highlighting
 - Content collections live in `src/content/{articles,contributions,projects,works}/{locale}/`
-- SEO handled with document metadata, generated `robots.txt` and `sitemap.xml`, and JSON-LD
+- SEO handled with Next Metadata, generated `robots.txt` and `sitemap.xml`, and JSON-LD
 
 ## Releases
 
@@ -51,13 +50,12 @@ src/
 │   └── contact/         # Contact form feature
 ├── i18n/messages/       # Localized UI messages
 ├── lib/
-├── pages/               # Route-level components
-├── main.tsx
+├── site-pages/          # Shared route-level presentation components
+├── generated/           # Build-generated Markdown source manifest
 └── index.css
-index.html
+next.config.ts
 scripts/
 terraform/
-vite.config.ts
 ```
 
 ## Local Development
@@ -99,12 +97,13 @@ Required secrets:
 Required repository variable:
 
 - `CLOUDFLARE_PAGES_PROJECT_NAME`
-- `VITE_TURNSTILE_SITE_KEY`
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+- `VITE_TURNSTILE_SITE_KEY` (legacy releases)
 
 Optional environment variable:
 
-- `VITE_SITE_URL` for canonical URLs and metadata generation
-- `VITE_CONTACT_API_URL` to override the contact API URL
+- `NEXT_PUBLIC_SITE_URL` for canonical URLs and metadata generation
+- `NEXT_PUBLIC_CONTACT_API_URL` to override the contact API URL
 
 ## Terraform Configuration
 

@@ -5,12 +5,17 @@ observability.enabled = true
 
 routes = [
   { pattern = "fbrissi.dev/api/contact", zone_name = "fbrissi.dev" },
-  { pattern = "www.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" }
+  { pattern = "www.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" },
+  { pattern = "sandbox.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" }
 ]
 
 [[queues.producers]]
 binding = "CONTACT_FORM_QUEUE"
 queue = "fbrissi-dev-contact-form"
+
+[[queues.producers]]
+binding = "CONTACT_FORM_SANDBOX_QUEUE"
+queue = "fbrissi-dev-sandbox-contact-form"
 
 [[ratelimits]]
 name = "CONTACT_FORM_IP_RATE_LIMITER"

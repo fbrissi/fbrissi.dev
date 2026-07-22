@@ -2,40 +2,45 @@ import type { ContactMessage } from '../contact-message';
 
 interface ContactConfirmationEmailTemplateOptions {
   isLocal: boolean;
+  isSandbox?: boolean;
 }
 
 const copy = {
   en: {
-    subject: (subject: string, isLocal: boolean) => `Re: ${subject}${isLocal ? ' [LOCAL]' : ''}`,
+    subject: (subject: string, isLocal: boolean, isSandbox: boolean) => `Re: ${subject}${isLocal ? ' [LOCAL]' : isSandbox ? ' [SANDBOX]' : ''}`,
     greeting: (name: string) => `Hi ${name},`,
     body: (subject: string) => `Thanks for getting in touch. I received your message about "${subject}" and will reply as soon as possible.`,
     regards: 'Best regards,',
-    footer: 'This is an automated confirmation from noreply@fbrissi.dev. Replies to this email are not monitored.',
+    footer: 'This is an automated confirmation from no-reply@fbrissi.dev. Replies to this email are not monitored.',
     localNote: 'This confirmation was sent from local development.',
   },
   'pt-BR': {
-    subject: (subject: string, isLocal: boolean) => `Re: ${subject}${isLocal ? ' [LOCAL]' : ''}`,
+    subject: (subject: string, isLocal: boolean, isSandbox: boolean) => `Re: ${subject}${isLocal ? ' [LOCAL]' : isSandbox ? ' [SANDBOX]' : ''}`,
     greeting: (name: string) => `Olá ${name},`,
     body: (subject: string) => `Obrigado por entrar em contato. Recebi sua mensagem sobre "${subject}" e responderei assim que possível.`,
     regards: 'Atenciosamente,',
-    footer: 'Esta é uma confirmação automática de noreply@fbrissi.dev. Respostas a este e-mail não são monitoradas.',
+    footer: 'Esta é uma confirmação automática de no-reply@fbrissi.dev. Respostas a este e-mail não são monitoradas.',
     localNote: 'Esta confirmação foi enviada do ambiente de desenvolvimento local.',
   },
 } as const;
 
 export function contactConfirmationEmailSubject(
   { subject, locale }: ContactMessage,
-  { isLocal }: ContactConfirmationEmailTemplateOptions
+  { isLocal, isSandbox = false }: ContactConfirmationEmailTemplateOptions
 ): string {
-  return copy[locale].subject(subject, isLocal);
+  return copy[locale].subject(subject, isLocal, isSandbox);
 }
 
 export function contactConfirmationEmailText(
   { name, subject, locale }: ContactMessage,
-  { isLocal }: ContactConfirmationEmailTemplateOptions
+  { isLocal, isSandbox = false }: ContactConfirmationEmailTemplateOptions
 ): string {
   const t = copy[locale];
-  const localNote = isLocal ? `\n\n(${t.localNote})` : '';
+  const environmentNote = isLocal
+    ? `\n\n(${t.localNote})`
+    : isSandbox
+      ? '\n\n(This confirmation was sent from the sandbox environment.)'
+      : '';
 
   return `${t.greeting(name)}
 
@@ -50,20 +55,22 @@ Cloud Architecture • Distributed Systems • Kubernetes • AWS • Microservi
 
 contact@fbrissi.dev
 https://fbrissi.dev/
-${localNote}
+${environmentNote}
 ${t.footer}`;
 }
 
 export function contactConfirmationEmailHtml(
   { name, subject, locale }: ContactMessage,
-  { isLocal }: ContactConfirmationEmailTemplateOptions
+  { isLocal, isSandbox = false }: ContactConfirmationEmailTemplateOptions
 ): string {
   const t = copy[locale];
   const siteUrl = isLocal ? 'http://localhost:3000' : 'https://fbrissi.dev';
   const avatarUrl = `${siteUrl}/images/avatar.png`;
-  const localNote = isLocal
+  const environmentNote = isLocal
     ? `<p style="margin:16px 0 0;font-size:12px;line-height:1.5;color:#666666;">${t.localNote}</p>`
-    : '';
+    : isSandbox
+      ? '<p style="margin:16px 0 0;font-size:12px;line-height:1.5;color:#666666;">This confirmation was sent from the sandbox environment.</p>'
+      : '';
 
   return `<!DOCTYPE html>
 <html>
@@ -94,7 +101,7 @@ export function contactConfirmationEmailHtml(
             </td>
           </tr>
         </table>
-        ${localNote}
+        ${environmentNote}
         <p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #e5e5e5;font-size:12px;line-height:1.5;color:#888888;">${t.footer}</p>
       </td>
     </tr>

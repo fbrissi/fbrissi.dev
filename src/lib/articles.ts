@@ -1,12 +1,7 @@
 import { formatDate, localizedPath, type Locale } from './i18n';
 import { parseMarkdown } from './markdown';
 import { absoluteUrl } from './seo';
-
-const articleSources = import.meta.glob<string>('/src/content/articles/**/*.md', {
-  query: '?raw',
-  import: 'default',
-  eager: true
-});
+import { markdownSources } from '@/generated/content-data';
 
 type FrontMatter = {
   title: string;
@@ -26,7 +21,7 @@ export type Article = FrontMatter & {
 };
 
 function readArticleFile(locale: Locale, slug: string): Article | null {
-  const source = articleSources[`/src/content/articles/${locale}/${slug}.md`];
+  const source = markdownSources[`articles/${locale}/${slug}` as keyof typeof markdownSources];
   if (!source) {
     return null;
   }
@@ -48,10 +43,10 @@ function estimateReadingTime(content: string): string {
 }
 
 export function getArticleSlugs(locale: Locale): string[] {
-  const prefix = `/src/content/articles/${locale}/`;
-  return Object.keys(articleSources)
+  const prefix = `articles/${locale}/`;
+  return Object.keys(markdownSources)
     .filter((fileName) => fileName.startsWith(prefix))
-    .map((fileName) => fileName.slice(prefix.length).replace(/\.md$/, ''))
+    .map((fileName) => fileName.slice(prefix.length))
     .sort();
 }
 

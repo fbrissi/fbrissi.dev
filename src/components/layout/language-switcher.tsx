@@ -1,5 +1,7 @@
+ 'use client';
+
 import { useState, useRef, useEffect } from 'react';
-import { Link } from 'react-router';
+import Link from 'next/link';
 import { getAlternateLocale, setPreferredLocale, type Locale } from '@/lib/i18n';
 
 type LanguageSwitcherProps = {
@@ -53,7 +55,7 @@ export function LanguageSwitcher({ locale, alternatePath, compact = false }: Lan
         {isOpen && (
           <div className="absolute right-0 top-full mt-2 min-w-[140px] animate-[fadeIn_150ms_ease-in] rounded-lg border border-line bg-bg-card shadow-lg">
             <Link
-              to={alternatePath}
+              href={alternatePath}
               className="flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-200 hover:bg-bg-soft hover:text-accent"
               onClick={selectAlternateLocale}
             >
@@ -97,7 +99,7 @@ export function LanguageSwitcher({ locale, alternatePath, compact = false }: Lan
       {isOpen && (
         <div className="absolute right-0 top-full mt-2 min-w-[140px] animate-[fadeIn_150ms_ease-in] rounded-lg border border-line bg-bg-card shadow-lg">
           <Link
-            to={alternatePath}
+            href={alternatePath}
             className="flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-200 hover:bg-bg-soft hover:text-accent"
             onClick={selectAlternateLocale}
           >

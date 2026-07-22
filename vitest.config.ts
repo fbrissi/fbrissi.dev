@@ -19,7 +19,14 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'cobertura'],
       include: ['src/**/*.{ts,tsx}', 'workers/**/*.ts'],
-      exclude: ['**/*.d.ts', 'src/main.tsx', 'workers/contact-message.ts'],
+      exclude: [
+        '**/*.d.ts',
+        'src/app/**',
+        'src/generated/**',
+        'src/lib/next-metadata.ts',
+        'src/site-pages/not-found-page.tsx',
+        'workers/contact-message.ts'
+      ],
       thresholds: {
         branches: 100,
         functions: 100,

@@ -8,6 +8,8 @@ scripts:
     - kool run yarn install
     - kool start
 
+  share: sh -c 'docker run --rm --init --network $(basename $(pwd) | tr -d "." | tr "[:upper:]" "[:lower:]")_kool_local beyondcodegmbh/expose-server:1.4.1 share http://app:3000 --server-host kool.live'
+
   quality:
     - kool run actionlint
     - kool run yarn lint:fix

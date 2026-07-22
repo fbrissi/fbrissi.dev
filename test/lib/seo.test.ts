@@ -38,9 +38,9 @@ describe('seo', () => {
         url: 'https://example.com/articles/example',
         locale: 'en_US',
         alternateLocale: 'pt_BR',
-        images: [{ url: 'https://example.com/images/og/og-image-avatar.png', width: 1200, height: 630, alt: 'Example title' }]
+        images: [{ url: 'https://example.com/images/og/og-image-profile.png', width: 1200, height: 630, alt: 'Example title' }]
       },
-      twitter: { images: ['https://example.com/images/og/og-image-avatar.png'] }
+      twitter: { images: ['https://example.com/images/og/og-image-profile.png'] }
     });
   });
 

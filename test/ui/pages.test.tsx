@@ -1,6 +1,5 @@
 import { cleanup, render as renderComponent, screen } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.stubGlobal('React', React);
@@ -11,7 +10,7 @@ afterEach(() => {
 });
 
 function render(ui: React.ReactNode) {
-  return renderComponent(ui, { wrapper: MemoryRouter });
+  return renderComponent(ui);
 }
 
 vi.mock('@/components/layout/site-shell', () => ({
@@ -19,17 +18,17 @@ vi.mock('@/components/layout/site-shell', () => ({
 }));
 vi.mock('@/features/contact/contact-form', () => ({ ContactForm: ({ locale, turnstileSiteKey }: { locale: string; turnstileSiteKey: string }) => <p data-site-key={turnstileSiteKey}>Contact form ({locale})</p> }));
 
-import { AboutPage } from '@/pages/about-page';
-import { ArticlePage } from '@/pages/article-page';
-import { ArticlesPage } from '@/pages/articles-page';
-import { ContactPage } from '@/pages/contact-page';
-import { ContributionPage } from '@/pages/contribution-page';
-import { ContributionsPage } from '@/pages/contributions-page';
-import { HomePage } from '@/pages/home-page';
-import { ProjectPage } from '@/pages/project-page';
-import { ProjectsPage } from '@/pages/projects-page';
-import { WorkPage } from '@/pages/work-page';
-import { WorksPage } from '@/pages/works-page';
+import { AboutPage } from '@/site-pages/about-page';
+import { ArticlePage } from '@/site-pages/article-page';
+import { ArticlesPage } from '@/site-pages/articles-page';
+import { ContactPage } from '@/site-pages/contact-page';
+import { ContributionPage } from '@/site-pages/contribution-page';
+import { ContributionsPage } from '@/site-pages/contributions-page';
+import { HomePage } from '@/site-pages/home-page';
+import { ProjectPage } from '@/site-pages/project-page';
+import { ProjectsPage } from '@/site-pages/projects-page';
+import { WorkPage } from '@/site-pages/work-page';
+import { WorksPage } from '@/site-pages/works-page';
 import { getArticles } from '@/lib/articles';
 import * as articles from '@/lib/articles';
 import { getContributions } from '@/lib/contributions';

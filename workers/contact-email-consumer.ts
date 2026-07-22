@@ -1,6 +1,6 @@
 import { EmailMessage } from 'cloudflare:email';
 import type { ContactMessage } from './contact-message';
-import { resolveContactLocale } from './contact-message';
+import { resolveContactEnvironment, resolveContactLocale } from './contact-message';
 import {
   contactConfirmationEmailHtml,
   contactConfirmationEmailSubject,
@@ -40,11 +40,16 @@ const contactEmailConsumer = {
 export default contactEmailConsumer;
 
 async function sendEmails(env: Env, rawMessage: ContactMessage): Promise<void> {
-  const message: ContactMessage = { ...rawMessage, locale: resolveContactLocale(rawMessage.locale) };
+  const message: ContactMessage = {
+    ...rawMessage,
+    locale: resolveContactLocale(rawMessage.locale),
+    environment: resolveContactEnvironment(rawMessage.environment),
+  };
+  const emailOptions = { isLocal: message.environment === 'local', isSandbox: message.environment === 'sandbox' };
   await env.SEND_EMAIL.send(new EmailMessage(
     env.CONTACT_EMAIL_FROM,
     env.CONTACT_EMAIL_TO,
-    buildOwnerRawEmail(env, message)
+    buildOwnerRawEmail(env, message, emailOptions)
   ));
 }
 
@@ -61,11 +66,11 @@ export async function sendConfirmationEmail(env: Env, message: ContactMessage): 
   }
 }
 
-function buildOwnerRawEmail(env: Env, message: ContactMessage): string {
+function buildOwnerRawEmail(env: Env, message: ContactMessage, emailOptions: { isLocal: boolean; isSandbox: boolean }): string {
   const boundary = `contact-form-${crypto.randomUUID()}`;
   const replyToName = message.name.replace(/[\r\n]/g, ' ').replace(/([\\"])/g, '\\$1');
   const replyToEmail = sanitizeHeaderValue(message.email);
-  const subject = contactEmailSubject(message, { isLocal: false }).replace(/[\r\n]/g, ' ');
+  const subject = contactEmailSubject(message, emailOptions).replace(/[\r\n]/g, ' ');
 
   return [
     `From: Contact Form <${env.CONTACT_EMAIL_FROM}>`,
@@ -79,13 +84,13 @@ function buildOwnerRawEmail(env: Env, message: ContactMessage): string {
     'Content-Type: text/plain; charset=UTF-8',
     'Content-Transfer-Encoding: 8bit',
     '',
-    contactEmailText(message, { isLocal: false }),
+    contactEmailText(message, emailOptions),
     '',
     `--${boundary}`,
     'Content-Type: text/html; charset=UTF-8',
     'Content-Transfer-Encoding: 8bit',
     '',
-    contactEmailHtml(message, { isLocal: false }),
+    contactEmailHtml(message, emailOptions),
     '',
     `--${boundary}--`,
   ].join('\r\n');
@@ -93,7 +98,8 @@ function buildOwnerRawEmail(env: Env, message: ContactMessage): string {
 
 function buildConfirmationRawEmail(env: Env, message: ContactMessage, to: string): string {
   const boundary = `contact-confirmation-${crypto.randomUUID()}`;
-  const subject = contactConfirmationEmailSubject(message, { isLocal: false }).replace(/[\r\n]/g, ' ');
+  const emailOptions = { isLocal: message.environment === 'local', isSandbox: message.environment === 'sandbox' };
+  const subject = contactConfirmationEmailSubject(message, emailOptions).replace(/[\r\n]/g, ' ');
 
   return [
     `From: Filipe <${env.CONTACT_EMAIL_FROM}>`,
@@ -109,13 +115,13 @@ function buildConfirmationRawEmail(env: Env, message: ContactMessage, to: string
     'Content-Type: text/plain; charset=UTF-8',
     'Content-Transfer-Encoding: 8bit',
     '',
-    contactConfirmationEmailText(message, { isLocal: false }),
+    contactConfirmationEmailText(message, emailOptions),
     '',
     `--${boundary}`,
     'Content-Type: text/html; charset=UTF-8',
     'Content-Transfer-Encoding: 8bit',
     '',
-    contactConfirmationEmailHtml(message, { isLocal: false }),
+    contactConfirmationEmailHtml(message, emailOptions),
     '',
     `--${boundary}--`,
   ].join('\r\n');
