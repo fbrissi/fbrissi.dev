@@ -9,6 +9,7 @@ All notable changes to this project are documented here. Release versions follow
 
 - chore: disable automatic confirmation emails until dynamic delivery is supported
 - chore: update the contact email header color
+- chore: rate-limit contact submissions by IP address and recipient email
 - feat: separate the contact email display recipient from the delivery address
 
 ## v0.1.6

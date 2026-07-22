@@ -19,6 +19,8 @@ const validForm = {
 function createEnv() {
   return {
     CONTACT_FORM_QUEUE: { send: vi.fn().mockResolvedValue(undefined) },
+    CONTACT_FORM_IP_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) },
+    CONTACT_FORM_EMAIL_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) },
     TURNSTILE_SECRET_KEY: 'turnstile-secret',
   };
 }
@@ -73,6 +75,25 @@ describe('contact API worker', () => {
     expect(env.CONTACT_FORM_QUEUE.send).not.toHaveBeenCalled();
   });
 
+  it('rejects submissions when a rate limit is exceeded', async () => {
+    const verify = vi.fn();
+    vi.stubGlobal('fetch', verify);
+    const env = createEnv();
+    env.CONTACT_FORM_EMAIL_RATE_LIMITER.limit.mockResolvedValue({ success: false });
+
+    const response = await contactApi.fetch(new Request('https://api.example.com/contact', {
+      method: 'POST',
+      headers: { 'CF-Connecting-IP': '203.0.113.42' },
+      body: JSON.stringify(validForm),
+    }), env);
+
+    await expectJson(response, 429, { error: 'Too many submissions' });
+    expect(env.CONTACT_FORM_IP_RATE_LIMITER.limit).toHaveBeenCalledWith({ key: '203.0.113.42' });
+    expect(env.CONTACT_FORM_EMAIL_RATE_LIMITER.limit).toHaveBeenCalledWith({ key: 'ada@example.com' });
+    expect(verify).not.toHaveBeenCalled();
+    expect(env.CONTACT_FORM_QUEUE.send).not.toHaveBeenCalled();
+  });
+
   it('verifies the captcha with the connecting IP, trims fields, and queues valid submissions', async () => {
     const verify = vi.fn().mockResolvedValue(Response.json({ success: true }));
     vi.stubGlobal('fetch', verify);
@@ -90,6 +111,8 @@ describe('contact API worker', () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ secret: 'turnstile-secret', response: 'captcha-token', remoteip: '203.0.113.42' }),
     });
+    expect(env.CONTACT_FORM_IP_RATE_LIMITER.limit).toHaveBeenCalledWith({ key: '203.0.113.42' });
+    expect(env.CONTACT_FORM_EMAIL_RATE_LIMITER.limit).toHaveBeenCalledWith({ key: 'ada@example.com' });
     expect(env.CONTACT_FORM_QUEUE.send).toHaveBeenCalledWith({
       name: 'Ada Lovelace',
       email: 'ada@example.com',
@@ -97,6 +120,19 @@ describe('contact API worker', () => {
       message: 'Test message',
       locale: 'en',
     });
+  });
+
+  it('normalizes the email used for rate limiting', async () => {
+    const verify = vi.fn().mockResolvedValue(Response.json({ success: true }));
+    vi.stubGlobal('fetch', verify);
+    const env = createEnv();
+
+    await contactApi.fetch(new Request('https://api.example.com/contact', {
+      method: 'POST',
+      body: JSON.stringify({ ...validForm, email: 'ADA@EXAMPLE.COM' }),
+    }), env);
+
+    expect(env.CONTACT_FORM_EMAIL_RATE_LIMITER.limit).toHaveBeenCalledWith({ key: 'ada@example.com' });
   });
 
   it('uses an empty IP address and rejects failed captcha verification', async () => {
