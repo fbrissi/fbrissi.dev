@@ -1,7 +1,7 @@
 resource "cloudflare_pages_project" "site" {
   account_id        = local.cloudflare_account_id
   name              = local.project_name
-  production_branch = "sandbox"
+  production_branch = "main"
 }
 
 resource "cloudflare_pages_project" "sandbox" {
