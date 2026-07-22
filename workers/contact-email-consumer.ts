@@ -45,7 +45,9 @@ async function sendEmails(env: Env, rawMessage: ContactMessage): Promise<void> {
     env.CONTACT_EMAIL_TO,
     buildOwnerRawEmail(env, message)
   ));
+}
 
+export async function sendConfirmationEmail(env: Env, message: ContactMessage): Promise<void> {
   try {
     const confirmationTo = sanitizeHeaderValue(message.email);
     await env.SEND_EMAIL.send(new EmailMessage(

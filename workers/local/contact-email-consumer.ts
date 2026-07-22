@@ -54,7 +54,9 @@ async function deliver(message: ContactMessage): Promise<void> {
     text: contactEmailText(message, { isLocal: true }),
     html: contactEmailHtml(message, { isLocal: true }),
   });
+}
 
+export async function sendConfirmationEmail(message: ContactMessage, from: string): Promise<void> {
   try {
     await transporter.sendMail({
       from: { address: from, name: 'Filipe' },

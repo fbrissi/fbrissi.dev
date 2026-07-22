@@ -139,7 +139,7 @@ describe('interactive components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(await screen.findByRole('heading', { name: 'Message sent!' })).toBeInTheDocument();
-    expect(screen.getByText(/confirmation email/i)).toBeInTheDocument();
+    expect(screen.getByText(/your message was received/i)).toBeInTheDocument();
     expect(fetchMock).toHaveBeenCalledWith('https://contact.example.com', expect.objectContaining({ method: 'POST' }));
     expect(window.turnstile.reset).toHaveBeenCalledWith('widget');
 

@@ -43,7 +43,7 @@ export function contactEmailHtml(
   <meta charset="utf-8">
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }
-    .header { background: #0a0a0a; color: #fafafa; padding: 20px; border-radius: 8px 8px 0 0; }
+    .header { background: #139a00; color: #fafafa; padding: 20px; border-radius: 8px 8px 0 0; }
     .badge { display: inline-block; background: #f97316; color: white; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-left: 10px; }
     .content { background: #f9f9f9; padding: 20px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px; }
     .field { margin-bottom: 15px; }

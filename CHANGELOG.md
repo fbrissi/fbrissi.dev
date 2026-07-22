@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.1.7
+
+### Changed
+
+- chore: disable automatic confirmation emails until dynamic delivery is supported
+- chore: update the contact email header color
+
 ## v0.1.6
 
 ### Added
