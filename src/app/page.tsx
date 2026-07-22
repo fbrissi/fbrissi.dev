@@ -5,7 +5,7 @@ import { getProfile } from '@/lib/site';
 export const metadata = createNextMetadata({
   locale: 'en',
   pathname: '/',
-  title: 'Filipe Bojikian Rissi | Portfolio',
+  title: 'Filipe Bojikian Rissi | Staff Software Engineer',
   description: getProfile('en').summary,
   keywords: getProfile('en').skills.flatMap((group) => group.items)
 });
