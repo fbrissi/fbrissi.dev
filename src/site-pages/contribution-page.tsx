@@ -12,7 +12,7 @@ export function ContributionPage({ locale, slug }: { locale: Locale; slug: strin
   if (!contribution) return null;
 
   return (
-    <SiteShell locale={locale} activePage="openSource">
+    <SiteShell locale={locale} activePage="openSource" pathname={`/open-source/${slug}`}>
       <section className="mb-12 max-w-4xl">
         <Link className="mb-6 inline-flex text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" href={localizedPath(locale, '/open-source')}>
           {messages.labels.backToContributions}

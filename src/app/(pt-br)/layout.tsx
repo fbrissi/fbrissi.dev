@@ -3,11 +3,11 @@ import type { ReactNode } from 'react';
 
 import { siteUrl } from '@/lib/site';
 
-import '../index.css';
+import '../../index.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: 'Filipe Bojikian Rissi | Staff Software Engineer',
+  title: 'Filipe Bojikian Rissi | Especialista em Engenharia de Software',
   icons: {
     icon: [
       { url: '/images/icons/favicon.ico', sizes: 'any' },
@@ -16,12 +16,12 @@ export const metadata: Metadata = {
     ],
     apple: '/images/icons/apple-touch-icon.png'
   },
-  description: 'Staff Software Engineer and Senior Backend Engineer with 15+ years of experience in distributed systems, cloud architecture, AWS, Kubernetes and microservices.'
+  description: 'Especialista em Engenharia de Software e Engenheiro Backend Sênior com mais de 15 anos de experiência em sistemas distribuídos, arquitetura cloud, AWS, Kubernetes e microsserviços.'
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="pt-BR">
       <body>{children}</body>
     </html>
   );

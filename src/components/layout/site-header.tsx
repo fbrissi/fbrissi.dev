@@ -8,7 +8,7 @@ import enMessages from '@/i18n/messages/en.json';
 import ptMessages from '@/i18n/messages/pt-BR.json';
 import enProfile from '@/content/profile/en.json';
 import ptProfile from '@/content/profile/pt-BR.json';
-import { getAlternateLocale, localizedPath, normalizeRoute, type Locale } from '@/lib/i18n';
+import { getAlternateLocale, localizedPath, type Locale } from '@/lib/i18n';
 import type { Messages, Profile } from '@/lib/site';
 import { LanguageSwitcher } from './language-switcher';
 import { ResumeDownloadMenu } from './resume-download-menu';
@@ -19,6 +19,7 @@ const profileImageUrl = typeof profileImage === 'string' ? profileImage : profil
 type SiteHeaderProps = {
   locale: Locale;
   activePage: 'home' | 'about' | 'projects' | 'openSource' | 'works' | 'articles' | 'contact';
+  currentPath?: string;
   messages?: Messages;
   profile?: Pick<Profile, 'name' | 'publicLinks'>;
 };
@@ -33,18 +34,14 @@ const navItems = [
   { key: 'contact', labelKey: 'contact', path: '/contact' }
 ] as const;
 
-export function SiteHeader({ locale, activePage, messages: providedMessages, profile: providedProfile }: SiteHeaderProps) {
+export function SiteHeader({ locale, activePage, currentPath, messages: providedMessages, profile: providedProfile }: SiteHeaderProps) {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [pathname, setPathname] = useState('/');
   const messages = providedMessages ?? (locale === 'pt-BR' ? ptMessages : enMessages);
   const profile = providedProfile ?? (locale === 'pt-BR' ? ptProfile : enProfile);
   const alternateLocale = getAlternateLocale(locale);
-
-  const currentPath = normalizeRoute(pathname);
+  const path = currentPath ?? ({ home: '/', about: '/about', projects: '/projects', openSource: '/open-source', works: '/works', articles: '/articles', contact: '/contact' } as const)[activePage];
 
   useEffect(() => {
-    setPathname(window.location.pathname);
-
     function handleScroll() {
       setIsScrolled(window.scrollY > 24);
     }
@@ -85,14 +82,14 @@ export function SiteHeader({ locale, activePage, messages: providedMessages, pro
         </nav>
 
         <div className="flex-shrink-0">
-          <LanguageSwitcher locale={locale} alternatePath={localizedPath(alternateLocale, currentPath)} compact />
+          <LanguageSwitcher locale={locale} alternatePath={localizedPath(alternateLocale, path)} compact />
         </div>
       </div>
 
       {/* Desktop: layout with smooth scroll-driven transition */}
       <div className="site-header-desktop-shell relative hidden sm:block">
         <div className="absolute right-0 top-0 z-10">
-          <LanguageSwitcher locale={locale} alternatePath={localizedPath(alternateLocale, currentPath)} />
+          <LanguageSwitcher locale={locale} alternatePath={localizedPath(alternateLocale, path)} />
         </div>
 
         {/* Always-centered container */}

@@ -8,12 +8,14 @@ import { deploymentEnvironment, getMessages, getProfile } from '@/lib/site';
 type SiteShellProps = {
   locale: 'en' | 'pt-BR';
   activePage: 'home' | 'about' | 'projects' | 'openSource' | 'works' | 'articles' | 'contact';
+  pathname?: string;
   children: ReactNode;
 };
 
-export function SiteShell({ locale, activePage, children }: SiteShellProps) {
+export function SiteShell({ locale, activePage, pathname, children }: SiteShellProps) {
   const messages = getMessages(locale);
   const profile = getProfile(locale);
+  const currentPath = pathname ?? ({ home: '/', about: '/about', projects: '/projects', openSource: '/open-source', works: '/works', articles: '/articles', contact: '/contact' } as const)[activePage];
 
   return (
     <div className="relative min-h-screen px-4 pb-10 pt-8 sm:px-8 sm:pb-10 sm:pt-0" lang={locale}>
@@ -25,7 +27,7 @@ export function SiteShell({ locale, activePage, children }: SiteShellProps) {
       <GridBackground />
       <SiteEffects />
       <div className="relative z-10 mx-auto max-w-screen-xl">
-         <SiteHeader locale={locale} activePage={activePage} messages={messages} profile={profile} />
+         <SiteHeader locale={locale} activePage={activePage} currentPath={currentPath} messages={messages} profile={profile} />
         <main className="mb-12 p-0 sm:mb-20">{children}</main>
 
         <footer className="mt-20 flex flex-wrap items-start justify-between gap-8 border-t-2 border-line pt-10">

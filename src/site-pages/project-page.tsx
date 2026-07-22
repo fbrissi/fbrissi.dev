@@ -11,7 +11,7 @@ export function ProjectPage({ locale, slug }: { locale: Locale; slug: string }) 
   if (!project) return null;
 
   return (
-    <SiteShell locale={locale} activePage="projects">
+    <SiteShell locale={locale} activePage="projects" pathname={`/projects/${slug}`}>
       <section className="mb-16">
         <Link className="mb-6 inline-flex items-center gap-2 text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" href={localizedPath(locale, '/projects')}>
           {messages.labels.backToProjects}

@@ -12,7 +12,7 @@ export function ArticlePage({ locale, slug }: { locale: Locale; slug: string }) 
   if (!post) return null;
 
   return (
-    <SiteShell locale={locale} activePage="articles">
+    <SiteShell locale={locale} activePage="articles" pathname={`/articles/${slug}`}>
       <StructuredData
         data={{
           '@context': 'https://schema.org',
