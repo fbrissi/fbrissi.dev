@@ -28,6 +28,7 @@ jobs:
           NEXT_PUBLIC_OG_IMAGE: /images/og/og-image-profile.png
           NEXT_PUBLIC_SITE_URL: https://sandbox.fbrissi.dev
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
       - name: Deploy Cloudflare Pages sandbox
         uses: cloudflare/pages-action@v1
         with:

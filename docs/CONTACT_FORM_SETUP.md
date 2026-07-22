@@ -90,6 +90,7 @@ Keep **Auto apply** disabled in the Terraform Cloud workspace. After reviewing t
 Merge the release pull request into `main`. Terraform Cloud applies the configuration, which creates the Turnstile widget and configures:
 
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY` as a GitHub Actions repository variable
+- `VITE_TURNSTILE_SITE_KEY` as a legacy GitHub Actions repository variable for older tagged releases
 - `TURNSTILE_SECRET_KEY` as a GitHub Actions repository secret
 
 After that apply succeeds, the release workflow creates the tag and deploys the site and Workers.

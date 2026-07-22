@@ -67,6 +67,7 @@ Supported locales are `en` and `pt-BR`.
 ## Environment
 
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: public Turnstile key embedded in the client build
+- `VITE_TURNSTILE_SITE_KEY`: legacy public Turnstile key retained for older tagged releases
 - `NEXT_PUBLIC_CONTACT_API_URL`: optional local contact API override
 - `NEXT_PUBLIC_SITE_URL`: optional canonical site URL override
 

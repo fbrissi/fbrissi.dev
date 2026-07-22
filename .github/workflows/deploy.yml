@@ -45,6 +45,7 @@ jobs:
           APP_ENV: production
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           NEXT_PUBLIC_OG_IMAGE: ${{ vars.NEXT_PUBLIC_OG_IMAGE }}
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
       - name: Deploy Cloudflare Pages
         id: pages
         uses: cloudflare/pages-action@v1

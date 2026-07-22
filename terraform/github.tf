@@ -9,6 +9,12 @@ resource "github_actions_variable" "turnstile_site_key" {
   value         = cloudflare_turnstile_widget.contact_form.sitekey
 }
 
+resource "github_actions_variable" "turnstile_site_key_legacy" {
+  repository    = local.github_repository
+  variable_name = "VITE_TURNSTILE_SITE_KEY"
+  value         = cloudflare_turnstile_widget.contact_form.sitekey
+}
+
 # Terraform Cloud encrypts the state; GitHub encrypts this value again at rest.
 resource "github_actions_secret" "turnstile_secret_key" {
   repository  = local.github_repository

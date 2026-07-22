@@ -98,6 +98,7 @@ Required repository variable:
 
 - `CLOUDFLARE_PAGES_PROJECT_NAME`
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
+- `VITE_TURNSTILE_SITE_KEY` (legacy releases)
 
 Optional environment variable:
 

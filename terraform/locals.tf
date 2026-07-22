@@ -12,7 +12,7 @@ locals {
   github_repository = "fbrissi.dev"
 
   # Contact Form - Email addresses
-  contact_email_to     = "f.b.rissi@gmail.com" # Verified Worker Email binding destination
+  contact_email_to     = "f.b.rissi@gmail.com"  # Verified Worker Email binding destination
   contact_email_from   = "no-reply@fbrissi.dev" # From address (must be @fbrissi.dev)
   public_contact_email = "contact@fbrissi.dev"
   # Alias kept so Portuguese-style typos still reach the inbox
