@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.1.7
+
+### Changed
+
+- feat: separate the contact email display recipient from the delivery address
+
 ## v0.1.6
 
 ### Added

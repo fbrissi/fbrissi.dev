@@ -10,6 +10,7 @@ import { contactEmailHtml, contactEmailSubject, contactEmailText } from './templ
 
 export interface Env {
   CONTACT_EMAIL_TO: string;
+  CONTACT_EMAIL_DISPLAY_TO: string;
   CONTACT_EMAIL_FROM: string;
   SEND_EMAIL: { send: (message: EmailMessage) => Promise<void> };
 }
@@ -66,7 +67,7 @@ function buildOwnerRawEmail(env: Env, message: ContactMessage): string {
 
   return [
     `From: Contact Form <${env.CONTACT_EMAIL_FROM}>`,
-    `To: ${env.CONTACT_EMAIL_TO}`,
+    `To: ${env.CONTACT_EMAIL_DISPLAY_TO}`,
     `Reply-To: "${replyToName}" <${replyToEmail}>`,
     `Subject: ${subject}`,
     'MIME-Version: 1.0',
