@@ -1,6 +1,5 @@
 import { act, cleanup, fireEvent, render as renderComponent, screen } from '@testing-library/react';
 import React from 'react';
-import { MemoryRouter } from 'react-router';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ArticleCard, ProjectCard, WorksCard } from '@/components/content/content-cards';
@@ -18,7 +17,7 @@ import { ContactForm } from '@/features/contact/contact-form';
 vi.stubGlobal('React', React);
 
 function render(ui: React.ReactNode) {
-  return renderComponent(ui, { wrapper: MemoryRouter });
+  return renderComponent(ui);
 }
 
 afterEach(() => {

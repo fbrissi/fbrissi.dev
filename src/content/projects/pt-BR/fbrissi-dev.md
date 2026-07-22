@@ -20,9 +20,9 @@ O `fbrissi.dev` é o repositório público que mantém este portfólio. Ele foi 
 
 ## Produto e arquitetura frontend
 
-A aplicação é uma SPA bilíngue em React 19 construída com **Vite, TypeScript, React Router e Tailwind CSS**. As rotas em inglês ficam na raiz e as rotas em português sob `/pt-br`, com suporte a acesso direto por meio do Cloudflare Pages.
+A aplicação é um site bilíngue em React 19 construído com **Next.js, TypeScript e Tailwind CSS**, usando exportação estática para o Cloudflare Pages. As rotas em inglês ficam na raiz e as rotas em português sob `/pt-br`, com todas as páginas pré-renderizadas durante o build.
 
-O conteúdo editorial é separado da apresentação e mantido em Markdown e JSON localizados. O Vite importa esse conteúdo durante o build, enquanto utilitários reutilizáveis de parsing e collections oferecem acesso tipado a artigos, projetos, experiências profissionais e informações de perfil.
+O conteúdo editorial é separado da apresentação e mantido em Markdown e JSON localizados. O build gera um manifesto tipado do conteúdo, enquanto utilitários reutilizáveis de parsing e collections oferecem acesso a artigos, projetos, experiências profissionais e informações de perfil.
 
 O frontend também inclui:
 

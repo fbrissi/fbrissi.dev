@@ -1,3 +1,5 @@
+ 'use client';
+
 import { useEffect, useRef } from 'react';
 
 // Grid pattern must match the previous CSS background (50px cells, --line color at 0.5 alpha).

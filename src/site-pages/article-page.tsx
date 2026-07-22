@@ -26,7 +26,7 @@ export function ArticlePage({ locale, slug }: { locale: Locale; slug: string }) 
         }}
       />
       <section className="mb-16">
-        <Link className="mb-6 inline-flex items-center gap-2 text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" to={localizedPath(locale, '/articles')}>
+        <Link className="mb-6 inline-flex items-center gap-2 text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" href={localizedPath(locale, '/articles')}>
           {messages.labels.backToArticles}
         </Link>
         <p className="mb-4 text-xs font-light uppercase tracking-widest text-text-muted">{post.dateLabel} · {post.readingTime}</p>
@@ -40,4 +40,4 @@ export function ArticlePage({ locale, slug }: { locale: Locale; slug: string }) 
     </SiteShell>
   );
 }
-import { Link } from 'react-router';
+import Link from 'next/link';

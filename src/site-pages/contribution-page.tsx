@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import Link from 'next/link';
 
 import { Markdown } from '@/components/content/markdown';
 import { SiteShell } from '@/components/layout/site-shell';
@@ -14,7 +14,7 @@ export function ContributionPage({ locale, slug }: { locale: Locale; slug: strin
   return (
     <SiteShell locale={locale} activePage="openSource">
       <section className="mb-12 max-w-4xl">
-        <Link className="mb-6 inline-flex text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" to={localizedPath(locale, '/open-source')}>
+        <Link className="mb-6 inline-flex text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" href={localizedPath(locale, '/open-source')}>
           {messages.labels.backToContributions}
         </Link>
         <p className="mb-4 font-mono text-xs text-accent">{contribution.repository} · {contribution.period}</p>

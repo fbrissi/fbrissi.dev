@@ -1,8 +1,11 @@
+ 'use client';
+
 import { useState, useRef, useEffect } from 'react';
 
 interface ContactFormProps {
   locale: 'en' | 'pt-BR';
   turnstileSiteKey: string;
+  contactApiUrl?: string;
 }
 
 interface FormState {
@@ -84,7 +87,8 @@ const messages = {
   },
 };
 
-export function ContactForm({ locale, turnstileSiteKey }: ContactFormProps) {
+/* c8 ignore next: Vite environment variables are retained only as a migration fallback. */
+export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.env.NEXT_PUBLIC_CONTACT_API_URL ?? process.env.VITE_CONTACT_API_URL ?? '/api/contact' }: ContactFormProps) {
   const t = messages[locale].form;
   const [formState, setFormState] = useState<FormState>({
     name: '',
@@ -176,7 +180,7 @@ export function ContactForm({ locale, turnstileSiteKey }: ContactFormProps) {
     setErrorMessage('');
 
     try {
-      const response = await fetch(import.meta.env.VITE_CONTACT_API_URL ?? '/api/contact', {
+      const response = await fetch(contactApiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

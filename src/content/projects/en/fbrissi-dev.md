@@ -20,9 +20,9 @@ order: 1
 
 ## Product and frontend architecture
 
-The user-facing application is a bilingual React 19 SPA built with **Vite, TypeScript, React Router, and Tailwind CSS**. English routes live at the root and Portuguese routes under `/pt-br`, with direct-navigation support on Cloudflare Pages.
+The user-facing application is a bilingual React 19 site built with **Next.js, TypeScript, and Tailwind CSS**, using static export for Cloudflare Pages. English routes live at the root and Portuguese routes under `/pt-br`, with every page pre-rendered at build time.
 
-Editorial content is separated from presentation and stored as localized Markdown and JSON. Vite imports the content at build time, while reusable parsing and collection utilities provide typed access to articles, projects, work history, and profile information.
+Editorial content is separated from presentation and stored as localized Markdown and JSON. The build generates a typed content manifest, while reusable parsing and collection utilities provide access to articles, projects, work history, and profile information.
 
 The frontend also includes:
 

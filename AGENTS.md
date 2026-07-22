@@ -1,38 +1,36 @@
 # AI Agents Context for fbrissi.dev
 
-Static bilingual portfolio built with Vite, React 19, TypeScript, and Tailwind CSS, deployed to Cloudflare Pages.
+Static bilingual portfolio built with Next.js, React 19, TypeScript, and Tailwind CSS, deployed to Cloudflare Pages.
 
 ## Architecture
 
-- Vite builds the SPA to `dist/`.
-- Cloudflare Pages uses `public/_redirects` to serve `index.html` for application routes.
+- Next.js statically exports the site to `out/`.
+- Cloudflare Pages serves the static export from `out/`.
 - English routes use the root path; Portuguese routes use `/pt-br`.
-- `src/app/router.tsx` defines React Router routes.
-- `src/app/metadata.ts` manages route document metadata.
-- Markdown content is imported at build time with Vite `import.meta.glob`.
+- `src/app/` defines the Next.js App Router routes and metadata.
+- Markdown content is compiled into a build-generated typed manifest.
 - Contact handling remains in Cloudflare Workers under `workers/`.
 
 ## Structure
 
 ```text
-public/                       Static files and Cloudflare redirects
+public/                       Static assets and Cloudflare configuration
 src/
-  app/                        Router, metadata, and root application
+  app/                        Next.js App Router and root layout
   components/content/         Shared content presentation
   components/layout/          Shared site chrome
   content/                    Localized Markdown and profile JSON
   features/contact/           Contact form feature
   i18n/messages/              Localized UI messages
   lib/                        Content, i18n, and SEO utilities
-  pages/                      Route-level page components
-  main.tsx                    React entry point
+  site-pages/                 Shared route-level page components
+  generated/                  Build-generated content manifest
   index.css                   Global Tailwind styles
 test/                         Vitest tests
 workers/                      Production and local contact workers
 scripts/                      Build helpers
 terraform/                    Cloudflare infrastructure
-index.html                    Vite HTML entry
-vite.config.ts                Vite configuration
+next.config.ts                Next.js configuration
 ```
 
 ## Development
@@ -68,9 +66,9 @@ Supported locales are `en` and `pt-BR`.
 
 ## Environment
 
-- `VITE_TURNSTILE_SITE_KEY`: public Turnstile key embedded in the client build
-- `VITE_CONTACT_API_URL`: optional local contact API override
-- `VITE_SITE_URL`: optional canonical site URL override
+- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`: public Turnstile key embedded in the client build
+- `NEXT_PUBLIC_CONTACT_API_URL`: optional local contact API override
+- `NEXT_PUBLIC_SITE_URL`: optional canonical site URL override
 
 ## Releases
 

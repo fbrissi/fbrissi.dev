@@ -47,6 +47,7 @@ export function createPageMetadata({ locale, pathname, title, description, image
           url: absoluteUrl(image),
           width: 1200,
           height: 630,
+          type: 'image/png',
           alt: title
         }
       ]
@@ -55,7 +56,8 @@ export function createPageMetadata({ locale, pathname, title, description, image
       card: 'summary_large_image',
       title,
       description,
-      images: [absoluteUrl(image)]
+      images: [absoluteUrl(image)],
+      imageAlt: title
     }
   };
 }

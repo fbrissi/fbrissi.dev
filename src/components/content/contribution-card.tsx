@@ -1,4 +1,4 @@
-import { Link } from 'react-router';
+import Link from 'next/link';
 
 import type { Contribution } from '@/lib/contributions';
 import { localizedPath, type Locale } from '@/lib/i18n';
@@ -10,7 +10,7 @@ export function ContributionCard({ locale, item }: { locale: Locale; item: Contr
 
   return (
     <article className="group flex h-full flex-col rounded-xl border border-line bg-bg-soft p-6 shadow-lg transition-all duration-250 hover:-translate-y-1 hover:border-line-bright hover:shadow-xl">
-      <Link className="flex flex-1 flex-col" to={contributionPath}>
+      <Link className="flex flex-1 flex-col" href={contributionPath}>
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <p className="mb-2 font-mono text-xs text-accent">{item.repository}</p>
@@ -24,7 +24,7 @@ export function ContributionCard({ locale, item }: { locale: Locale; item: Contr
         </div>
       </Link>
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-line pt-4">
-        <Link className="text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" to={contributionPath}>
+        <Link className="text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" href={contributionPath}>
           {messages.labels.readContribution}
         </Link>
         <a className="text-xs text-text-muted transition-colors duration-250 hover:text-text" href={item.evidence[0].url} target="_blank" rel="noreferrer">

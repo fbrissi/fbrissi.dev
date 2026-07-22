@@ -12,6 +12,9 @@ import { getProjects } from '@/lib/projects';
 import { getMessages, getProfile } from '@/lib/site';
 import { getWorks } from '@/lib/works';
 
+/* c8 ignore next: Vite and Next expose imported assets with different shapes. */
+const portfolioImageUrl = typeof portfolioImage === 'string' ? portfolioImage : portfolioImage.src;
+
 export function HomePage({ locale }: { locale: Locale }) {
   const messages = getMessages(locale);
   const profile = getProfile(locale);
@@ -46,7 +49,7 @@ export function HomePage({ locale }: { locale: Locale }) {
       <section className="mb-16">
         <img
           className="mb-10 w-full rounded-xl border border-line shadow-xl"
-          src={portfolioImage}
+          src={portfolioImageUrl}
           alt={locale === 'pt-BR' ? 'Tecnologias e áreas de atuação de Filipe' : "Filipe's engineering technologies and focus areas"}
         />
         <h1 className="mb-6 text-3xl font-normal tracking-tight sm:text-5xl">{profile.headline}</h1>

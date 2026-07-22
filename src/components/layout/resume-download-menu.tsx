@@ -1,21 +1,21 @@
+ 'use client';
+
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 import type { Locale } from '@/lib/i18n';
-import { getMessages } from '@/lib/site';
 
 const resumeFiles = [
   { label: 'English', href: '/resume/filipe-bojikian-rissi-resume-en.pdf', language: 'EN' },
   { label: 'Português', href: '/resume/filipe-bojikian-rissi-curriculo-pt-br.pdf', language: 'PT' }
 ];
 
-export function ResumeDownloadMenu({ locale, compact = false }: { locale: Locale; compact?: boolean }) {
+export function ResumeDownloadMenu({ locale, resumeLabel = 'Baixar currículo', compact = false }: { locale: Locale; resumeLabel?: string; compact?: boolean }) {
   const [isOpen, setIsOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [position, setPosition] = useState({ right: 0, top: 0 });
-  const messages = getMessages(locale);
 
   useEffect(() => {
     function closeMenu(event: MouseEvent) {
@@ -53,12 +53,12 @@ export function ResumeDownloadMenu({ locale, compact = false }: { locale: Locale
   }, [isOpen]);
 
   return (
-    <div className="relative" ref={menuRef}>
+    <div className="relative" ref={menuRef} data-locale={locale}>
       <button
         ref={buttonRef}
         className="flex items-center gap-1.5 font-light tracking-wide text-text-secondary transition-colors duration-300 hover:text-accent"
         type="button"
-        aria-label={messages.labels.downloadResume}
+         aria-label={resumeLabel}
         aria-expanded={isOpen}
         aria-haspopup="menu"
         onClick={() => setIsOpen((open) => !open)}
@@ -66,7 +66,7 @@ export function ResumeDownloadMenu({ locale, compact = false }: { locale: Locale
         <svg aria-hidden="true" className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
           <path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        <span>{compact ? 'CV' : messages.nav.resume}</span>
+        <span>{compact ? 'CV' : resumeLabel}</span>
       </button>
 
       {isOpen && createPortal(

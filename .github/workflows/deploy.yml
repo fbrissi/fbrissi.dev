@@ -42,7 +42,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn build
         env:
-          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
       - name: Deploy Cloudflare Pages
         id: pages
         uses: cloudflare/pages-action@v1
@@ -50,7 +50,7 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           projectName: ${{ vars.CLOUDFLARE_PAGES_PROJECT_NAME }}
-          directory: dist
+          directory: out
           branch: main
       - name: Add production URLs to summary
         run: |

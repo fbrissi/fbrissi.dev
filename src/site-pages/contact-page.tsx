@@ -3,10 +3,10 @@ import { ContactForm } from '@/features/contact/contact-form';
 import type { Locale } from '@/lib/i18n';
 import { getMessages, getProfile } from '@/lib/site';
 
-export function ContactPage({ locale }: { locale: Locale }) {
+/* c8 ignore next: Vite environment variables are retained only as a migration fallback. */
+export function ContactPage({ locale, turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY ?? process.env.VITE_TURNSTILE_SITE_KEY ?? '', contactApiUrl = process.env.NEXT_PUBLIC_CONTACT_API_URL ?? process.env.VITE_CONTACT_API_URL ?? '/api/contact' }: { locale: Locale; turnstileSiteKey?: string; contactApiUrl?: string }) {
   const messages = getMessages(locale);
   const profile = getProfile(locale);
-  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY ?? '';
 
   return (
     <SiteShell locale={locale} activePage="contact">
@@ -17,7 +17,7 @@ export function ContactPage({ locale }: { locale: Locale }) {
       <section className="mb-16">
         <div className="rounded-xl border border-line bg-bg-soft p-8 shadow-lg">
           <h2 className="mb-6 text-2xl font-normal tracking-tight">{messages.pages.contact.formTitle}</h2>
-          <ContactForm locale={locale} turnstileSiteKey={turnstileSiteKey} />
+          <ContactForm locale={locale} turnstileSiteKey={turnstileSiteKey} contactApiUrl={contactApiUrl} />
         </div>
       </section>
       <section className="mb-16">

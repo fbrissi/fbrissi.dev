@@ -1,14 +1,14 @@
 import enMessages from '@/i18n/messages/en.json';
 import ptMessages from '@/i18n/messages/pt-BR.json';
 import enProfile from '@/content/profile/en.json';
-import enProfileMarkdown from '@/content/profile/en.md?raw';
 import ptProfile from '@/content/profile/pt-BR.json';
-import ptProfileMarkdown from '@/content/profile/pt-BR.md?raw';
 
 import type { Locale } from './i18n';
 import { parseMarkdown } from './markdown';
+import { profileSources } from '@/generated/content-data';
 
-export const siteUrl = import.meta.env.VITE_SITE_URL ?? 'https://fbrissi.dev';
+/* c8 ignore next: Vite is retained only as a migration fallback. */
+export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VITE_SITE_URL ?? 'https://fbrissi.dev';
 
 export const messages = {
   en: enMessages,
@@ -20,8 +20,12 @@ type ProfileFrontMatter = {
   summary: string;
 };
 
-const enProfileContent = parseMarkdown<ProfileFrontMatter>(enProfileMarkdown);
-const ptProfileContent = parseMarkdown<ProfileFrontMatter>(ptProfileMarkdown);
+function readProfileMarkdown(locale: Locale): { data: ProfileFrontMatter; content: string } {
+  return parseMarkdown<ProfileFrontMatter>(profileSources[locale]);
+}
+
+const enProfileContent = readProfileMarkdown('en');
+const ptProfileContent = readProfileMarkdown('pt-BR');
 
 export const profiles = {
   en: { ...enProfile, ...enProfileContent.data, about: enProfileContent.content },

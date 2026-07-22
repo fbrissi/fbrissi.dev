@@ -1,9 +1,12 @@
-import { Link } from 'react-router';
+import Link from 'next/link';
 
 import portfolioImage from '@/assets/images/portifolio.png';
 import type { Article } from '@/lib/articles';
 import type { Locale } from '@/lib/i18n';
 import { localizedPath } from '@/lib/i18n';
+
+/* c8 ignore next: Vite and Next expose imported assets with different shapes. */
+const portfolioImageUrl = typeof portfolioImage === 'string' ? portfolioImage : portfolioImage.src;
 import type { ProjectItem } from '@/lib/projects';
 import type { WorkEntry } from '@/lib/works';
 import { getMessages } from '@/lib/site';
@@ -37,10 +40,10 @@ export function ProjectCard({ locale, item }: ProjectCardProps) {
   const href = localizedPath(locale, `/projects/${item.slug}`);
 
   return (
-    <Link to={href} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-bg-soft shadow-lg transition-all duration-250 hover:-translate-y-1 hover:border-line-bright hover:shadow-xl">
+    <Link href={href} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-bg-soft shadow-lg transition-all duration-250 hover:-translate-y-1 hover:border-line-bright hover:shadow-xl">
       <img
         className="aspect-video w-full border-b border-line object-cover transition-colors duration-250 group-hover:border-line-bright"
-        src={portfolioImage}
+        src={portfolioImageUrl}
         alt={locale === 'pt-BR' ? `Prévia do projeto ${item.title}` : `${item.title} project preview`}
       />
       <div className="flex flex-1 flex-col gap-4 p-6">
@@ -66,7 +69,7 @@ export function WorksCard({ locale, item }: WorksCardProps) {
   const href = localizedPath(locale, `/works/${item.slug}`);
 
   return (
-    <Link to={href} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-bg-soft p-6 shadow-lg transition-all duration-250 hover:-translate-y-1 hover:border-line-bright hover:shadow-xl">
+    <Link href={href} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-bg-soft p-6 shadow-lg transition-all duration-250 hover:-translate-y-1 hover:border-line-bright hover:shadow-xl">
       <div className="flex flex-col gap-3">
         <img className="mb-2 h-14 w-14 rounded-lg bg-white object-contain p-1" src={item.logo} alt={`${item.company} logo`} loading="lazy" />
         <p className="text-xs font-light uppercase tracking-widest text-text-muted">{item.dateRange}</p>
@@ -86,7 +89,7 @@ export function ArticleCard({ locale, item }: ArticleCardProps) {
   const messages = getMessages(locale);
 
   return (
-    <Link to={localizedPath(locale, `/articles/${item.slug}`)} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-bg-soft shadow-lg transition-all duration-250 hover:-translate-y-1 hover:border-line-bright hover:shadow-xl">
+    <Link href={localizedPath(locale, `/articles/${item.slug}`)} className="group flex flex-col overflow-hidden rounded-xl border border-line bg-bg-soft shadow-lg transition-all duration-250 hover:-translate-y-1 hover:border-line-bright hover:shadow-xl">
       {item.image ? (
         <img className="aspect-video w-full border-b border-line object-cover transition-colors duration-250 group-hover:border-line-bright" src={item.image} alt={item.imageAlt ?? ''} />
       ) : (

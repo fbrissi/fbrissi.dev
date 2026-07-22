@@ -1,15 +1,26 @@
+ 'use client';
+
 import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router';
+import Link from 'next/link';
 
 import profileImage from '@/assets/images/profile.png';
+import enMessages from '@/i18n/messages/en.json';
+import ptMessages from '@/i18n/messages/pt-BR.json';
+import enProfile from '@/content/profile/en.json';
+import ptProfile from '@/content/profile/pt-BR.json';
 import { getAlternateLocale, localizedPath, normalizeRoute, type Locale } from '@/lib/i18n';
-import { getMessages, getProfile } from '@/lib/site';
+import type { Messages, Profile } from '@/lib/site';
 import { LanguageSwitcher } from './language-switcher';
 import { ResumeDownloadMenu } from './resume-download-menu';
+
+/* c8 ignore next: Vite and Next expose imported assets with different shapes. */
+const profileImageUrl = typeof profileImage === 'string' ? profileImage : profileImage.src;
 
 type SiteHeaderProps = {
   locale: Locale;
   activePage: 'home' | 'about' | 'projects' | 'openSource' | 'works' | 'articles' | 'contact';
+  messages?: Messages;
+  profile?: Pick<Profile, 'name' | 'publicLinks'>;
 };
 
 const navItems = [
@@ -22,16 +33,18 @@ const navItems = [
   { key: 'contact', labelKey: 'contact', path: '/contact' }
 ] as const;
 
-export function SiteHeader({ locale, activePage }: SiteHeaderProps) {
-  const [isScrolled, setIsScrolled] = useState(() => window.scrollY > 24);
-  const location = useLocation();
-  const messages = getMessages(locale);
-  const profile = getProfile(locale);
+export function SiteHeader({ locale, activePage, messages: providedMessages, profile: providedProfile }: SiteHeaderProps) {
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [pathname, setPathname] = useState('/');
+  const messages = providedMessages ?? (locale === 'pt-BR' ? ptMessages : enMessages);
+  const profile = providedProfile ?? (locale === 'pt-BR' ? ptProfile : enProfile);
   const alternateLocale = getAlternateLocale(locale);
 
-  const currentPath = normalizeRoute(location.pathname);
+  const currentPath = normalizeRoute(pathname);
 
   useEffect(() => {
+    setPathname(window.location.pathname);
+
     function handleScroll() {
       setIsScrolled(window.scrollY > 24);
     }
@@ -44,10 +57,10 @@ export function SiteHeader({ locale, activePage }: SiteHeaderProps) {
     <header className={`site-header-shell sticky top-0 z-50 mb-16 sm:border-b sm:border-line ${isScrolled ? 'site-header-shell-fixed' : ''}`}>
       {/* Mobile: always compact horizontal layout */}
       <div className="mb-8 flex items-center justify-between gap-4 border-b border-line px-4 py-4 sm:hidden">
-        <Link className="flex-shrink-0 transition-transform duration-300 hover:scale-105" to={localizedPath(locale, '/')}>
+          <Link className="flex-shrink-0 transition-transform duration-300 hover:scale-105" href={localizedPath(locale, '/')}>
           <img
             className="h-[50px] w-[50px] rounded-full border-2 border-line shadow-lg"
-            src={profileImage}
+            src={profileImageUrl}
             alt={profile.name} 
             width={50} 
             height={50} 
@@ -63,12 +76,12 @@ export function SiteHeader({ locale, activePage }: SiteHeaderProps) {
                   ? 'text-accent after:absolute after:bottom-[-4px] after:left-0 after:h-[1px] after:w-full after:bg-accent' 
                   : 'text-text-secondary'
               }`}
-              to={localizedPath(locale, item.path)}
+              href={localizedPath(locale, item.path)}
             >
               {messages.nav[item.labelKey]}
             </Link>
           ))}
-          <ResumeDownloadMenu locale={locale} compact />
+          <ResumeDownloadMenu locale={locale} resumeLabel={messages.nav.resume} compact />
         </nav>
 
         <div className="flex-shrink-0">
@@ -85,10 +98,10 @@ export function SiteHeader({ locale, activePage }: SiteHeaderProps) {
         {/* Always-centered container */}
         <div className="site-header-desktop-stack flex flex-col items-center">
           {/* Avatar with size transition */}
-          <Link className="site-header-desktop-avatar border-2 border-line shadow-lg transition-transform duration-300 hover:scale-105" to={localizedPath(locale, '/')}>
+          <Link className="site-header-desktop-avatar border-2 border-line shadow-lg transition-transform duration-300 hover:scale-105" href={localizedPath(locale, '/')}>
             <img
               className="h-full w-full object-cover"
-              src={profileImage}
+             src={profileImageUrl}
               alt={profile.name}
             />
           </Link>
@@ -96,7 +109,7 @@ export function SiteHeader({ locale, activePage }: SiteHeaderProps) {
           {/* Name fades out when scrolled */}
           <Link
             className="site-header-desktop-name group inline-block overflow-hidden"
-            to={localizedPath(locale, '/')}
+            href={localizedPath(locale, '/')}
           >
             <h1 className="whitespace-nowrap text-center text-3xl font-normal tracking-tight transition-colors duration-300 group-hover:text-accent">
               {profile.name}
@@ -113,12 +126,12 @@ export function SiteHeader({ locale, activePage }: SiteHeaderProps) {
                     ? 'text-accent after:absolute after:bottom-[-4px] after:left-0 after:h-[1px] after:w-full after:bg-accent' 
                     : 'text-text-secondary'
                 }`}
-                to={localizedPath(locale, item.path)}
+                href={localizedPath(locale, item.path)}
               >
                 {messages.nav[item.labelKey]}
               </Link>
             ))}
-            <ResumeDownloadMenu locale={locale} />
+            <ResumeDownloadMenu locale={locale} resumeLabel={messages.nav.resume} />
           </nav>
         </div>
       </div>
