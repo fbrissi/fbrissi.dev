@@ -11,3 +11,19 @@ routes = [
 [[queues.producers]]
 binding = "CONTACT_FORM_QUEUE"
 queue = "fbrissi-dev-contact-form"
+
+[[ratelimits]]
+name = "CONTACT_FORM_IP_RATE_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[ratelimits]]
+name = "CONTACT_FORM_EMAIL_RATE_LIMITER"
+namespace_id = "1002"
+
+  [ratelimits.simple]
+  limit = 3
+  period = 60

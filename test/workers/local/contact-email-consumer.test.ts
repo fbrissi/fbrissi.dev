@@ -62,18 +62,7 @@ describe('local contact email consumer', () => {
       text: expect.stringContaining('LOCAL DEVELOPMENT'),
       html: expect.stringContaining('LOCAL DEV'),
     }));
-    expect(mocks.sendMail).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      from: { address: 'noreply@fbrissi.dev', name: 'Filipe' },
-      to: 'ada@example.com',
-      replyTo: 'noreply@fbrissi.dev',
-      subject: 'Re: Hello [LOCAL]',
-      text: expect.stringContaining('I received your message about "Hello"'),
-      html: expect.stringContaining('Filipe Bojikian Rissi'),
-      headers: {
-        'Auto-Submitted': 'auto-replied',
-        'X-Auto-Response-Suppress': 'All',
-      },
-    }));
+    expect(mocks.sendMail).toHaveBeenCalledTimes(1);
     expect(mocks.DeleteMessageCommand).toHaveBeenCalledWith({ QueueUrl: 'http://localstack:4566/queue/contact', ReceiptHandle: 'receipt' });
   });
 
@@ -84,14 +73,10 @@ describe('local contact email consumer', () => {
     process.env.CONTACT_EMAIL_TO = 'to@example.com';
 
     await startConsumer([{ Body: JSON.stringify(message), ReceiptHandle: 'receipt' }]);
-    await vi.waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(2));
+    await vi.waitFor(() => expect(mocks.sendMail).toHaveBeenCalledTimes(1));
 
     expect(mocks.createTransport).toHaveBeenCalledWith({ host: 'localhost', port: 2525, secure: false });
     expect(mocks.sendMail).toHaveBeenNthCalledWith(1, expect.objectContaining({ from: 'from@example.com', to: 'to@example.com' }));
-    expect(mocks.sendMail).toHaveBeenNthCalledWith(2, expect.objectContaining({
-      from: { address: 'from@example.com', name: 'Filipe' },
-      to: 'ada@example.com',
-    }));
   });
 
   it('ignores null poll results', async () => {
@@ -125,18 +110,36 @@ describe('local contact email consumer', () => {
     expect(mocks.DeleteMessageCommand).not.toHaveBeenCalled();
   });
 
-  it('deletes the queue message when only the confirmation email fails', async () => {
-    const error = new Error('confirmation unavailable');
-    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    mocks.sendMail
-      .mockResolvedValueOnce({})
-      .mockRejectedValueOnce(error);
-
+  it('deletes the queue message after delivering the owner email', async () => {
     await startConsumer([{ Body: JSON.stringify(message), ReceiptHandle: 'receipt' }]);
 
     await vi.waitFor(() => expect(mocks.DeleteMessageCommand).toHaveBeenCalledOnce());
+    expect(mocks.sendMail).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the local confirmation implementation available', async () => {
+    await startConsumer(null);
+    const { sendConfirmationEmail } = await import('@/workers/local/contact-email-consumer');
+
+    await sendConfirmationEmail(message, 'from@example.com');
+
+    expect(mocks.sendMail).toHaveBeenCalledWith(expect.objectContaining({
+      from: { address: 'from@example.com', name: 'Filipe' },
+      to: 'ada@example.com',
+      subject: 'Re: Hello [LOCAL]',
+    }));
+  });
+
+  it('logs local confirmation delivery failures without throwing', async () => {
+    const error = new Error('confirmation unavailable');
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mocks.sendMail.mockRejectedValueOnce(error);
+    await startConsumer(null);
+    const { sendConfirmationEmail } = await import('@/workers/local/contact-email-consumer');
+
+    await sendConfirmationEmail(message, 'from@example.com');
+
     expect(consoleError).toHaveBeenCalledWith('Unable to deliver contact form confirmation email:', error);
-    expect(mocks.sendMail).toHaveBeenCalledTimes(2);
   });
 
   it('logs a failed queue delete after delivering the email', async () => {
@@ -146,7 +149,7 @@ describe('local contact email consumer', () => {
     await startConsumer([{ Body: JSON.stringify(message), ReceiptHandle: 'receipt' }], error);
 
     await vi.waitFor(() => expect(consoleError).toHaveBeenCalledWith('Unable to deliver queued contact form email:', error));
-    expect(mocks.sendMail).toHaveBeenCalledTimes(2);
+    expect(mocks.sendMail).toHaveBeenCalledTimes(1);
   });
 
   it('logs a stopped consumer and exits when queue setup fails', async () => {

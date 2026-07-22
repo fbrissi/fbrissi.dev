@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import contactEmailConsumer from '@/workers/contact-email-consumer';
+import contactEmailConsumer, { sendConfirmationEmail } from '@/workers/contact-email-consumer';
 
 interface MockEmailMessage {
   from: string;
@@ -30,7 +30,7 @@ afterEach(() => {
 });
 
 describe('contact email consumer worker', () => {
-  it('sends owner and confirmation emails after a successful delivery', async () => {
+  it('sends the owner email after a successful delivery', async () => {
     vi.spyOn(crypto, 'randomUUID')
       .mockReturnValueOnce('boundary-id' as ReturnType<typeof crypto.randomUUID>)
       .mockReturnValueOnce('confirmation-id' as ReturnType<typeof crypto.randomUUID>);
@@ -40,7 +40,7 @@ describe('contact email consumer worker', () => {
     await contactEmailConsumer.queue({ messages: [{ body: message, retry }] }, env);
 
     expect(retry).not.toHaveBeenCalled();
-    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(2);
+    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(1);
 
     const ownerEmail = env.SEND_EMAIL.send.mock.calls[0][0] as MockEmailMessage;
     expect(ownerEmail.from).toBe('sender@fbrissi.dev');
@@ -55,17 +55,6 @@ describe('contact email consumer worker', () => {
     expect(ownerEmail.raw).toMatch(/<h2[^>]*>New Contact Form Submission <\/h2>/);
     expect(ownerEmail.raw).toContain('--contact-form-boundary-id--');
 
-    const confirmationEmail = env.SEND_EMAIL.send.mock.calls[1][0] as MockEmailMessage;
-    expect(confirmationEmail.from).toBe('sender@fbrissi.dev');
-    expect(confirmationEmail.to).toBe('ada@example.com');
-    expect(confirmationEmail.raw).toContain('From: Filipe <sender@fbrissi.dev>');
-    expect(confirmationEmail.raw).toContain('To: ada@example.com');
-    expect(confirmationEmail.raw).toContain('Reply-To: sender@fbrissi.dev');
-    expect(confirmationEmail.raw).toContain('Subject: Re: Hello');
-    expect(confirmationEmail.raw).toContain('Auto-Submitted: auto-replied');
-    expect(confirmationEmail.raw).toContain('I received your message about "Hello"');
-    expect(confirmationEmail.raw).toContain('Filipe Bojikian Rissi');
-    expect(confirmationEmail.raw).toContain('boundary="contact-confirmation-confirmation-id"');
   });
 
   it('sanitizes newlines from email headers', async () => {
@@ -92,9 +81,7 @@ describe('contact email consumer worker', () => {
     expect(ownerEmail.raw).toContain('Subject: [Contact Form] Hello  Bcc: attacker@example.com');
     expect(ownerEmail.raw.split('\r\n\r\n')[0]).not.toContain('\r\nBcc: attacker@example.com');
 
-    const confirmationEmail = env.SEND_EMAIL.send.mock.calls[1][0] as MockEmailMessage;
-    expect(confirmationEmail.to).toBe('ada@example.comBcc: attacker@example.com');
-    expect(confirmationEmail.raw.split('\r\n\r\n')[0]).not.toContain('\r\nBcc: attacker@example.com');
+    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(1);
   });
 
   it('retries when the owner email fails and skips confirmation', async () => {
@@ -115,23 +102,27 @@ describe('contact email consumer worker', () => {
     expect(consoleError).toHaveBeenCalledWith('Unable to deliver contact form email:', error);
     expect(retryFirst).toHaveBeenCalledOnce();
     expect(retrySecond).not.toHaveBeenCalled();
-    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(3);
+    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(2);
   });
 
-  it('does not retry when only the confirmation email fails', async () => {
+  it('keeps the confirmation implementation available without sending it', async () => {
+    const env = createEnv();
+
+    await sendConfirmationEmail(env, message);
+
+    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(1);
+    expect((env.SEND_EMAIL.send.mock.calls[0][0] as MockEmailMessage).to).toBe('ada@example.com');
+  });
+
+  it('logs confirmation delivery failures without throwing', async () => {
     const error = new Error('confirmation unavailable');
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
     const env = createEnv();
-    env.SEND_EMAIL.send
-      .mockResolvedValueOnce(undefined)
-      .mockRejectedValueOnce(error);
-    const retry = vi.fn();
+    env.SEND_EMAIL.send.mockRejectedValueOnce(error);
 
-    await contactEmailConsumer.queue({ messages: [{ body: message, retry }] }, env);
+    await sendConfirmationEmail(env, message);
 
-    expect(retry).not.toHaveBeenCalled();
     expect(consoleError).toHaveBeenCalledWith('Unable to deliver contact form confirmation email:', error);
-    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(2);
   });
 
   it('defaults to English when locale is missing (legacy payload)', async () => {
@@ -145,8 +136,6 @@ describe('contact email consumer worker', () => {
     await contactEmailConsumer.queue({ messages: [{ body: legacyMessage, retry }] }, env);
 
     expect(retry).not.toHaveBeenCalled();
-    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(2);
-    const confirmationEmail = env.SEND_EMAIL.send.mock.calls[1][0] as MockEmailMessage;
-    expect(confirmationEmail.raw).toContain('I received your message about "Hello"');
+    expect(env.SEND_EMAIL.send).toHaveBeenCalledTimes(1);
   });
 });

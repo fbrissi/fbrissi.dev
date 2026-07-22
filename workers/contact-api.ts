@@ -2,7 +2,13 @@ import { resolveContactLocale, type ContactFormRequest, type ContactMessage } fr
 
 export interface Env {
   CONTACT_FORM_QUEUE: { send: (message: ContactMessage) => Promise<void> };
+  CONTACT_FORM_IP_RATE_LIMITER: RateLimiter;
+  CONTACT_FORM_EMAIL_RATE_LIMITER: RateLimiter;
   TURNSTILE_SECRET_KEY: string;
+}
+
+interface RateLimiter {
+  limit: (options: { key: string }) => Promise<{ success: boolean }>;
 }
 
 interface TurnstileResponse {
@@ -25,10 +31,19 @@ const contactApi = {
       const form = await request.json() as ContactFormRequest;
       if (!isValidForm(form)) return json({ error: 'Invalid form submission' }, 400);
 
+      const ip = request.headers.get('CF-Connecting-IP') ?? '';
+      const [ipLimit, emailLimit] = await Promise.all([
+        env.CONTACT_FORM_IP_RATE_LIMITER.limit({ key: ip || 'unknown' }),
+        env.CONTACT_FORM_EMAIL_RATE_LIMITER.limit({ key: normalizeEmail(form.email) }),
+      ]);
+      if (!ipLimit.success || !emailLimit.success) {
+        return json({ error: 'Too many submissions' }, 429);
+      }
+
       const turnstile = await verifyTurnstile(
         form['cf-turnstile-response'],
         env.TURNSTILE_SECRET_KEY,
-        request.headers.get('CF-Connecting-IP') ?? ''
+        ip
       );
       if (!turnstile.success) return json({ error: 'Captcha verification failed' }, 400);
 
@@ -59,6 +74,10 @@ function isValidForm(form: Partial<ContactFormRequest>): form is ContactFormRequ
     form.message?.trim() &&
     form['cf-turnstile-response']
   );
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
 }
 
 async function verifyTurnstile(token: string, secret: string, remoteip: string): Promise<TurnstileResponse> {
