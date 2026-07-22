@@ -15,5 +15,6 @@ retry_delay = 30
 name = "SEND_EMAIL"
 
 [vars]
-CONTACT_EMAIL_TO = "contact@fbrissi.dev"
+CONTACT_EMAIL_TO = "f.b.rissi@gmail.com"
+CONTACT_EMAIL_DISPLAY_TO = "contact@fbrissi.dev"
 CONTACT_EMAIL_FROM = "noreply@fbrissi.dev"
