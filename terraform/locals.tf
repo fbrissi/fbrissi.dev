@@ -6,6 +6,7 @@ locals {
   # Project configuration
   project_name      = "fbrissi-dev"
   production_branch = "main"
+  sandbox_branch    = "sandbox"
   custom_domain     = "fbrissi.dev"
   sandbox_domain    = "sandbox.fbrissi.dev"
   github_owner      = "fbrissi"
