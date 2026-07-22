@@ -9,6 +9,8 @@ import { profileSources } from '@/generated/content-data';
 
 /* c8 ignore next: Vite is retained only as a migration fallback. */
 export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VITE_SITE_URL ?? 'https://fbrissi.dev';
+export const socialImage = process.env.NEXT_PUBLIC_OG_IMAGE || '/images/og/og-image-profile.png';
+export const deploymentEnvironment = process.env.APP_ENV || (process.env.NODE_ENV === 'production' ? 'production' : 'local');
 
 export const messages = {
   en: enMessages,

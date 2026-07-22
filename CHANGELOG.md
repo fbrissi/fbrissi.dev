@@ -3,6 +3,22 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.0
+
+### Added
+
+- feat: migrate the bilingual portfolio to Next.js App Router with static export
+- feat: add manually triggered sandbox deployments for any selected branch at `sandbox.fbrissi.dev`
+- feat: isolate sandbox contact submissions in a dedicated queue and identify sandbox emails
+- feat: add environment labels for local and sandbox builds
+- feat: validate contact forms with Zod and submit them through Axios
+
+### Changed
+
+- chore: add localized Next.js metadata, favicon configuration, and profile Open Graph imagery
+- chore: persist Mailpit data in a Docker volume
+- chore: rename the contact sender address from `noreply@fbrissi.dev` to `no-reply@fbrissi.dev`
+
 ## v0.1.8
 
 ### Changed

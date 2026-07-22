@@ -30,7 +30,7 @@ describe('contact confirmation email templates', () => {
     expect(text).toContain('Staff Software Engineer');
     expect(text).toContain('contact@fbrissi.dev');
     expect(text).toContain('https://fbrissi.dev/');
-    expect(text).toContain('noreply@fbrissi.dev');
+    expect(text).toContain('no-reply@fbrissi.dev');
     expect(text).not.toContain('local development');
   });
 
@@ -56,6 +56,13 @@ describe('contact confirmation email templates', () => {
     const text = contactConfirmationEmailText(ptMessage, { isLocal: true });
 
     expect(text).toContain('desenvolvimento local');
+  });
+
+  it('renders sandbox markers in the confirmation', () => {
+    expect(contactConfirmationEmailSubject(enMessage, { isLocal: false, isSandbox: true })).toBe('Re: Question & <idea> [SANDBOX]');
+    expect(contactConfirmationEmailSubject(ptMessage, { isLocal: false, isSandbox: true })).toBe('Re: Question & <idea> [SANDBOX]');
+    expect(contactConfirmationEmailText(enMessage, { isLocal: false, isSandbox: true })).toContain('sandbox environment');
+    expect(contactConfirmationEmailHtml(enMessage, { isLocal: false, isSandbox: true })).toContain('sandbox environment');
   });
 
   it('escapes user content and includes signature in production HTML (English)', () => {

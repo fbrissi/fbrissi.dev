@@ -43,4 +43,22 @@ describe('site data', () => {
 
     expect(siteUrl).toBe('https://fbrissi.dev');
   });
+
+  it('uses the configured application environment when provided', async () => {
+    vi.stubEnv('APP_ENV', 'sandbox');
+    vi.resetModules();
+
+    const { deploymentEnvironment } = await import('@/lib/site');
+
+    expect(deploymentEnvironment).toBe('sandbox');
+  });
+
+  it('uses production as the environment for production builds', async () => {
+    vi.stubEnv('NODE_ENV', 'production');
+    vi.resetModules();
+
+    const { deploymentEnvironment } = await import('@/lib/site');
+
+    expect(deploymentEnvironment).toBe('production');
+  });
 });

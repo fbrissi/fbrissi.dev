@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 
 import { getAlternateLocale, localizedPath, type Locale } from './i18n';
-import { siteUrl } from './site';
-
-const socialImage = '/images/og/og-image-avatar.png';
+import { siteUrl, socialImage } from './site';
 
 export function createNextMetadata({
   locale,

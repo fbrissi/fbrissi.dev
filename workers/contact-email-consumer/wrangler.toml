@@ -11,10 +11,17 @@ max_batch_timeout = 5
 max_retries = 3
 retry_delay = 30
 
+[[queues.consumers]]
+queue = "fbrissi-dev-sandbox-contact-form"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 3
+retry_delay = 30
+
 [[send_email]]
 name = "SEND_EMAIL"
 
 [vars]
 CONTACT_EMAIL_TO = "f.b.rissi@gmail.com"
 CONTACT_EMAIL_DISPLAY_TO = "contact@fbrissi.dev"
-CONTACT_EMAIL_FROM = "noreply@fbrissi.dev"
+CONTACT_EMAIL_FROM = "no-reply@fbrissi.dev"

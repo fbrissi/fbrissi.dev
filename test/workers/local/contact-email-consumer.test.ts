@@ -55,12 +55,12 @@ describe('local contact email consumer', () => {
       VisibilityTimeout: 30,
     });
     expect(mocks.sendMail).toHaveBeenNthCalledWith(1, expect.objectContaining({
-      from: 'noreply@fbrissi.dev',
+      from: 'no-reply@fbrissi.dev',
       to: 'hello@fbrissi.dev',
       replyTo: { address: 'ada@example.com', name: 'Ada Lovelace' },
       subject: '[Contact Form - LOCAL] Hello',
       text: expect.stringContaining('LOCAL DEVELOPMENT'),
-      html: expect.stringContaining('LOCAL DEV'),
+        html: expect.stringContaining('LOCAL'),
     }));
     expect(mocks.sendMail).toHaveBeenCalledTimes(1);
     expect(mocks.DeleteMessageCommand).toHaveBeenCalledWith({ QueueUrl: 'http://localstack:4566/queue/contact', ReceiptHandle: 'receipt' });

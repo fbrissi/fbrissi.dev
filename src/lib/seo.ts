@@ -1,5 +1,5 @@
 import { getAlternateLocale, localizedPath, type Locale } from './i18n';
-import { getMessages, siteUrl } from './site';
+import { getMessages, siteUrl, socialImage } from './site';
 
 const baseUrl = new URL(siteUrl);
 
@@ -18,7 +18,7 @@ type PageMetadataInput = {
 
 export type PageMetadata = ReturnType<typeof createPageMetadata>;
 
-export function createPageMetadata({ locale, pathname, title, description, image = '/images/og/og-image-avatar.png', keywords = [] }: PageMetadataInput) {
+export function createPageMetadata({ locale, pathname, title, description, image = socialImage, keywords = [] }: PageMetadataInput) {
   const alternateLocale = getAlternateLocale(locale);
   const currentPath = localizedPath(locale, pathname);
   const messages = getMessages(locale);

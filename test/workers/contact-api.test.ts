@@ -17,8 +17,9 @@ const validForm = {
 };
 
 function createEnv() {
-  return {
-    CONTACT_FORM_QUEUE: { send: vi.fn().mockResolvedValue(undefined) },
+    return {
+      CONTACT_FORM_QUEUE: { send: vi.fn().mockResolvedValue(undefined) },
+      CONTACT_FORM_SANDBOX_QUEUE: { send: vi.fn().mockResolvedValue(undefined) },
     CONTACT_FORM_IP_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) },
     CONTACT_FORM_EMAIL_RATE_LIMITER: { limit: vi.fn().mockResolvedValue({ success: true }) },
     TURNSTILE_SECRET_KEY: 'turnstile-secret',
@@ -119,7 +120,24 @@ describe('contact API worker', () => {
       subject: 'Hello',
       message: 'Test message',
       locale: 'en',
+      environment: 'production',
     });
+  });
+
+  it('identifies sandbox submissions and allows the sandbox origin', async () => {
+    const verify = vi.fn().mockResolvedValue(Response.json({ success: true }));
+    vi.stubGlobal('fetch', verify);
+    const env = createEnv();
+
+    const response = await contactApi.fetch(new Request('https://fbrissi.dev/api/contact', {
+      method: 'POST',
+      headers: { Origin: 'https://sandbox.fbrissi.dev' },
+      body: JSON.stringify(validForm),
+    }), env);
+
+    expect(response.headers.get('Access-Control-Allow-Origin')).toBe('https://sandbox.fbrissi.dev');
+    expect(env.CONTACT_FORM_SANDBOX_QUEUE.send).toHaveBeenCalledWith(expect.objectContaining({ environment: 'sandbox' }));
+    expect(env.CONTACT_FORM_QUEUE.send).not.toHaveBeenCalled();
   });
 
   it('normalizes the email used for rate limiting', async () => {

@@ -25,6 +25,12 @@ describe('contact email templates', () => {
     expect(text).toContain('http://localhost:3000/contact');
   });
 
+  it('renders sandbox markers in subjects, text, and HTML emails', () => {
+    expect(contactEmailSubject(message, { isLocal: false, isSandbox: true })).toBe('[Contact Form - SANDBOX] Question');
+    expect(contactEmailText(message, { isLocal: false, isSandbox: true })).toContain('(SANDBOX)');
+    expect(contactEmailHtml(message, { isLocal: false, isSandbox: true })).toContain('<span class="badge">SANDBOX</span>');
+  });
+
   it('escapes user content and preserves message line breaks in production HTML', () => {
     const html = contactEmailHtml(message, { isLocal: false });
 
@@ -40,7 +46,7 @@ describe('contact email templates', () => {
   it('adds local HTML markers and links', () => {
     const html = contactEmailHtml(message, { isLocal: true });
 
-    expect(html).toContain('<span class="badge">LOCAL DEV</span>');
+    expect(html).toContain('<span class="badge">LOCAL</span>');
     expect(html).toContain('<a href="http://localhost:3000"');
     expect(html).toContain('src="http://localhost:3000/images/avatar.png"');
     expect(html).toContain('href="http://localhost:3000/contact"');

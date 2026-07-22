@@ -1,6 +1,8 @@
  'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import axios from 'axios';
+import { z } from 'zod';
 
 interface ContactFormProps {
   locale: 'en' | 'pt-BR';
@@ -16,8 +18,18 @@ interface FormState {
 }
 
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
+type FieldName = keyof FormState;
+type FieldErrors = Partial<Record<FieldName, string>>;
 
 const turnstileScriptId = 'cloudflare-turnstile-script';
+const requiredFieldsSchema = z.object({
+  name: z.string().trim().min(1),
+  email: z.string().trim().min(1),
+  subject: z.string().trim().min(1),
+  message: z.string().trim().min(1),
+});
+const emailSchema = z.string().trim().email();
+const contactFormSchema = requiredFieldsSchema.extend({ email: emailSchema });
 
 // Turnstile widget types
 declare global {
@@ -98,6 +110,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
   });
   const [status, setStatus] = useState<FormStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
   const [turnstileToken, setTurnstileToken] = useState<string>('');
   const turnstileRef = useRef<HTMLDivElement>(null);
   const turnstileWidgetId = useRef<string | null>(null);
@@ -152,22 +165,33 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
   ) => {
     const { name, value } = e.target;
     setFormState((prev) => ({ ...prev, [name]: value }));
+    setFieldErrors((prev) => ({ ...prev, [name]: undefined }));
   };
 
-  const validateForm = (): boolean => {
-    if (!formState.name.trim()) return false;
-    if (!formState.email.trim()) return false;
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formState.email)) return false;
-    if (!formState.subject.trim()) return false;
-    if (!formState.message.trim()) return false;
-    return true;
+  const validateForm = (): FieldErrors => {
+    const errors: FieldErrors = {};
+    const parsed = contactFormSchema.safeParse(formState);
+
+    if (parsed.success) return errors;
+
+    (Object.keys(formState) as FieldName[]).forEach((field) => {
+      if (!formState[field].trim()) {
+        errors[field] = t.required;
+      } else if (field === 'email' && !emailSchema.safeParse(formState.email).success) {
+        errors.email = t.invalidEmail;
+      }
+    });
+
+    return errors;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!validateForm()) {
-      setErrorMessage(t.required);
+    const validationErrors = validateForm();
+    setFieldErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrorMessage('');
       return;
     }
 
@@ -180,19 +204,12 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
     setErrorMessage('');
 
     try {
-      const response = await fetch(contactApiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formState,
-          locale,
-          'cf-turnstile-response': turnstileToken,
-        }),
+      const form = contactFormSchema.parse(formState);
+      await axios.post(contactApiUrl, {
+        ...form,
+        locale,
+        'cf-turnstile-response': turnstileToken,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to send message');
-      }
 
       setStatus('success');
       setFormState({ name: '', email: '', subject: '', message: '' });
@@ -275,7 +292,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
   }
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+    <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-6">
       <div className="grid gap-6 sm:grid-cols-2">
         <div className="flex flex-col gap-2">
           <label htmlFor="name" className="text-sm font-light tracking-wide text-text-secondary">
@@ -288,9 +305,11 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
             value={formState.name}
             onChange={handleChange}
             placeholder={t.namePlaceholder}
-            required
+            aria-invalid={Boolean(fieldErrors.name)}
+            aria-describedby={fieldErrors.name ? 'name-error' : undefined}
             className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           />
+          {fieldErrors.name && <p id="name-error" role="alert" className="text-sm text-red-500">{fieldErrors.name}</p>}
         </div>
 
         <div className="flex flex-col gap-2">
@@ -304,9 +323,11 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
             value={formState.email}
             onChange={handleChange}
             placeholder={t.emailPlaceholder}
-            required
+            aria-invalid={Boolean(fieldErrors.email)}
+            aria-describedby={fieldErrors.email ? 'email-error' : undefined}
             className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
           />
+          {fieldErrors.email && <p id="email-error" role="alert" className="text-sm text-red-500">{fieldErrors.email}</p>}
         </div>
       </div>
 
@@ -321,9 +342,11 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
           value={formState.subject}
           onChange={handleChange}
           placeholder={t.subjectPlaceholder}
-          required
+          aria-invalid={Boolean(fieldErrors.subject)}
+          aria-describedby={fieldErrors.subject ? 'subject-error' : undefined}
           className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
         />
+        {fieldErrors.subject && <p id="subject-error" role="alert" className="text-sm text-red-500">{fieldErrors.subject}</p>}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -336,10 +359,12 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
           value={formState.message}
           onChange={handleChange}
           placeholder={t.messagePlaceholder}
-          required
+          aria-invalid={Boolean(fieldErrors.message)}
+          aria-describedby={fieldErrors.message ? 'message-error' : undefined}
           rows={6}
           className="resize-none rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
         />
+        {fieldErrors.message && <p id="message-error" role="alert" className="text-sm text-red-500">{fieldErrors.message}</p>}
       </div>
 
       {/* Cloudflare Turnstile */}
