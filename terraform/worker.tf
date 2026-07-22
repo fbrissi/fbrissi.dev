@@ -4,11 +4,16 @@ resource "cloudflare_queue" "contact_form" {
   queue_name = "${local.project_name}-contact-form"
 }
 
+resource "cloudflare_queue" "contact_form_sandbox" {
+  account_id = local.cloudflare_account_id
+  queue_name = "${local.project_name}-sandbox-contact-form"
+}
+
 # Turnstile Widget (anti-spam)
 resource "cloudflare_turnstile_widget" "contact_form" {
   account_id = local.cloudflare_account_id
   name       = "${local.project_name}-contact-form"
-  domains    = [local.custom_domain, "www.${local.custom_domain}"]
+  domains    = [local.custom_domain, "www.${local.custom_domain}", local.sandbox_domain]
   mode       = "managed"
 }
 
