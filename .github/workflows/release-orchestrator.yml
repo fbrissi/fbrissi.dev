@@ -10,38 +10,6 @@ permissions:
   contents: write
 
 jobs:
-  validate-release-note:
-    name: Validate Release Note
-    if: ${{ github.event.action != 'closed' }}
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Validate new release note
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-
-          mapfile -t versions < <(
-            git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- CHANGELOG.md \
-              | sed -nE 's/^\+## (v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p'
-          )
-
-          if [ "${#versions[@]}" -ne 1 ]; then
-            echo 'CHANGELOG.md must add exactly one release heading in the form ## vMAJOR.MINOR.PATCH.'
-            exit 1
-          fi
-
-          version="${versions[0]}"
-          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
-            echo "Release tag already exists: $version"
-            exit 1
-          fi
-
   prepare-release:
     name: Prepare Release
     if: ${{ github.event.pull_request.merged == true }}

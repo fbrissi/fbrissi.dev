@@ -173,18 +173,67 @@ jobs:
   quality-jobs:
     name: Quality Checks
     runs-on: ubuntu-latest
-    needs: [quality, terraform]
+    needs: [quality, terraform, release-note]
     if: ${{ always() }}
     steps:
       - name: Validate quality results
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
           TERRAFORM_RESULT: ${{ needs.terraform.result }}
+          RELEASE_NOTE_RESULT: ${{ needs.release-note.result }}
         run: |
           set -euo pipefail
 
           if [ "$QUALITY_RESULT" != 'success' ] || [ "$TERRAFORM_RESULT" != 'success' ]; then
             echo "Quality result: $QUALITY_RESULT"
             echo "Terraform result: $TERRAFORM_RESULT"
+            exit 1
+          fi
+
+          if [ "$RELEASE_NOTE_RESULT" != 'success' ] && [ "$RELEASE_NOTE_RESULT" != 'skipped' ]; then
+            echo "Release note result: $RELEASE_NOTE_RESULT"
+            exit 1
+          fi
+
+  release-note:
+    name: Quality / release-note
+    if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Validate new release note
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t versions < <(
+            git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- CHANGELOG.md \
+              | sed -nE 's/^\+## (v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p'
+          )
+
+          if [ "${#versions[@]}" -ne 1 ]; then
+            echo 'CHANGELOG.md must add exactly one release heading in the form ## vMAJOR.MINOR.PATCH.'
+            exit 1
+          fi
+
+          version="${versions[0]}"
+          notes=$(awk -v heading="## $version" '
+            $0 == heading { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md)
+
+          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            echo "Release $version must include release notes."
+            exit 1
+          fi
+
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "Release tag already exists: $version"
             exit 1
           fi

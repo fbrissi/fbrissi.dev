@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.1
+
+### Changed
+
+- Moved release-note validation into the required quality checks for pull requests targeting `main`.
+
 ## v0.2.0
 
 ### Added
