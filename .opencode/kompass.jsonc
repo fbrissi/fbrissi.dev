@@ -5,13 +5,5 @@
     },
     "shared": {
         "prApprove": true
-    },
-    "tools": {
-        "ticket_load": {
-            "enabled": false
-        },
-        "ticket_sync": {
-            "enabled": false
-        }
     }
 }
