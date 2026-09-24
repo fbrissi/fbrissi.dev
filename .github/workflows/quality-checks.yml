@@ -24,6 +24,7 @@ jobs:
   warm-cache:
     name: Warm Dependency Cache
     runs-on: ubuntu-24.04
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,6 +50,7 @@ jobs:
     name: Quality / ${{ matrix.name }}
     needs: warm-cache
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     strategy:
       fail-fast: false
       matrix:
@@ -160,6 +162,7 @@ jobs:
     name: Terraform
     needs: warm-cache
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     defaults:
       run:
         working-directory: terraform
@@ -174,7 +177,7 @@ jobs:
     name: Quality Checks
     runs-on: ubuntu-latest
     needs: [quality, terraform, release-note]
-    if: ${{ always() }}
+    if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     steps:
       - name: Validate quality results
         env:
