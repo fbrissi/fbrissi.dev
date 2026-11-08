@@ -24,7 +24,7 @@ resource "cloudflare_queue" "contact_form_sandbox_dead_letter" {
 resource "cloudflare_turnstile_widget" "contact_form" {
   account_id = local.cloudflare_account_id
   name       = "${local.project_name}-contact-form"
-  domains    = [local.custom_domain, "www.${local.custom_domain}", local.sandbox_domain]
+  domains    = [local.custom_domain, local.sandbox_domain, "www.${local.custom_domain}"]
   mode       = "managed"
 
   lifecycle {
