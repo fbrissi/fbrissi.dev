@@ -207,21 +207,15 @@ jobs:
         with:
           script: |
             const pullRequest = context.payload.pull_request;
-            try {
-              await github.rest.actions.createWorkflowDispatch({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: 'code-review.yml',
-                ref: pullRequest.head.ref,
-                inputs: {
-                  pr_number: String(pullRequest.number),
-                },
-              });
-            } catch (error) {
-              // Dispatch resolves the workflow on the default branch; tolerate it until main has a dispatchable Code Review.
-              if (error.status !== 422 || !String(error.message).includes('workflow_dispatch')) throw error;
-              core.warning('Code Review on the default branch does not accept workflow_dispatch yet.');
-            }
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'code-review.yml',
+              ref: pullRequest.head.ref,
+              inputs: {
+                pr_number: String(pullRequest.number),
+              },
+            });
 
   release-note:
     name: Quality / release-note
