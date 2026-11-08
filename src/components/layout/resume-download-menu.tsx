@@ -73,7 +73,7 @@ export function ResumeDownloadMenu({ locale, resumeLabel = 'Baixar currículo', 
       {isOpen && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[100] min-w-48 overflow-hidden rounded-lg border border-line bg-bg-card shadow-xl"
+          className="fixed z-100 min-w-48 overflow-hidden rounded-lg border border-line bg-bg-card shadow-xl"
           style={position}
           role="menu"
         >

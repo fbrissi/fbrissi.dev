@@ -1,6 +1,217 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@theme {
+  --color-bg: #0a0a0a;
+  --color-bg-soft: #171717;
+  --color-bg-card: #1f1f1f;
+
+  --color-text: #fafafa;
+  --color-text-secondary: #a3a3a3;
+  --color-text-muted: #737373;
+
+  --color-line: #2a2a2a;
+  --color-line-bright: #404040;
+
+  --color-accent: #f97316;
+  --color-accent-hover: #ea580c;
+  --color-accent-glow: rgba(249, 115, 22, 0.15);
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+  --shadow-md:
+    0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+  --shadow-lg:
+    0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.6);
+  --shadow-xl:
+    0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 8px 10px -6px rgba(0, 0, 0, 0.7);
+  --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+    Cantarell, 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+
+  --animate-fadeIn: fadeIn 150ms ease-in;
+  --animate-slideInFromTop: slideInFromTop 300ms ease-out;
+  --animate-slideOutToTop: slideOutToTop 300ms ease-out;
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes slideInFromTop {
+    0% {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @keyframes slideOutToTop {
+    0% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
+}
+
+@utility site-header-shell {
+  background-color: transparent;
+  box-shadow: none;
+  backdrop-filter: blur(0px);
+  -webkit-backdrop-filter: blur(0px);
+  transition:
+    background-color 200ms ease,
+    box-shadow 200ms ease,
+    backdrop-filter 200ms ease;
+
+  @media (min-width: 640px) {
+    @supports (animation-timeline: scroll()) {
+      animation: site-header-shell-shrink 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 240px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none !important;
+    }
+  }
+}
+
+@utility site-header-shell-fixed {
+  background-color: rgba(10, 10, 10, 0.96);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+@utility site-header-desktop-shell {
+  position: relative;
+  overflow: hidden;
+  height: 280px;
+
+  @media (min-width: 640px) {
+    @supports (animation-timeline: scroll()) {
+      animation: site-header-desktop-shell-shrink 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 220px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none !important;
+    }
+  }
+}
+
+@utility site-header-desktop-stack {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+
+  @media (min-width: 640px) {
+    @supports (animation-timeline: scroll()) {
+      animation: site-header-desktop-stack-shrink 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 220px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none !important;
+    }
+  }
+}
+
+@utility site-header-desktop-avatar {
+  position: relative;
+  display: block;
+  flex-shrink: 0;
+  overflow: hidden;
+  width: 150px;
+  height: 150px;
+  border-radius: 9999px;
+
+  @media (min-width: 640px) {
+    @supports (animation-timeline: scroll()) {
+      animation: site-header-desktop-avatar-shrink 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 220px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none !important;
+    }
+  }
+}
+
+@utility site-header-desktop-name {
+  flex-shrink: 0;
+  max-height: 3rem;
+  opacity: 1;
+  transform: translateY(0);
+
+  @media (min-width: 640px) {
+    @supports (animation-timeline: scroll()) {
+      animation: site-header-desktop-name-shrink 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 160px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none !important;
+    }
+  }
+}
+
+@utility site-header-desktop-nav {
+  flex-shrink: 0;
+  gap: 1.5rem;
+
+  @media (min-width: 640px) {
+    @supports (animation-timeline: scroll()) {
+      animation: site-header-desktop-nav-shrink 1ms linear both;
+      animation-timeline: scroll(root block);
+      animation-range: 0 220px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none !important;
+    }
+  }
+}
 
 @layer base {
   * {
@@ -14,9 +225,9 @@
   body {
     margin: 0;
     min-height: 100vh;
-    background: theme('colors.bg.DEFAULT');
-    color: theme('colors.text.DEFAULT');
-    font-family: theme('fontFamily.sans');
+    background: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
     font-weight: 300;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
@@ -57,7 +268,7 @@
   }
 
   ::selection {
-    background: theme('colors.accent.DEFAULT');
+    background: var(--color-accent);
     color: #ffffff;
   }
 
@@ -74,112 +285,6 @@
 
   p {
     margin: 0;
-  }
-}
-
-@layer components {
-  .site-header-shell {
-    background-color: transparent;
-    box-shadow: none;
-    backdrop-filter: blur(0px);
-    -webkit-backdrop-filter: blur(0px);
-    transition: background-color 200ms ease, box-shadow 200ms ease, backdrop-filter 200ms ease;
-  }
-
-  .site-header-shell-fixed {
-    background-color: rgba(10, 10, 10, 0.96);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-  }
-
-  .site-header-desktop-shell {
-    position: relative;
-    overflow: hidden;
-    height: 280px;
-  }
-
-  .site-header-desktop-stack {
-    position: absolute;
-    inset: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-  }
-
-  .site-header-desktop-avatar {
-    position: relative;
-    display: block;
-    flex-shrink: 0;
-    overflow: hidden;
-    width: 150px;
-    height: 150px;
-    border-radius: 9999px;
-  }
-
-  .site-header-desktop-name {
-    flex-shrink: 0;
-    max-height: 3rem;
-    opacity: 1;
-    transform: translateY(0);
-  }
-
-  .site-header-desktop-nav {
-    flex-shrink: 0;
-    gap: 1.5rem;
-  }
-
-  @media (min-width: 640px) {
-    @supports (animation-timeline: scroll()) {
-      .site-header-shell {
-        animation: site-header-shell-shrink 1ms linear both;
-        animation-timeline: scroll(root block);
-        animation-range: 0 240px;
-      }
-
-      .site-header-desktop-shell {
-        animation: site-header-desktop-shell-shrink 1ms linear both;
-        animation-timeline: scroll(root block);
-        animation-range: 0 220px;
-      }
-
-      .site-header-desktop-stack {
-        animation: site-header-desktop-stack-shrink 1ms linear both;
-        animation-timeline: scroll(root block);
-        animation-range: 0 220px;
-      }
-
-      .site-header-desktop-avatar {
-        animation: site-header-desktop-avatar-shrink 1ms linear both;
-        animation-timeline: scroll(root block);
-        animation-range: 0 220px;
-      }
-
-      .site-header-desktop-nav {
-        animation: site-header-desktop-nav-shrink 1ms linear both;
-        animation-timeline: scroll(root block);
-        animation-range: 0 220px;
-      }
-
-      .site-header-desktop-name {
-        animation: site-header-desktop-name-shrink 1ms linear both;
-        animation-timeline: scroll(root block);
-        animation-range: 0 160px;
-      }
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      .site-header-shell,
-      .site-header-desktop-shell,
-      .site-header-desktop-stack,
-      .site-header-desktop-avatar,
-      .site-header-desktop-name,
-      .site-header-desktop-nav {
-        transition: none !important;
-      }
-    }
   }
 }
 

@@ -307,7 +307,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
             placeholder={t.namePlaceholder}
             aria-invalid={Boolean(fieldErrors.name)}
             aria-describedby={fieldErrors.name ? 'name-error' : undefined}
-            className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-hidden focus:ring-2 focus:ring-accent/20"
           />
           {fieldErrors.name && <p id="name-error" role="alert" className="text-sm text-red-500">{fieldErrors.name}</p>}
         </div>
@@ -325,7 +325,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
             placeholder={t.emailPlaceholder}
             aria-invalid={Boolean(fieldErrors.email)}
             aria-describedby={fieldErrors.email ? 'email-error' : undefined}
-            className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+            className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-hidden focus:ring-2 focus:ring-accent/20"
           />
           {fieldErrors.email && <p id="email-error" role="alert" className="text-sm text-red-500">{fieldErrors.email}</p>}
         </div>
@@ -344,7 +344,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
           placeholder={t.subjectPlaceholder}
           aria-invalid={Boolean(fieldErrors.subject)}
           aria-describedby={fieldErrors.subject ? 'subject-error' : undefined}
-          className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          className="rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-hidden focus:ring-2 focus:ring-accent/20"
         />
         {fieldErrors.subject && <p id="subject-error" role="alert" className="text-sm text-red-500">{fieldErrors.subject}</p>}
       </div>
@@ -362,7 +362,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
           aria-invalid={Boolean(fieldErrors.message)}
           aria-describedby={fieldErrors.message ? 'message-error' : undefined}
           rows={6}
-          className="resize-none rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20"
+          className="resize-none rounded-lg border border-line bg-bg px-4 py-3 font-light tracking-wide transition-all duration-250 placeholder:text-text-muted focus:border-accent focus:outline-hidden focus:ring-2 focus:ring-accent/20"
         />
         {fieldErrors.message && <p id="message-error" role="alert" className="text-sm text-red-500">{fieldErrors.message}</p>}
       </div>
