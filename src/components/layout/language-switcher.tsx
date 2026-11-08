@@ -53,7 +53,7 @@ export function LanguageSwitcher({ locale, alternatePath, compact = false }: Lan
         </button>
 
         {isOpen && (
-          <div className="absolute right-0 top-full mt-2 min-w-[140px] animate-[fadeIn_150ms_ease-in] rounded-lg border border-line bg-bg-card shadow-lg">
+          <div className="absolute right-0 top-full mt-2 min-w-[140px] animate-fadeIn rounded-lg border border-line bg-bg-card shadow-lg">
             <Link
               href={alternatePath}
               className="flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-200 hover:bg-bg-soft hover:text-accent"
@@ -97,7 +97,7 @@ export function LanguageSwitcher({ locale, alternatePath, compact = false }: Lan
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 min-w-[140px] animate-[fadeIn_150ms_ease-in] rounded-lg border border-line bg-bg-card shadow-lg">
+        <div className="absolute right-0 top-full mt-2 min-w-[140px] animate-fadeIn rounded-lg border border-line bg-bg-card shadow-lg">
           <Link
             href={alternatePath}
             className="flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-200 hover:bg-bg-soft hover:text-accent"

@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.3
+
+### Changed
+
+- Migrate to Tailwind CSS 4 with the theme defined in CSS and the `@tailwindcss/postcss` plugin.
+
 ## v0.2.2
 
 ### Changed
