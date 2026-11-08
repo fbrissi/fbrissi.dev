@@ -16,6 +16,7 @@ All notable changes to this project are documented here. Release versions follow
 - Manage Email Routing activation and drop unknown addresses with Terraform.
 - Run on Node.js 24 and update the GitHub Actions.
 - Authenticate Terraform with a GitHub App and the Terraform variable `CLOUDFLARE_API_TOKEN`.
+- Update Next.js, Axios, Nodemailer, Zod, PostCSS, and Vitest to fix vulnerable dependencies.
 
 ## v0.2.0
 
