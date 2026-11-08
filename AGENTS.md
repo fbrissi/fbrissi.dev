@@ -73,7 +73,12 @@ Supported locales are `en` and `pt-BR`.
 
 ## Releases
 
-Every release must add exactly one `CHANGELOG.md` entry headed `## vMAJOR.MINOR.PATCH`. Merging that pull request into `main` creates the matching GitHub release and tag.
+Every release must add exactly one `CHANGELOG.md` entry headed `## vMAJOR.MINOR.PATCH`. Merging that pull request into `main` waits for the Terraform Cloud apply when `terraform/` changed, then creates the matching GitHub release and tag and dispatches the deploy.
+
+- Deploys use the Terraform-managed `CLOUDFLARE_DEPLOY_API_TOKEN`; `CLOUDFLARE_API_TOKEN` is only the Terraform credential.
+- Production deploys only Semantic Versioning tags reachable from `main`.
+- `.github/workflows/rotate-credentials.yml` copies the manual Cloudflare token to Terraform Cloud (`bootstrap` and `manual` modes), and twice a year also replaces the deployment token and Turnstile widget and redeploys the latest tag (`automatic` mode).
+- Dependabot targets `main`; bring its changes into a `release/*` pull request, since pull requests into `main` require a new `CHANGELOG.md` release.
 
 ## Validation
 

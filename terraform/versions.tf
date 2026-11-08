@@ -21,3 +21,17 @@ terraform {
     }
   }
 }
+
+provider "cloudflare" {
+  api_token = var.CLOUDFLARE_API_TOKEN
+}
+
+provider "github" {
+  owner = local.github_owner
+
+  app_auth {
+    id              = var.GITHUB_APP_ID
+    installation_id = var.GITHUB_APP_INSTALLATION_ID
+    pem_file        = var.GITHUB_APP_PEM_FILE
+  }
+}

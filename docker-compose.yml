@@ -1,6 +1,6 @@
 services:
   app:
-    image: kooldev/node:20
+    image: kooldev/node:24
     command: yarn dev
     ports:
       - "3000:3000"
@@ -17,7 +17,7 @@ services:
       - contact-api
 
   contact-api:
-    image: kooldev/node:20
+    image: kooldev/node:24
     command: yarn dev:contact-api
     environment:
       ASDF_NODEJS_VERSION: 20
@@ -33,7 +33,7 @@ services:
         condition: service_healthy
 
   contact-email-consumer:
-    image: kooldev/node:20
+    image: kooldev/node:24
     command: yarn dev:contact-email-consumer
     environment:
       ASDF_NODEJS_VERSION: 20

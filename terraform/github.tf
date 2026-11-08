@@ -1,7 +1,3 @@
-provider "github" {
-  owner = local.github_owner
-}
-
 # The public key is a repository variable because it is embedded in the static build.
 resource "github_actions_variable" "turnstile_site_key" {
   repository    = local.github_repository
@@ -20,4 +16,10 @@ resource "github_actions_secret" "turnstile_secret_key" {
   repository  = local.github_repository
   secret_name = "TURNSTILE_SECRET_KEY"
   value       = cloudflare_turnstile_widget.contact_form.secret
+}
+
+resource "github_actions_secret" "cloudflare_deploy_api_token" {
+  repository  = local.github_repository
+  secret_name = "CLOUDFLARE_DEPLOY_API_TOKEN"
+  value       = cloudflare_account_token.deploy.value
 }
