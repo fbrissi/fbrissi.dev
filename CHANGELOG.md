@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.2
+
+### Changed
+
+- Update React, pdfkit, ESLint 10, globals, TypeScript 6, Testing Library jest-dom 7, jsdom 31, and the Cloudflare Terraform provider.
+- Dispatch Code Review from Quality Checks without the transition fallback.
+
 ## v0.2.1
 
 ### Changed
