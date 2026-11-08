@@ -178,6 +178,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [quality, terraform, release-note]
     if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    permissions:
+      actions: write
+      contents: read
     steps:
       - name: Validate quality results
         env:
@@ -197,6 +200,22 @@ jobs:
             echo "Release note result: $RELEASE_NOTE_RESULT"
             exit 1
           fi
+
+      - name: Dispatch Code Review
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const pullRequest = context.payload.pull_request;
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'code-review.yml',
+              ref: pullRequest.head.ref,
+              inputs: {
+                pr_number: String(pullRequest.number),
+              },
+            });
 
   release-note:
     name: Quality / release-note
