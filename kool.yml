@@ -1,7 +1,7 @@
 scripts:
-  yarn: kool docker kooldev/node:20 yarn
-  npm: kool docker kooldev/node:20 npm
-  audit: kool docker kooldev/node:20 env npm_config_userconfig=/dev/null npm audit --audit-level=high --no-package-lock
+  yarn: kool docker kooldev/node:24 yarn
+  npm: kool docker kooldev/node:24 npm
+  audit: kool docker kooldev/node:24 env npm_config_userconfig=/dev/null npm audit --audit-level=high --no-package-lock
   actionlint: sh -c 'kool docker rhysd/actionlint:latest .github/workflows/*.yml'
 
   setup:

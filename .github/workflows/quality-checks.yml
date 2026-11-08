@@ -24,11 +24,12 @@ jobs:
   warm-cache:
     name: Warm Dependency Cache
     runs-on: ubuntu-24.04
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: yarn
       - id: cache
         uses: actions/cache/restore@v6
@@ -49,6 +50,7 @@ jobs:
     name: Quality / ${{ matrix.name }}
     needs: warm-cache
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     strategy:
       fail-fast: false
       matrix:
@@ -70,17 +72,17 @@ jobs:
             coverage_summary_path: coverage/cobertura-coverage.xml
             coverage_html_path: coverage/index.html
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: yarn
       - run: yarn install --frozen-lockfile
       - name: Run ${{ matrix.name }}
         run: ${{ matrix.command }}
       - name: Upload coverage report
         if: ${{ always() && matrix.artifact_path != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
@@ -160,12 +162,13 @@ jobs:
     name: Terraform
     needs: warm-cache
     runs-on: ubuntu-latest
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     defaults:
       run:
         working-directory: terraform
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
       - run: terraform fmt -check -recursive
       - run: terraform init -backend=false
       - run: terraform validate
@@ -173,18 +176,92 @@ jobs:
   quality-jobs:
     name: Quality Checks
     runs-on: ubuntu-latest
-    needs: [quality, terraform]
-    if: ${{ always() }}
+    needs: [quality, terraform, release-note]
+    if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    permissions:
+      actions: write
+      contents: read
     steps:
       - name: Validate quality results
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
           TERRAFORM_RESULT: ${{ needs.terraform.result }}
+          RELEASE_NOTE_RESULT: ${{ needs.release-note.result }}
         run: |
           set -euo pipefail
 
           if [ "$QUALITY_RESULT" != 'success' ] || [ "$TERRAFORM_RESULT" != 'success' ]; then
             echo "Quality result: $QUALITY_RESULT"
             echo "Terraform result: $TERRAFORM_RESULT"
+            exit 1
+          fi
+
+          if [ "$RELEASE_NOTE_RESULT" != 'success' ] && [ "$RELEASE_NOTE_RESULT" != 'skipped' ]; then
+            echo "Release note result: $RELEASE_NOTE_RESULT"
+            exit 1
+          fi
+
+      - name: Dispatch Code Review
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const pullRequest = context.payload.pull_request;
+            try {
+              await github.rest.actions.createWorkflowDispatch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'code-review.yml',
+                ref: pullRequest.head.ref,
+                inputs: {
+                  pr_number: String(pullRequest.number),
+                },
+              });
+            } catch (error) {
+              // Dispatch resolves the workflow on the default branch; tolerate it until main has a dispatchable Code Review.
+              if (error.status !== 422 || !String(error.message).includes('workflow_dispatch')) throw error;
+              core.warning('Code Review on the default branch does not accept workflow_dispatch yet.');
+            }
+
+  release-note:
+    name: Quality / release-note
+    if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+      - name: Validate new release note
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          mapfile -t versions < <(
+            git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- CHANGELOG.md \
+              | sed -nE 's/^\+## (v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p'
+          )
+
+          if [ "${#versions[@]}" -ne 1 ]; then
+            echo 'CHANGELOG.md must add exactly one release heading in the form ## vMAJOR.MINOR.PATCH.'
+            exit 1
+          fi
+
+          version="${versions[0]}"
+          notes=$(awk -v heading="## $version" '
+            $0 == heading { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md)
+
+          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
+            echo "Release $version must include release notes."
+            exit 1
+          fi
+
+          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
+            echo "Release tag already exists: $version"
             exit 1
           fi

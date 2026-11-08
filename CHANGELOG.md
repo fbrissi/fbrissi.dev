@@ -3,6 +3,21 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.1
+
+### Changed
+
+- Moved release-note validation into the required quality checks for pull requests targeting `main`.
+- Deploy production and sandbox with a scoped Cloudflare token managed by Terraform, through Wrangler instead of the deprecated Pages action.
+- Deploy only release tags reachable from `main`.
+- Rotate the deployment token and Turnstile widget twice a year with the credential rotation workflow.
+- Target Dependabot updates at `main`.
+- Keep contact submissions that exhaust the delivery retries in dead-letter queues.
+- Manage Email Routing activation and drop unknown addresses with Terraform.
+- Run on Node.js 24 and update the GitHub Actions.
+- Authenticate Terraform with a GitHub App and the Terraform variable `CLOUDFLARE_API_TOKEN`.
+- Update Next.js, Axios, Nodemailer, Zod, PostCSS, and Vitest to fix vulnerable dependencies.
+
 ## v0.2.0
 
 ### Added

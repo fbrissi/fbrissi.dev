@@ -40,6 +40,7 @@ export function ResumeDownloadMenu({ locale, resumeLabel = 'Baixar currículo', 
 
     function updatePosition() {
       const bounds = buttonRef.current?.getBoundingClientRect();
+      /* v8 ignore else -- the button stays mounted while the menu is open. */
       if (bounds) setPosition({ right: window.innerWidth - bounds.right, top: bounds.bottom + 12 });
     }
 

@@ -51,13 +51,10 @@ open http://localhost:3000/contact
 
 ### Step 1: Configure Cloudflare Email Routing
 
-1. **Enable Email Routing** (manual, one-time setup):
-   - Go to [Cloudflare Dashboard](https://dash.cloudflare.com)
-   - Select your domain (`fbrissi.dev`)
-   - Navigate to **Email** → **Email Routing**
-   - Click **Get started** and follow the wizard
+1. **Email Routing** is enabled by Terraform (`cloudflare_email_routing_dns`), which
+   also drops mail sent to unknown addresses (`cloudflare_email_routing_catch_all`).
 
-2. **Add destination address**:
+2. **Add destination address** (manual, one-time setup):
    - Add your personal email address (e.g., `filipe@gmail.com`)
    - Verify it by clicking the confirmation link sent to that address
 
@@ -70,18 +67,19 @@ open http://localhost:3000/contact
 Terraform creates the Turnstile widget and synchronizes its keys to GitHub Actions.
 No Turnstile key is created or copied manually.
 
-Add these workspace environment variables in Terraform Cloud:
+Configure the `fbrissi-dev` Terraform Cloud workspace:
 
-- `CLOUDFLARE_API_TOKEN` - a Cloudflare API token with edit access to Pages,
-  Queues, Turnstile, and Email Routing for this account and zone. Mark it
-  sensitive.
-- `GITHUB_TOKEN` - a fine-grained GitHub token with access to the
-  `fbrissi/fbrissi.dev` repository and **Variables: Read and write** and
-  **Secrets: Read and write** repository permissions. Mark it sensitive.
+- `CLOUDFLARE_API_TOKEN` - sensitive Terraform variable copied from the GitHub
+  secret of the same name by the Rotate Deployment Credentials workflow (see the
+  README for its permissions); do not set it manually.
+- `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and sensitive
+  `GITHUB_APP_PEM_FILE` - Terraform variables of a GitHub App installed on
+  `fbrissi/fbrissi.dev` with **Secrets: Read and write** and **Variables: Read
+  and write** repository permissions.
 
 Add this GitHub Actions secret:
 
-- `TFC_API_TOKEN` - preferably a Terraform Cloud team token. Create a dedicated team, grant it **Read** access only to the `fbrissi-dev` workspace, and create its token. The release workflow uses it only to wait for the VCS-triggered apply. Mark it secret.
+- `TFC_API_TOKEN` - a Terraform Cloud team token with **Write** access to the `fbrissi-dev` workspace (organization tokens cannot create runs). The release workflow uses it to wait for the VCS-triggered apply, and the credential rotation workflow uses it to update `CLOUDFLARE_API_TOKEN` and start runs. Mark it secret.
 
 Keep **Auto apply** disabled in the Terraform Cloud workspace. After reviewing the automatically generated plan, apply it manually. When a merge changes `terraform/`, the release workflow waits up to six hours for the Terraform Cloud run for that commit to succeed, then creates the tag and deploys. Releases without Terraform changes skip this wait.
 
@@ -117,13 +115,14 @@ Terraform manages:
 - ✅ Custom domain configuration
 - ✅ Cloudflare Queue (contact form messages)
 - ✅ Turnstile widget
+- ✅ Email Routing activation and catch-all drop rule
 - ✅ `contact@fbrissi.dev` forwarding rule
 - ✅ `contato@fbrissi.dev` alias forwarding rule
 
 GitHub Actions manages the Worker scripts, routes, queue consumer, bindings, and Pages deployments.
 
 **Manual setup** (one-time, not managed by Terraform):
-- Enable Cloudflare Email Routing and verify `f.b.rissi@gmail.com` as a destination
+- Verify `f.b.rissi@gmail.com` as an Email Routing destination
 
 ### Migrating Existing Infrastructure
 
@@ -201,10 +200,8 @@ The API Worker is in `workers/contact-api.ts`, the consumer Worker is in
 ### Terraform errors
 
 **Error: "Missing X-Auth-Key, X-Auth-Email or Authorization headers"**
-- Add `CLOUDFLARE_API_TOKEN` as a sensitive environment variable in the
-  `fbrissi-dev` Terraform Cloud workspace, then start a new run.
-- A GitHub Actions secret with the same name is not available to Terraform
-  Cloud automatically.
+- Run the Rotate Deployment Credentials workflow in `manual` mode to copy the
+  `CLOUDFLARE_API_TOKEN` GitHub secret to Terraform Cloud, then start a new run.
 
 ### Form submission fails
 
@@ -324,7 +321,7 @@ All services used are **free**:
 └────────┬────────┘
          ▼
 ┌─────────────────┐
-│ Email Routing   │◄─── Manual setup
+│ Email Routing   │◄─── Terraform
 └────────┬────────┘
          ▼
 ┌─────────────────┐
