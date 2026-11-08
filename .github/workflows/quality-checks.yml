@@ -26,10 +26,10 @@ jobs:
     runs-on: ubuntu-24.04
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: yarn
       - id: cache
         uses: actions/cache/restore@v6
@@ -72,17 +72,17 @@ jobs:
             coverage_summary_path: coverage/cobertura-coverage.xml
             coverage_html_path: coverage/index.html
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
-          node-version: 20
+          node-version: 24
           cache: yarn
       - run: yarn install --frozen-lockfile
       - name: Run ${{ matrix.name }}
         run: ${{ matrix.command }}
       - name: Upload coverage report
         if: ${{ always() && matrix.artifact_path != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}
           path: ${{ matrix.artifact_path }}
@@ -167,8 +167,8 @@ jobs:
       run:
         working-directory: terraform
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@v7
+      - uses: hashicorp/setup-terraform@v4
       - run: terraform fmt -check -recursive
       - run: terraform init -backend=false
       - run: terraform validate
@@ -178,6 +178,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [quality, terraform, release-note]
     if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
+    permissions:
+      actions: write
+      contents: read
     steps:
       - name: Validate quality results
         env:
@@ -198,12 +201,28 @@ jobs:
             exit 1
           fi
 
+      - name: Dispatch Code Review
+        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const pullRequest = context.payload.pull_request;
+            await github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'code-review.yml',
+              ref: pullRequest.head.ref,
+              inputs: {
+                pr_number: String(pullRequest.number),
+              },
+            });
+
   release-note:
     name: Quality / release-note
     if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.pull_request.head.sha }}

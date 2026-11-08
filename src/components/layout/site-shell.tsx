@@ -20,13 +20,13 @@ export function SiteShell({ locale, activePage, pathname, children }: SiteShellP
   return (
     <div className="relative min-h-screen px-4 pb-10 pt-8 sm:px-8 sm:pb-10 sm:pt-0" lang={locale}>
       {deploymentEnvironment !== 'production' ? (
-        <div className="fixed left-3 top-3 z-[60] rounded-full border border-orange-300/60 bg-orange-500 px-3 py-1 text-xs font-bold tracking-widest text-white shadow-lg" role="status">
+        <div className="fixed left-3 top-3 z-60 rounded-full border border-orange-300/60 bg-orange-500 px-3 py-1 text-xs font-bold tracking-widest text-white shadow-lg" role="status">
           {deploymentEnvironment.toUpperCase()}
         </div>
       ) : null}
       <GridBackground />
       <SiteEffects />
-      <div className="relative z-10 mx-auto max-w-screen-xl">
+      <div className="relative z-10 mx-auto max-w-(--breakpoint-xl)">
          <SiteHeader locale={locale} activePage={activePage} currentPath={currentPath} messages={messages} profile={profile} />
         <main className="mb-12 p-0 sm:mb-20">{children}</main>
 

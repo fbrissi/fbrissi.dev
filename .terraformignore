@@ -1,0 +1,11 @@
+.git/
+**/.terraform/
+.idea/
+.next/
+.vite/
+coverage/
+dist/
+tmp/
+.wrangler/
+node_modules/
+out/

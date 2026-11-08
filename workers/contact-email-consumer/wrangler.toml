@@ -10,6 +10,7 @@ max_batch_size = 10
 max_batch_timeout = 5
 max_retries = 3
 retry_delay = 30
+dead_letter_queue = "fbrissi-dev-contact-form-dlq"
 
 [[queues.consumers]]
 queue = "fbrissi-dev-sandbox-contact-form"
@@ -17,6 +18,7 @@ max_batch_size = 10
 max_batch_timeout = 5
 max_retries = 3
 retry_delay = 30
+dead_letter_queue = "fbrissi-dev-sandbox-contact-form-dlq"
 
 [[send_email]]
 name = "SEND_EMAIL"

@@ -105,6 +105,8 @@ describe('interactive components', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
     fireEvent.click(button);
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(screen.getByRole('menu')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
@@ -127,6 +129,8 @@ describe('interactive components', () => {
     fireEvent.click(screen.getByRole('link', { name: /português/i }));
     expect(screen.queryByRole('link', { name: /português/i })).not.toBeInTheDocument();
     fireEvent.click(button);
+    fireEvent.mouseDown(button);
+    expect(screen.getByRole('link', { name: /português/i })).toBeInTheDocument();
     fireEvent.mouseDown(document.body);
     expect(screen.queryByRole('link', { name: /português/i })).not.toBeInTheDocument();
 

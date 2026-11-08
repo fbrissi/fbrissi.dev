@@ -40,6 +40,7 @@ export function ResumeDownloadMenu({ locale, resumeLabel = 'Baixar currículo', 
 
     function updatePosition() {
       const bounds = buttonRef.current?.getBoundingClientRect();
+      /* v8 ignore else -- the button stays mounted while the menu is open. */
       if (bounds) setPosition({ right: window.innerWidth - bounds.right, top: bounds.bottom + 12 });
     }
 
@@ -72,7 +73,7 @@ export function ResumeDownloadMenu({ locale, resumeLabel = 'Baixar currículo', 
       {isOpen && createPortal(
         <div
           ref={dropdownRef}
-          className="fixed z-[100] min-w-48 overflow-hidden rounded-lg border border-line bg-bg-card shadow-xl"
+          className="fixed z-100 min-w-48 overflow-hidden rounded-lg border border-line bg-bg-card shadow-xl"
           style={position}
           role="menu"
         >

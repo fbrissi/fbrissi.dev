@@ -54,7 +54,7 @@ export function SiteHeader({ locale, activePage, currentPath, messages: provided
     <header className={`site-header-shell sticky top-0 z-50 mb-16 sm:border-b sm:border-line ${isScrolled ? 'site-header-shell-fixed' : ''}`}>
       {/* Mobile: always compact horizontal layout */}
       <div className="mb-8 flex items-center justify-between gap-4 border-b border-line px-4 py-4 sm:hidden">
-          <Link className="flex-shrink-0 transition-transform duration-300 hover:scale-105" href={localizedPath(locale, '/')}>
+          <Link className="shrink-0 transition-transform duration-300 hover:scale-105" href={localizedPath(locale, '/')}>
           <img
             className="h-[50px] w-[50px] rounded-full border-2 border-line shadow-lg"
             src={profileImageUrl}
@@ -70,7 +70,7 @@ export function SiteHeader({ locale, activePage, currentPath, messages: provided
               key={item.key}
               className={`relative font-light tracking-wide transition-colors duration-300 hover:text-accent ${
                 activePage === item.key 
-                  ? 'text-accent after:absolute after:bottom-[-4px] after:left-0 after:h-[1px] after:w-full after:bg-accent' 
+                  ? 'text-accent after:absolute after:bottom-[-4px] after:left-0 after:h-px after:w-full after:bg-accent' 
                   : 'text-text-secondary'
               }`}
               href={localizedPath(locale, item.path)}
@@ -81,7 +81,7 @@ export function SiteHeader({ locale, activePage, currentPath, messages: provided
           <ResumeDownloadMenu locale={locale} resumeLabel={messages.nav.resume} compact />
         </nav>
 
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <LanguageSwitcher locale={locale} alternatePath={localizedPath(alternateLocale, path)} compact />
         </div>
       </div>
@@ -120,7 +120,7 @@ export function SiteHeader({ locale, activePage, currentPath, messages: provided
                 key={item.key}
                 className={`relative font-light tracking-wide transition-colors duration-300 hover:text-accent ${
                   activePage === item.key 
-                    ? 'text-accent after:absolute after:bottom-[-4px] after:left-0 after:h-[1px] after:w-full after:bg-accent' 
+                    ? 'text-accent after:absolute after:bottom-[-4px] after:left-0 after:h-px after:w-full after:bg-accent' 
                     : 'text-text-secondary'
                 }`}
                 href={localizedPath(locale, item.path)}

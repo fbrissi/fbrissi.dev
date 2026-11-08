@@ -93,7 +93,7 @@ export function ArticleCard({ locale, item }: ArticleCardProps) {
       {item.image ? (
         <img className="aspect-video w-full border-b border-line object-cover transition-colors duration-250 group-hover:border-line-bright" src={item.image} alt={item.imageAlt ?? ''} />
       ) : (
-        <div className="flex aspect-video items-center justify-center border-b border-line bg-gradient-to-br from-bg-card to-bg text-sm text-text-muted transition-colors duration-250 group-hover:border-line-bright">
+        <div className="flex aspect-video items-center justify-center border-b border-line bg-linear-to-br from-bg-card to-bg text-sm text-text-muted transition-colors duration-250 group-hover:border-line-bright">
           <span>Article Image</span>
         </div>
       )}

@@ -37,7 +37,7 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       tag_exists: ${{ steps.release.outputs.tag_exists }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Normalize and validate version
@@ -74,7 +74,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 360
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Check whether the release changes Terraform
@@ -157,7 +157,7 @@ jobs:
     needs: [validate, wait-for-infrastructure]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Resolve release notes

@@ -88,17 +88,36 @@ The repository includes a minimal `Dockerfile` and `docker-compose.yml` so `kool
 
 ## GitHub Secrets and Variables
 
-Required secrets:
+Configured manually:
 
-- `CLOUDFLARE_API_TOKEN`
-- `CLOUDFLARE_ACCOUNT_ID`
-- `TURNSTILE_SECRET_KEY`
+- Secret `CLOUDFLARE_API_TOKEN`: Terraform credential with account permissions
+  Pages, Queues, Turnstile Sites, and Account API Tokens Write, plus Account
+  Settings Read, and `fbrissi.dev` zone permissions DNS, Email Routing Rules,
+  and Zone Settings Write, plus Zone Read. Account and zone permissions must be separate policy
+  blocks. `.github/workflows/rotate-credentials.yml` copies it to the sensitive
+  Terraform Cloud Terraform variable `CLOUDFLARE_API_TOKEN`; run the workflow
+  in `bootstrap` mode before the first apply and in `manual` mode after
+  replacing the token.
+- Secret `TFC_API_TOKEN`: Terraform Cloud team token with write access to the
+  `fbrissi-dev` workspace (organization tokens cannot create runs)
+- Terraform Cloud workspace `fbrissi-dev`, Terraform variables `GITHUB_APP_ID`,
+  `GITHUB_APP_INSTALLATION_ID`, and sensitive `GITHUB_APP_PEM_FILE`: GitHub App
+  installed on this repository with Actions secrets and variables write access
+- Variables `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_PAGES_PROJECT_NAME`, and
+  `NEXT_PUBLIC_OG_IMAGE`
 
-Required repository variable:
+Published by Terraform, do not set them manually:
 
-- `CLOUDFLARE_PAGES_PROJECT_NAME`
-- `NEXT_PUBLIC_TURNSTILE_SITE_KEY`
-- `VITE_TURNSTILE_SITE_KEY` (legacy releases)
+- Secrets `CLOUDFLARE_DEPLOY_API_TOKEN` (scoped deployment token used by the
+  production and sandbox deploys) and `TURNSTILE_SECRET_KEY`
+- Variables `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `VITE_TURNSTILE_SITE_KEY`
+  (legacy releases)
+
+In `automatic` mode (January 1 and July 1, or on demand),
+`.github/workflows/rotate-credentials.yml` replaces the deployment token and the
+Turnstile widget, then redeploys the latest release tag. Run Deploy Sandbox
+afterwards when the sandbox is in use; the contact form may reject submissions
+for the few minutes between the apply and the redeploy.
 
 Optional environment variable:
 
@@ -116,8 +135,8 @@ Configured in `terraform/locals.tf`:
 
 ### 1. Cloudflare Pages
 
-1. Add `CLOUDFLARE_API_TOKEN` as a sensitive Terraform Cloud workspace environment variable and as a GitHub Actions secret.
-2. Apply `terraform/` to create the Pages project, custom domain, queue, and Turnstile widget.
+1. Add `CLOUDFLARE_API_TOKEN` as a GitHub Actions secret and run the Rotate Deployment Credentials workflow in `bootstrap` mode.
+2. Apply `terraform/` to create the Pages project, custom domain, queue, Turnstile widget, and deployment token.
 3. Set the repository variable `CLOUDFLARE_PAGES_PROJECT_NAME`.
 4. Deploy the Pages site and contact Workers by pushing a `v*` tag or running the Deploy workflow for a specific tag.
 
@@ -126,7 +145,7 @@ Configured in `terraform/locals.tf`:
 The contact form uses **free** Cloudflare services to send emails without any monthly costs:
 
 - **Cloudflare Email Binding** - delivers from the consumer Worker to a verified destination (free)
-- **Cloudflare Workers + Queues** - API Worker queues submissions and a separate Worker delivers email asynchronously
+- **Cloudflare Workers + Queues** - API Worker queues submissions and a separate Worker delivers email asynchronously; submissions that exhaust the retries go to a dead-letter queue
 - **Cloudflare Turnstile** - anti-spam protection (free)
 - **LocalStack Community SQS + Mailpit** - local equivalents for the queue and email delivery flow
 
@@ -141,7 +160,7 @@ The contact form uses **free** Cloudflare services to send emails without any mo
 
 **Production Deployment**:
 
-1. Configure Cloudflare Email Routing manually (one-time)
+1. Verify the Email Routing destination address manually (one-time)
 2. Configure the Terraform Cloud and GitHub integrations in the setup guide
 3. Review and apply the VCS-triggered Terraform Cloud run
 4. Let the release workflow create the tag and deploy the site and Workers
