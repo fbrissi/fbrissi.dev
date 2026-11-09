@@ -1,52 +1,35 @@
 version: 2
 
+multi-ecosystem-groups:
+  dependencies:
+    schedule:
+      interval: weekly
+      day: monday
+      time: "09:00"
+      timezone: America/Sao_Paulo
+    assignees: [fbrissi]
+    commit-message:
+      prefix: chore
+      include: scope
+
 updates:
   - package-ecosystem: npm
     directory: /
-    target-branch: main
-    schedule:
-      interval: weekly
-      day: monday
-      time: "09:00"
-      timezone: America/Sao_Paulo
-    open-pull-requests-limit: 10
-    commit-message:
-      prefix: chore
-      include: scope
-    groups:
-      production-dependencies:
-        dependency-type: production
-        update-types: [minor, patch]
-      development-dependencies:
-        dependency-type: development
-        update-types: [minor, patch]
+    patterns: ["*"]
+    multi-ecosystem-group: dependencies
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: github-actions
     directory: /
-    target-branch: main
-    schedule:
-      interval: weekly
-      day: monday
-      time: "09:00"
-      timezone: America/Sao_Paulo
-    commit-message:
-      prefix: chore
-      include: scope
-    groups:
-      github-actions:
-        patterns: ["*"]
+    patterns: ["*"]
+    multi-ecosystem-group: dependencies
 
   - package-ecosystem: terraform
     directory: /terraform
-    target-branch: main
-    schedule:
-      interval: weekly
-      day: monday
-      time: "09:00"
-      timezone: America/Sao_Paulo
-    commit-message:
-      prefix: chore
-      include: scope
-    groups:
-      terraform-providers:
-        patterns: ["*"]
+    patterns: ["*"]
+    multi-ecosystem-group: dependencies
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
