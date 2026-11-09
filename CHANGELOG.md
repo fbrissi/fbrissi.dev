@@ -9,6 +9,7 @@ All notable changes to this project are documented here. Release versions follow
 
 - Update react-markdown to 10.1.0, moving the Markdown styles to a wrapper element since the `className` prop was removed.
 - Group every Dependabot update into a single pull request assigned to `fbrissi`, targeting the default branch.
+- Ignore major Terraform provider updates in Dependabot; provider majors are upgraded manually.
 
 ## v0.2.3
 

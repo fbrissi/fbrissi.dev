@@ -27,3 +27,6 @@ updates:
     directory: /terraform
     patterns: ["*"]
     multi-ecosystem-group: dependencies
+    ignore:
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
