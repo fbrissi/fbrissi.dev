@@ -3,6 +3,13 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.5
+
+### Changed
+
+- Ignore major TypeScript updates in Dependabot until `typescript-eslint` supports TypeScript 7; the grouped update to 7.0.2 broke `yarn lint`.
+- Ignore major Terraform provider updates in Dependabot; provider majors are upgraded manually.
+
 ## v0.2.4
 
 ### Changed
