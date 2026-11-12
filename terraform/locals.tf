@@ -19,7 +19,12 @@ locals {
   # Alias kept so Portuguese-style typos still reach the inbox
   public_contact_email_aliases = ["contato@fbrissi.dev"]
 
-  # Amazon SES Easy DKIM tokens for fbrissi.dev, managed in oliblish-dev/nota-profile.
-  # Empty until the nota-profile apply publishes the ses_external_domain_dns_records output.
-  ses_dkim_tokens = []
+  # AWS account shared with the Oliblish projects; Terraform only reaches the fbrissi.dev SES identity.
+  aws_account_id = "526983805816"
+  aws_region     = "us-east-1"
+  aws_tags = {
+    Project    = local.project_name
+    Repository = "${local.github_owner}/${local.github_repository}"
+    ManagedBy  = "terraform"
+  }
 }

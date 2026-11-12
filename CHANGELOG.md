@@ -7,7 +7,7 @@ All notable changes to this project are documented here. Release versions follow
 
 ### Added
 
-- Manage the Amazon SES Easy DKIM CNAME records for `fbrissi.dev` in Terraform; the token list stays empty until the SES identity in `oliblish-dev/nota-profile` is applied.
+- Manage the `fbrissi.dev` SES identity in Terraform with restricted AWS access (dynamic credentials for the `fbrissi-dev-terraform` role, scoped to that identity): import the identity and its MAIL FROM created by `oliblish-dev/nota-profile`, and create the three Easy DKIM CNAMEs and the `mail.fbrissi.dev` MX and SPF records, with the MAIL FROM rejecting mail when its MX is missing.
 
 ## v0.2.5
 

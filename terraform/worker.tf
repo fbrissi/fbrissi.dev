@@ -99,21 +99,11 @@ resource "cloudflare_email_routing_rule" "public_contact_alias" {
 }
 
 # Monitor authentication failures for messages sent from the domain.
+# Change p=none to p=reject once the SES account moves from the sandbox to production access.
 resource "cloudflare_dns_record" "dmarc" {
   zone_id = local.cloudflare_zone_id
   name    = "_dmarc"
   type    = "TXT"
   content = "\"v=DMARC1; p=none; rua=mailto:${local.contact_email_to}\""
   ttl     = 1
-}
-
-# Amazon SES Easy DKIM records for messages sent from the domain.
-resource "cloudflare_dns_record" "ses_dkim" {
-  for_each = toset(local.ses_dkim_tokens)
-  zone_id  = local.cloudflare_zone_id
-  name     = "${each.value}._domainkey"
-  type     = "CNAME"
-  content  = "${each.value}.dkim.amazonses.com"
-  proxied  = false
-  ttl      = 1
 }
