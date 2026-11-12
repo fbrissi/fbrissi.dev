@@ -48,3 +48,25 @@ resource "cloudflare_dns_record" "ses_mail_from_spf" {
   type    = "TXT"
   ttl     = 1
 }
+
+# SMTP credential for Gmail and Spark "Send mail as" fbrissi.dev; it can send only as this identity.
+resource "aws_iam_user" "gmail_smtp" {
+  name = "${local.project_name}-gmail-smtp"
+}
+
+data "aws_iam_policy_document" "gmail_smtp" {
+  statement {
+    actions   = ["ses:SendRawEmail"]
+    resources = [aws_sesv2_email_identity.domain.arn]
+  }
+}
+
+resource "aws_iam_user_policy" "gmail_smtp" {
+  name   = "${local.project_name}-gmail-smtp"
+  user   = aws_iam_user.gmail_smtp.name
+  policy = data.aws_iam_policy_document.gmail_smtp.json
+}
+
+resource "aws_iam_access_key" "gmail_smtp" {
+  user = aws_iam_user.gmail_smtp.name
+}
