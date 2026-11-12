@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.6
+
+### Added
+
+- Manage the `fbrissi.dev` SES identity in Terraform with restricted AWS access (dynamic credentials for the `fbrissi-dev-terraform` role, scoped to that identity): import the identity and its MAIL FROM created by `oliblish-dev/nota-profile`, and create the three Easy DKIM CNAMEs and the `mail.fbrissi.dev` MX and SPF records, with the MAIL FROM rejecting mail when its MX is missing.
+
 ## v0.2.5
 
 ### Changed

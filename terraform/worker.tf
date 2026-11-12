@@ -99,6 +99,7 @@ resource "cloudflare_email_routing_rule" "public_contact_alias" {
 }
 
 # Monitor authentication failures for messages sent from the domain.
+# Change p=none to p=reject once the SES account moves from the sandbox to production access.
 resource "cloudflare_dns_record" "dmarc" {
   zone_id = local.cloudflare_zone_id
   name    = "_dmarc"

@@ -131,6 +131,55 @@ Configured in `terraform/locals.tf`:
 - Cloudflare account ID
 - Pages project name, production branch, and custom domain
 
+## AWS Access
+
+Terraform manages only the `fbrissi.dev` SES identity (Easy DKIM, MAIL FROM
+`mail.fbrissi.dev`) in the shared AWS account `526983805816`, with its DNS
+records in the same apply. Terraform Cloud reaches AWS only through dynamic
+provider credentials (OIDC); no AWS key is stored. The role is created manually
+in the IAM console, once, before the first apply, and Terraform does not manage
+it. The account-wide `app.terraform.io` OIDC provider already exists.
+
+1. Role `fbrissi-dev-terraform` with this trust policy:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Principal": { "Federated": "arn:aws:iam::526983805816:oidc-provider/app.terraform.io" },
+       "Action": "sts:AssumeRoleWithWebIdentity",
+       "Condition": {
+         "StringEquals": { "app.terraform.io:aud": "aws.workload.identity" },
+         "StringLike": { "app.terraform.io:sub": "organization:fbrissi:project:*:workspace:fbrissi-dev:run_phase:*" }
+       }
+     }]
+   }
+   ```
+
+2. Inline policy `fbrissi-dev-terraform` on the role, limited to the
+   `fbrissi.dev` identity:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Sid": "SesIdentity",
+       "Effect": "Allow",
+       "Action": [
+         "ses:CreateEmailIdentity", "ses:DeleteEmailIdentity", "ses:GetEmailIdentity",
+         "ses:ListTagsForResource", "ses:PutEmailIdentityDkimSigningAttributes",
+         "ses:PutEmailIdentityMailFromAttributes", "ses:TagResource", "ses:UntagResource"
+       ],
+       "Resource": "arn:aws:ses:us-east-1:526983805816:identity/fbrissi.dev"
+     }]
+   }
+   ```
+
+3. In the `fbrissi-dev` workspace, set the environment variables
+   `TFC_AWS_PROVIDER_AUTH=true` and
+   `TFC_AWS_RUN_ROLE_ARN=arn:aws:iam::526983805816:role/fbrissi-dev-terraform`.
+
 ## Cloudflare Setup
 
 ### 1. Cloudflare Pages

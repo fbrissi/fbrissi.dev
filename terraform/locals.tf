@@ -18,4 +18,13 @@ locals {
   public_contact_email = "contact@fbrissi.dev"
   # Alias kept so Portuguese-style typos still reach the inbox
   public_contact_email_aliases = ["contato@fbrissi.dev"]
+
+  # AWS account shared with the Oliblish projects; Terraform only reaches the fbrissi.dev SES identity.
+  aws_account_id = "526983805816"
+  aws_region     = "us-east-1"
+  aws_tags = {
+    Project    = local.project_name
+    Repository = "${local.github_owner}/${local.github_repository}"
+    ManagedBy  = "terraform"
+  }
 }
