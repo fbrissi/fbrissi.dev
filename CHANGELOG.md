@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.7
+
+### Added
+
+- Add the `fbrissi-dev-gmail-smtp` SES SMTP credential for Gmail and Spark "Send mail as" `@fbrissi.dev`, limited to `ses:SendRawEmail` on the `fbrissi.dev` identity, with the `gmail_smtp_username` and sensitive `gmail_smtp_password` Terraform outputs. The `fbrissi-dev-terraform` role needs the new `ProjectUsers` statement before the apply.
+
 ## v0.2.6
 
 ### Added

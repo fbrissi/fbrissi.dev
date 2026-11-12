@@ -34,3 +34,15 @@ output "contact_form_api_url" {
   description = "Contact form API endpoint"
   value       = "https://${local.custom_domain}/api/contact"
 }
+
+# Gmail and Spark "Send mail as" settings: server email-smtp.us-east-1.amazonaws.com, port 587 (TLS).
+output "gmail_smtp_username" {
+  description = "SES SMTP username for fbrissi.dev"
+  value       = aws_iam_access_key.gmail_smtp.id
+}
+
+output "gmail_smtp_password" {
+  description = "SES SMTP password for fbrissi.dev"
+  value       = aws_iam_access_key.gmail_smtp.ses_smtp_password_v4
+  sensitive   = true
+}

@@ -134,8 +134,8 @@ Configured in `terraform/locals.tf`:
 ## AWS Access
 
 Terraform manages only the `fbrissi.dev` SES identity (Easy DKIM, MAIL FROM
-`mail.fbrissi.dev`) in the shared AWS account `526983805816`, with its DNS
-records in the same apply. Terraform Cloud reaches AWS only through dynamic
+`mail.fbrissi.dev`) and its SMTP credential in the shared AWS account
+`526983805816`, with the DNS records in the same apply. Terraform Cloud reaches AWS only through dynamic
 provider credentials (OIDC); no AWS key is stored. The role is created manually
 in the IAM console, once, before the first apply, and Terraform does not manage
 it. The account-wide `app.terraform.io` OIDC provider already exists.
@@ -158,27 +158,48 @@ it. The account-wide `app.terraform.io` OIDC provider already exists.
    ```
 
 2. Inline policy `fbrissi-dev-terraform` on the role, limited to the
-   `fbrissi.dev` identity:
+   `fbrissi.dev` identity and the `fbrissi-dev-*` IAM users. Add permissions
+   here before merging Terraform changes that need them:
 
    ```json
    {
      "Version": "2012-10-17",
-     "Statement": [{
-       "Sid": "SesIdentity",
-       "Effect": "Allow",
-       "Action": [
-         "ses:CreateEmailIdentity", "ses:DeleteEmailIdentity", "ses:GetEmailIdentity",
-         "ses:ListTagsForResource", "ses:PutEmailIdentityDkimSigningAttributes",
-         "ses:PutEmailIdentityMailFromAttributes", "ses:TagResource", "ses:UntagResource"
-       ],
-       "Resource": "arn:aws:ses:us-east-1:526983805816:identity/fbrissi.dev"
-     }]
+     "Statement": [
+       {
+         "Sid": "SesIdentity",
+         "Effect": "Allow",
+         "Action": [
+           "ses:CreateEmailIdentity", "ses:DeleteEmailIdentity", "ses:GetEmailIdentity",
+           "ses:ListTagsForResource", "ses:PutEmailIdentityDkimSigningAttributes",
+           "ses:PutEmailIdentityMailFromAttributes", "ses:TagResource", "ses:UntagResource"
+         ],
+         "Resource": "arn:aws:ses:us-east-1:526983805816:identity/fbrissi.dev"
+       },
+       {
+         "Sid": "ProjectUsers",
+         "Effect": "Allow",
+         "Action": [
+           "iam:CreateAccessKey", "iam:CreateUser", "iam:DeleteAccessKey", "iam:DeleteUser",
+           "iam:DeleteUserPolicy", "iam:GetUser", "iam:GetUserPolicy", "iam:ListAccessKeys",
+           "iam:ListAttachedUserPolicies", "iam:ListGroupsForUser", "iam:ListUserPolicies",
+           "iam:ListUserTags", "iam:PutUserPolicy", "iam:TagUser", "iam:UntagUser"
+         ],
+         "Resource": "arn:aws:iam::526983805816:user/fbrissi-dev-*"
+       }
+     ]
    }
    ```
 
 3. In the `fbrissi-dev` workspace, set the environment variables
    `TFC_AWS_PROVIDER_AUTH=true` and
    `TFC_AWS_RUN_ROLE_ARN=arn:aws:iam::526983805816:role/fbrissi-dev-terraform`.
+
+Outbound mail: Gmail and Spark "Send mail as" `@fbrissi.dev` use SES SMTP
+(`email-smtp.us-east-1.amazonaws.com`, port 587, TLS) with the
+`gmail_smtp_username` and sensitive `gmail_smtp_password` Terraform outputs of
+the `fbrissi-dev-gmail-smtp` user, which can send only as `fbrissi.dev`. While
+the account's SES is in the sandbox, it delivers only to verified identities,
+so keep `smtp.gmail.com` until production access is granted.
 
 ## Cloudflare Setup
 
