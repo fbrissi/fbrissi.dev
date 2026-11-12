@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.2.6
+
+### Added
+
+- Manage the Amazon SES Easy DKIM CNAME records for `fbrissi.dev` in Terraform; the token list stays empty until the SES identity in `oliblish-dev/nota-profile` is applied.
+
 ## v0.2.5
 
 ### Changed

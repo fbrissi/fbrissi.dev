@@ -18,4 +18,8 @@ locals {
   public_contact_email = "contact@fbrissi.dev"
   # Alias kept so Portuguese-style typos still reach the inbox
   public_contact_email_aliases = ["contato@fbrissi.dev"]
+
+  # Amazon SES Easy DKIM tokens for fbrissi.dev, managed in oliblish-dev/nota-profile.
+  # Empty until the nota-profile apply publishes the ses_external_domain_dns_records output.
+  ses_dkim_tokens = []
 }
