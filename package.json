@@ -17,6 +17,7 @@
     "preview": "next dev",
     "dev:contact-api": "tsx workers/local/contact-api.ts",
     "dev:contact-email-consumer": "tsx workers/local/contact-email-consumer.ts",
+    "dev:study-group-api": "tsx workers/local/study-group-api.ts",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "typecheck": "tsc --noEmit",

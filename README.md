@@ -91,7 +91,7 @@ The repository includes a minimal `Dockerfile` and `docker-compose.yml` so `kool
 Configured manually:
 
 - Secret `CLOUDFLARE_API_TOKEN`: Terraform credential with account permissions
-  Pages, Queues, Turnstile Sites, and Account API Tokens Write, plus Account
+  D1, Pages, Queues, Turnstile Sites, and Account API Tokens Write, plus Account
   Settings Read, and `fbrissi.dev` zone permissions DNS, Email Routing Rules,
   and Zone Settings Write, plus Zone Read. Account and zone permissions must be separate policy
   blocks. `.github/workflows/rotate-credentials.yml` copies it to the sensitive
@@ -105,6 +105,14 @@ Configured manually:
   installed on this repository with Actions secrets and variables write access
 - Variables `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_PAGES_PROJECT_NAME`, and
   `NEXT_PUBLIC_OG_IMAGE`
+- Variable `CI_RUNNER`: optional runner label for every workflow job (defaults
+  to `ubuntu-latest`)
+- Secret `STUDY_GROUP_SLUG`: unguessable path segment of the unlisted study
+  group board (`/study-group/<slug>`) and its settings page
+- Secrets `STUDY_GROUP_ADMIN_EMAIL`, `STUDY_GROUP_ADMIN_PASSWORD_HASH`
+  (output of `node scripts/hash-study-group-password.mjs`, which reads the
+  password from stdin), and `STUDY_GROUP_SESSION_SECRET` (long random string):
+  study group settings login, pushed to the Worker on deploy
 
 Published by Terraform, do not set them manually:
 
@@ -123,6 +131,8 @@ Optional environment variable:
 
 - `NEXT_PUBLIC_SITE_URL` for canonical URLs and metadata generation
 - `NEXT_PUBLIC_CONTACT_API_URL` to override the contact API URL
+- `NEXT_PUBLIC_STUDY_GROUP_API_URL` to override the study group API URL
+- `STUDY_GROUP_SLUG` to build the study group routes (`local` in Docker)
 
 ## Terraform Configuration
 

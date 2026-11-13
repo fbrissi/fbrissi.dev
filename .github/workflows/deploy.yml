@@ -21,7 +21,7 @@ concurrency:
 
 jobs:
   deploy:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -52,6 +52,7 @@ jobs:
           APP_ENV: production
           NEXT_PUBLIC_TURNSTILE_SITE_KEY: ${{ vars.NEXT_PUBLIC_TURNSTILE_SITE_KEY }}
           NEXT_PUBLIC_OG_IMAGE: ${{ vars.NEXT_PUBLIC_OG_IMAGE }}
+          STUDY_GROUP_SLUG: ${{ secrets.STUDY_GROUP_SLUG }}
           VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
       - name: Deploy Cloudflare Pages
         id: pages
@@ -89,3 +90,56 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/contact-email-consumer
           wranglerVersion: '4'
+      - name: List D1 databases
+        id: d1
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_DEPLOY_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4'
+          command: d1 list --json
+      - name: Inject study group D1 database IDs
+        env:
+          D1_DATABASES: ${{ steps.d1.outputs.command-output }}
+        run: |
+          node --input-type=module -e '
+            import { readFileSync, writeFileSync } from "node:fs";
+            const output = process.env.D1_DATABASES ?? "";
+            const databases = JSON.parse(output.slice(output.indexOf("[")));
+            const file = "workers/study-group-api/wrangler.toml";
+            let config = readFileSync(file, "utf8");
+            for (const [placeholder, name] of [
+              ["STUDY_GROUP_DB_ID", "fbrissi-dev-study-group"],
+              ["STUDY_GROUP_SANDBOX_DB_ID", "fbrissi-dev-sandbox-study-group"],
+            ]) {
+              const database = databases.find((item) => item.name === name);
+              if (!database?.uuid) throw new Error("D1 database not found: " + name);
+              config = config.replace(JSON.stringify(placeholder), JSON.stringify(database.uuid));
+            }
+            writeFileSync(file, config);
+          '
+      - name: Apply study group D1 migrations
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_DEPLOY_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/study-group-api
+          wranglerVersion: '4'
+          command: |
+            d1 migrations apply fbrissi-dev-study-group --remote
+            d1 migrations apply fbrissi-dev-sandbox-study-group --remote
+      - name: Deploy study group API Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_DEPLOY_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/study-group-api
+          wranglerVersion: '4'
+          secrets: |
+            STUDY_GROUP_ADMIN_EMAIL
+            STUDY_GROUP_ADMIN_PASSWORD_HASH
+            STUDY_GROUP_SESSION_SECRET
+        env:
+          STUDY_GROUP_ADMIN_EMAIL: ${{ secrets.STUDY_GROUP_ADMIN_EMAIL }}
+          STUDY_GROUP_ADMIN_PASSWORD_HASH: ${{ secrets.STUDY_GROUP_ADMIN_PASSWORD_HASH }}
+          STUDY_GROUP_SESSION_SECRET: ${{ secrets.STUDY_GROUP_SESSION_SECRET }}

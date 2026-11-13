@@ -10,6 +10,7 @@ Static bilingual portfolio built with Next.js, React 19, TypeScript, and Tailwin
 - `src/app/` defines the Next.js App Router routes and metadata.
 - Markdown content is compiled into a build-generated typed manifest.
 - Contact handling remains in Cloudflare Workers under `workers/`.
+- The unlisted study group board (`/study-group/<slug>`, English only, noindex) uses the `study-group-api` Worker backed by Cloudflare D1; migrations live in `workers/study-group/migrations/`.
 
 ## Structure
 
@@ -70,6 +71,8 @@ Supported locales are `en` and `pt-BR`.
 - `VITE_TURNSTILE_SITE_KEY`: legacy public Turnstile key retained for older tagged releases
 - `NEXT_PUBLIC_CONTACT_API_URL`: optional local contact API override
 - `NEXT_PUBLIC_SITE_URL`: optional canonical site URL override
+- `NEXT_PUBLIC_STUDY_GROUP_API_URL`: optional local study group API override
+- `STUDY_GROUP_SLUG`: build-time slug of the unlisted `/study-group/<slug>` board; never commit it
 
 ## Releases
 

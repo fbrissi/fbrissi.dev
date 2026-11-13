@@ -15,3 +15,8 @@
 
 /images/avatar.png
   Cache-Control: public, max-age=0, must-revalidate
+
+# Unlisted study group board — keep out of search engines and referrers
+/study-group/*
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
