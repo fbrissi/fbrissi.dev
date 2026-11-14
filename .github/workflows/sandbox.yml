@@ -70,7 +70,7 @@ jobs:
           node --input-type=module -e '
             import { readFileSync, writeFileSync } from "node:fs";
             const output = process.env.D1_DATABASES ?? "";
-            const databases = JSON.parse(output.slice(output.indexOf("[")));
+            const databases = JSON.parse(output.slice(output.indexOf("["), output.lastIndexOf("]") + 1));
             const file = "workers/study-group-api/wrangler.toml";
             let config = readFileSync(file, "utf8");
             for (const [placeholder, name] of [
