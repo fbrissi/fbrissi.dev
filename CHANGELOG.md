@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.3.1
+
+### Fixed
+
+- Parse the `wrangler d1 list --json` output without the trailing package-manager lines, so the deploy injects the study group D1 database IDs, applies the migrations, and deploys the study group API Worker (the login returned 405 because the Worker was never deployed).
+
 ## v0.3.0
 
 ### Added
