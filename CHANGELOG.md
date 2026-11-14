@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.3.0
+
+### Added
+
+- Add the unlisted DevTalk study group board at `/study-group/<slug>` (English only, `noindex`, no-referrer, out of the sitemap): members suggest materials, browse open and discussed items, and run a weekly random draw or vote; the winner is marked discussed manually. Members unlock the board with a shared access code; deletes are soft and restorable.
+- Add the `/study-group/<slug>/settings` page, behind an email and PBKDF2 password login, to edit the group name, policy, meeting schedule and link, and access code, and to restore deleted materials.
+- Add the `fbrissi-dev-study-group-api` Worker on `/api/study-group/*`, with the `fbrissi-dev-study-group` and `fbrissi-dev-sandbox-study-group` D1 databases (Terraform), rate limits, migrations applied on deploy, and a local `node:sqlite` service in Docker. The Terraform `CLOUDFLARE_API_TOKEN` needs the D1 Write permission and the `STUDY_GROUP_*` secrets must exist before the apply and deploy.
+
+### Changed
+
+- Run every workflow job on `${{ vars.CI_RUNNER || 'ubuntu-latest' }}` so the runner can be switched with the `CI_RUNNER` variable.
+
 ## v0.2.7
 
 ### Added

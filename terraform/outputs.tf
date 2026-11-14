@@ -46,3 +46,13 @@ output "gmail_smtp_password" {
   value       = aws_iam_access_key.gmail_smtp.ses_smtp_password_v4
   sensitive   = true
 }
+
+output "study_group_database_id" {
+  description = "Study group D1 database ID"
+  value       = cloudflare_d1_database.study_group.id
+}
+
+output "study_group_sandbox_database_id" {
+  description = "Sandbox study group D1 database ID"
+  value       = cloudflare_d1_database.study_group_sandbox.id
+}

@@ -3,6 +3,20 @@ import type { Metadata } from 'next';
 import { getAlternateLocale, localizedPath, type Locale } from './i18n';
 import { siteUrl, socialImage } from './site';
 
+export function createUnlistedNextMetadata({ title, description }: { title: string; description: string }): Metadata {
+  return {
+    title,
+    description,
+    referrer: 'no-referrer',
+    robots: {
+      index: false,
+      follow: false,
+      nocache: true,
+      googleBot: { index: false, follow: false, noimageindex: true }
+    }
+  };
+}
+
 export function createNextMetadata({
   locale,
   pathname,

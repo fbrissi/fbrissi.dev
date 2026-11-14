@@ -13,7 +13,7 @@ jobs:
   prepare-release:
     name: Prepare Release
     if: ${{ github.event.pull_request.merged == true }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     outputs:
       version: ${{ steps.release.outputs.version }}
       release_notes: ${{ steps.release.outputs.release_notes }}

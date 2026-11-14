@@ -23,7 +23,7 @@ permissions:
 jobs:
   warm-cache:
     name: Warm Dependency Cache
-    runs-on: ubuntu-24.04
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     steps:
       - uses: actions/checkout@v7
@@ -49,7 +49,7 @@ jobs:
   quality:
     name: Quality / ${{ matrix.name }}
     needs: warm-cache
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     strategy:
       fail-fast: false
@@ -161,7 +161,7 @@ jobs:
   terraform:
     name: Terraform
     needs: warm-cache
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
     defaults:
       run:
@@ -175,7 +175,7 @@ jobs:
 
   quality-jobs:
     name: Quality Checks
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     needs: [quality, terraform, release-note]
     if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     permissions:
@@ -220,7 +220,7 @@ jobs:
   release-note:
     name: Quality / release-note
     if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
         with:

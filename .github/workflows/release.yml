@@ -32,7 +32,7 @@ permissions:
 jobs:
   validate:
     name: Validate Release
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     outputs:
       version: ${{ steps.release.outputs.version }}
       tag_exists: ${{ steps.release.outputs.tag_exists }}
@@ -71,7 +71,7 @@ jobs:
   wait-for-infrastructure:
     name: Wait for Infrastructure
     needs: validate
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     timeout-minutes: 360
     steps:
       - uses: actions/checkout@v7
@@ -155,7 +155,7 @@ jobs:
   release:
     name: Create Release
     needs: [validate, wait-for-infrastructure]
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
         with:
