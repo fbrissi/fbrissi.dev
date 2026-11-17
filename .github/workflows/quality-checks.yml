@@ -56,7 +56,7 @@ jobs:
       matrix:
         include:
           - name: dependency-audit
-            command: npm audit --audit-level=high --no-package-lock
+            command: node scripts/audit-high.mjs npm
           - name: lint
             command: yarn lint
           - name: typecheck
