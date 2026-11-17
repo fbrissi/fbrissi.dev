@@ -16,7 +16,40 @@
 /images/avatar.png
   Cache-Control: public, max-age=0, must-revalidate
 
-# Unlisted study group board — keep out of search engines and referrers
+# Study group app pages (board, settings, join, account, admin) — keep out of search engines and referrers (D2).
+# The landing and policy pages under /study-groups and /pt-br/study-groups stay indexable.
 /study-group/*
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+
+/study-groups/g/*
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+
+/study-groups/group
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+
+/study-groups/group/*
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+
+/study-groups/new
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+
+/study-groups/my
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+
+/study-groups/account
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+
+/study-groups/welcome
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+
+/study-groups/admin
   X-Robots-Tag: noindex, nofollow
   Referrer-Policy: no-referrer

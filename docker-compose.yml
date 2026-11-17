@@ -7,7 +7,8 @@ services:
     environment:
       ASDF_NODEJS_VERSION: 20
       NEXT_PUBLIC_CONTACT_API_URL: http://localhost:8787/api/contact
-      NEXT_PUBLIC_STUDY_GROUP_API_URL: http://localhost:8788/api/study-group
+      # `next dev` proxies /api/study-group/* to the local API so the session cookie stays same-origin.
+      STUDY_GROUP_API_PROXY_URL: http://study-group-api:8788
       STUDY_GROUP_SLUG: local
     volumes:
       - .:/app:delegated
@@ -42,12 +43,31 @@ services:
     environment:
       ASDF_NODEJS_VERSION: 24
       STUDY_GROUP_DB_PATH: tmp/study-group/local.sqlite
-      # Fake local-only admin credentials (admin@example.test / study-group-dev-password). `$$` escapes `$` for Compose.
-      STUDY_GROUP_ADMIN_EMAIL: admin@example.test
-      STUDY_GROUP_ADMIN_PASSWORD_HASH: pbkdf2-sha256$$10000$$36v4+k2cgAL7ZzRBbB4d2g==$$uPoey7Z5RYq+xW7XDAHwytPj/QbcZGsBBMGnrSk2ZR0=
+      STUDY_GROUP_APP_ORIGIN: http://localhost:3000
+      STUDY_GROUP_ALLOWED_ORIGINS: http://localhost:3000
       STUDY_GROUP_SESSION_SECRET: local-dev-session-secret-not-for-production
+      STUDY_GROUP_PLATFORM_ADMIN_EMAILS: admin@example.test
+      # Local-only fake Google IdP: the browser opens the public URL, the API calls it on the Docker network.
+      FAKE_IDP_PUBLIC_URL: http://localhost:8790
+      FAKE_IDP_INTERNAL_URL: http://fake-idp:8790
     ports:
       - "8788:8788"
+    volumes:
+      - .:/app:delegated
+    networks:
+      - kool_local
+    depends_on:
+      - fake-idp
+
+  # Fake Google OpenID Connect provider for local sign-in and E2E tests (never used in production).
+  fake-idp:
+    image: kooldev/node:24
+    command: yarn dev:fake-idp
+    environment:
+      ASDF_NODEJS_VERSION: 24
+      FAKE_IDP_PUBLIC_URL: http://localhost:8790
+    ports:
+      - "8790:8790"
     volumes:
       - .:/app:delegated
     networks:

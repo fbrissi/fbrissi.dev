@@ -1,22 +1,37 @@
 import { mkdirSync } from 'node:fs';
 import { createServer, type IncomingMessage } from 'node:http';
 import path from 'node:path';
+import { parseEmailAllowlist } from '../study-group/authorization';
 import { createHandler } from '../study-group/handler';
 import { openD1Sqlite } from './d1-sqlite';
 
-const port = Number(process.env.STUDY_GROUP_API_PORT ?? 8788);
-const databasePath = path.resolve(process.env.STUDY_GROUP_DB_PATH ?? 'tmp/study-group/local.sqlite');
-const allowedOrigins = (process.env.STUDY_GROUP_ALLOWED_ORIGINS ?? 'http://localhost:3000').split(',');
+const env = process.env;
+const port = Number(env.STUDY_GROUP_API_PORT ?? 8788);
+const databasePath = path.resolve(env.STUDY_GROUP_DB_PATH ?? 'tmp/study-group/local.sqlite');
+const allowedOrigins = (env.STUDY_GROUP_ALLOWED_ORIGINS ?? 'http://localhost:3000').split(',');
+const fakeIdpUrl = env.FAKE_IDP_PUBLIC_URL ?? 'http://localhost:8790';
+const fakeIdpInternalUrl = env.FAKE_IDP_INTERNAL_URL ?? fakeIdpUrl;
 
 mkdirSync(path.dirname(databasePath), { recursive: true });
+
+// Local only: sign-in goes to the fake Google IdP (workers/local/fake-idp.ts). The browser reaches it on its public URL,
+// while this container calls the token and JWKS endpoints on the Docker network.
 const handler = createHandler({
   db: openD1Sqlite(databasePath, path.resolve('workers/study-group/migrations')),
   allowedOrigins,
-  admin: {
-    email: process.env.STUDY_GROUP_ADMIN_EMAIL ?? '',
-    passwordHash: process.env.STUDY_GROUP_ADMIN_PASSWORD_HASH ?? '',
-    sessionSecret: process.env.STUDY_GROUP_SESSION_SECRET ?? '',
+  appOrigin: env.STUDY_GROUP_APP_ORIGIN ?? allowedOrigins[0],
+  oidc: {
+    provider: {
+      issuers: [fakeIdpUrl],
+      authorizationEndpoint: `${fakeIdpUrl}/authorize`,
+      tokenEndpoint: `${fakeIdpInternalUrl}/token`,
+      jwksUri: `${fakeIdpInternalUrl}/jwks`,
+    },
+    clientId: env.FAKE_IDP_CLIENT_ID ?? 'local-study-groups',
+    clientSecret: env.FAKE_IDP_CLIENT_SECRET ?? 'local-study-groups-secret',
   },
+  sessionSecret: env.STUDY_GROUP_SESSION_SECRET ?? '',
+  platformAdminEmails: parseEmailAllowlist(env.STUDY_GROUP_PLATFORM_ADMIN_EMAILS),
 });
 
 createServer(async (request, response) => {
@@ -26,8 +41,11 @@ createServer(async (request, response) => {
     headers: request.headers as HeadersInit,
     body: body || undefined,
   }));
-  response.writeHead(result.status, Object.fromEntries(result.headers));
-  response.end(await result.text());
+  const headers: Record<string, string | string[]> = Object.fromEntries(result.headers);
+  const cookies = result.headers.getSetCookie();
+  if (cookies.length) headers['set-cookie'] = cookies;
+  response.writeHead(result.status, headers);
+  response.end(Buffer.from(await result.arrayBuffer()));
 }).listen(port, () => console.log(`Study group API listening on ${port}`));
 
 async function readBody(request: IncomingMessage): Promise<string> {

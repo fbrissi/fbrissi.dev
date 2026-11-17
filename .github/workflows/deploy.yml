@@ -42,6 +42,23 @@ jobs:
             echo "Deployment tag must point to a commit reachable from main: $TAG"
             exit 1
           }
+      - name: Check required study group secrets
+        # Fails before anything is deployed or migrated, so a missing secret can't leave the API down on a new schema.
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          STUDY_GROUP_PLATFORM_ADMIN_EMAILS: ${{ secrets.STUDY_GROUP_PLATFORM_ADMIN_EMAILS }}
+          STUDY_GROUP_SESSION_SECRET: ${{ secrets.STUDY_GROUP_SESSION_SECRET }}
+          CLOUDFLARE_DEPLOY_API_TOKEN: ${{ secrets.CLOUDFLARE_DEPLOY_API_TOKEN }}
+        run: |
+          missing=0
+          for name in GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET STUDY_GROUP_PLATFORM_ADMIN_EMAILS STUDY_GROUP_SESSION_SECRET CLOUDFLARE_DEPLOY_API_TOKEN; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required secret: $name"
+              missing=1
+            fi
+          done
+          exit "$missing"
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -125,9 +142,7 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/study-group-api
           wranglerVersion: '4'
-          command: |
-            d1 migrations apply fbrissi-dev-study-group --remote
-            d1 migrations apply fbrissi-dev-sandbox-study-group --remote
+          command: d1 migrations apply fbrissi-dev-study-group --remote
       - name: Deploy study group API Worker
         uses: cloudflare/wrangler-action@v4
         with:
@@ -136,10 +151,12 @@ jobs:
           workingDirectory: workers/study-group-api
           wranglerVersion: '4'
           secrets: |
-            STUDY_GROUP_ADMIN_EMAIL
-            STUDY_GROUP_ADMIN_PASSWORD_HASH
+            GOOGLE_OAUTH_CLIENT_ID
+            GOOGLE_OAUTH_CLIENT_SECRET
+            STUDY_GROUP_PLATFORM_ADMIN_EMAILS
             STUDY_GROUP_SESSION_SECRET
         env:
-          STUDY_GROUP_ADMIN_EMAIL: ${{ secrets.STUDY_GROUP_ADMIN_EMAIL }}
-          STUDY_GROUP_ADMIN_PASSWORD_HASH: ${{ secrets.STUDY_GROUP_ADMIN_PASSWORD_HASH }}
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          STUDY_GROUP_PLATFORM_ADMIN_EMAILS: ${{ secrets.STUDY_GROUP_PLATFORM_ADMIN_EMAILS }}
           STUDY_GROUP_SESSION_SECRET: ${{ secrets.STUDY_GROUP_SESSION_SECRET }}

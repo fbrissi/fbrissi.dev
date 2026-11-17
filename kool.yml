@@ -3,6 +3,8 @@ scripts:
   npm: kool docker kooldev/node:24 npm
   audit: kool docker kooldev/node:24 env npm_config_userconfig=/dev/null npm audit --audit-level=high --no-package-lock
   actionlint: sh -c 'kool docker rhysd/actionlint:latest .github/workflows/*.yml'
+  # Playwright E2E against the running local stack (kool start); resets the local study group database.
+  e2e: bash e2e/run.sh
 
   setup:
     - kool run yarn install
