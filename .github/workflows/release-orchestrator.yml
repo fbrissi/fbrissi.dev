@@ -20,4 +20,5 @@ jobs:
       tfc-workspace: fbrissi-dev
       infrastructure-timeout-minutes: 360
       deploy-workflow: deploy.yml
-    secrets: inherit
+    secrets:
+      TFC_API_TOKEN: ${{ secrets.TFC_API_TOKEN }}

@@ -27,4 +27,8 @@ jobs:
       dependency-cache-path: node_modules
       dependency-cache-prefix: code-review-deps-v1-node24
       dependency-cache-files: yarn.lock
-    secrets: inherit
+    secrets:
+      AGENT_APP_PRIVATE_KEY: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+      OPEN_AI_TOKEN: ${{ secrets.OPEN_AI_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
