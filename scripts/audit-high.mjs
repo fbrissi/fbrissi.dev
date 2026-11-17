@@ -33,22 +33,28 @@ const add = (id, severity, name) => {
 };
 try {
   if (manager === 'yarn') {
+    let summary = false;
     for (const line of result.stdout.split('\n').filter(Boolean)) {
       const event = JSON.parse(line);
       if (event.type === 'auditAdvisory') {
         const { github_advisory_id: id, severity, module_name: name } = event.data.advisory;
         add(id, severity, name);
+      } else if (event.type === 'auditSummary') {
+        summary = true;
       }
     }
+    if (!summary) throw new Error('the audit did not complete');
   } else {
-    for (const vulnerability of Object.values(JSON.parse(result.stdout).vulnerabilities ?? {})) {
+    const report = JSON.parse(result.stdout);
+    if (report.error || !report.metadata?.vulnerabilities) throw new Error('the audit did not complete');
+    for (const vulnerability of Object.values(report.vulnerabilities ?? {})) {
       for (const via of vulnerability.via.filter((item) => typeof item === 'object')) {
         add(via.url?.split('/').pop(), via.severity, via.name);
       }
     }
   }
 } catch (error) {
-  console.error(`Could not parse the ${manager} audit output: ${error.message}`);
+  console.error(`The ${manager} audit failed: ${error.message}`);
   console.error(result.stderr);
   process.exit(1);
 }
