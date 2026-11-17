@@ -43,7 +43,7 @@ describe('local study group API', () => {
     mocks.createHandler.mockReturnValue(mocks.handle);
   });
 
-  it('starts with the default port, database path, and origin', async () => {
+  it('starts with the default port, database path, origin and the local fake IdP', async () => {
     await import('@/workers/local/study-group-api');
 
     expect(mocks.listen).toHaveBeenCalledWith(8788, expect.any(Function));
@@ -55,7 +55,19 @@ describe('local study group API', () => {
     expect(mocks.createHandler).toHaveBeenCalledWith({
       db: { db: true },
       allowedOrigins: ['http://localhost:3000'],
-      admin: { email: '', passwordHash: '', sessionSecret: '' },
+      appOrigin: 'http://localhost:3000',
+      oidc: {
+        provider: {
+          issuers: ['http://localhost:8790'],
+          authorizationEndpoint: 'http://localhost:8790/authorize',
+          tokenEndpoint: 'http://localhost:8790/token',
+          jwksUri: 'http://localhost:8790/jwks',
+        },
+        clientId: 'local-study-groups',
+        clientSecret: 'local-study-groups-secret',
+      },
+      sessionSecret: '',
+      platformAdminEmails: [],
     });
   });
 
@@ -63,9 +75,13 @@ describe('local study group API', () => {
     vi.stubEnv('STUDY_GROUP_API_PORT', '9999');
     vi.stubEnv('STUDY_GROUP_DB_PATH', '/data/db.sqlite');
     vi.stubEnv('STUDY_GROUP_ALLOWED_ORIGINS', 'http://a.test,http://b.test');
-    vi.stubEnv('STUDY_GROUP_ADMIN_EMAIL', 'admin@example.test');
-    vi.stubEnv('STUDY_GROUP_ADMIN_PASSWORD_HASH', 'pbkdf2-sha256$1$c2FsdA==$aGFzaA==');
+    vi.stubEnv('STUDY_GROUP_APP_ORIGIN', 'http://b.test');
     vi.stubEnv('STUDY_GROUP_SESSION_SECRET', 'dev-secret');
+    vi.stubEnv('STUDY_GROUP_PLATFORM_ADMIN_EMAILS', 'Admin@Example.test');
+    vi.stubEnv('FAKE_IDP_PUBLIC_URL', 'http://idp.local:1');
+    vi.stubEnv('FAKE_IDP_INTERNAL_URL', 'http://idp:1');
+    vi.stubEnv('FAKE_IDP_CLIENT_ID', 'id');
+    vi.stubEnv('FAKE_IDP_CLIENT_SECRET', 'secret');
     await import('@/workers/local/study-group-api');
     vi.unstubAllEnvs();
 
@@ -73,7 +89,14 @@ describe('local study group API', () => {
     expect(mocks.openD1Sqlite).toHaveBeenCalledWith('/data/db.sqlite', expect.any(String));
     expect(mocks.createHandler).toHaveBeenCalledWith(expect.objectContaining({
       allowedOrigins: ['http://a.test', 'http://b.test'],
-      admin: { email: 'admin@example.test', passwordHash: 'pbkdf2-sha256$1$c2FsdA==$aGFzaA==', sessionSecret: 'dev-secret' },
+      appOrigin: 'http://b.test',
+      oidc: {
+        provider: { issuers: ['http://idp.local:1'], authorizationEndpoint: 'http://idp.local:1/authorize', tokenEndpoint: 'http://idp:1/token', jwksUri: 'http://idp:1/jwks' },
+        clientId: 'id',
+        clientSecret: 'secret',
+      },
+      sessionSecret: 'dev-secret',
+      platformAdminEmails: ['admin@example.test'],
     }));
   });
 
@@ -87,13 +110,21 @@ describe('local study group API', () => {
 
     const post = await request('POST', '/api/study-group/materials', '{"title":"A"}');
     expect(post.writeHead).toHaveBeenCalledWith(201, expect.objectContaining({ 'x-robots-tag': 'noindex, nofollow' }));
-    expect(JSON.parse(post.end.mock.calls[0][0])).toEqual({
+    expect(post.writeHead.mock.calls[0][1]).not.toHaveProperty('set-cookie');
+    expect(JSON.parse(post.end.mock.calls[0][0].toString())).toEqual({
       method: 'POST',
       url: 'http://localhost:8788/api/study-group/materials',
       body: '{"title":"A"}',
     });
 
     const get = await request('GET', '/api/study-group/materials');
-    expect(JSON.parse(get.end.mock.calls[0][0])).toMatchObject({ method: 'GET', body: null });
+    expect(JSON.parse(get.end.mock.calls[0][0].toString())).toMatchObject({ method: 'GET', body: null });
+
+    const headers = new Headers({ Location: '/next' });
+    headers.append('Set-Cookie', 'a=1; Path=/');
+    headers.append('Set-Cookie', 'b=2; Path=/');
+    mocks.handle.mockResolvedValueOnce(new Response(null, { status: 302, headers }));
+    const redirected = await request('GET', '/api/study-group/auth/callback');
+    expect(redirected.writeHead).toHaveBeenCalledWith(302, expect.objectContaining({ location: '/next', 'set-cookie': ['a=1; Path=/', 'b=2; Path=/'] }));
   });
 });

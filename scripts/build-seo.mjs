@@ -4,7 +4,9 @@ import path from 'node:path';
 const root = process.cwd();
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VITE_SITE_URL ?? 'https://fbrissi.dev';
 
-const staticRoutes = ['/', '/about', '/articles', '/open-source', '/projects', '/works', '/contact', '/pt-br', '/pt-br/about', '/pt-br/articles', '/pt-br/open-source', '/pt-br/projects', '/pt-br/works', '/pt-br/contact'];
+const programRoutes = ['/study-groups', '/study-groups/terms', '/study-groups/privacy'];
+// Group pages (board, settings, join, account, admin) are noindex and never listed (D2).
+const staticRoutes = ['/', '/about', '/articles', '/open-source', '/projects', '/works', '/contact', ...programRoutes, '/pt-br', '/pt-br/about', '/pt-br/articles', '/pt-br/open-source', '/pt-br/projects', '/pt-br/works', '/pt-br/contact', ...programRoutes.map((route) => `/pt-br${route}`)];
 
 function readSlugs(collection, locale) {
   const dir = path.join(root, 'src', 'content', collection, locale);

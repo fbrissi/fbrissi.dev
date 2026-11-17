@@ -12,6 +12,7 @@
     "openSource": "Open Source",
     "works": "Trabalhos",
     "articles": "Artigos",
+    "studyGroups": "Grupos de estudo",
     "contact": "Contato",
     "resume": "Currículo"
   },
@@ -98,5 +99,49 @@
   "articles": {
     "title": "Artigos",
     "description": "Textos curtos em Markdown, fáceis de manter."
+  },
+  "studyGroups": {
+    "eyebrow": "Inglês para devs",
+    "title": "Grupos de estudo de inglês para desenvolvedores",
+    "description": "Um programa gratuito que ajuda desenvolvedores a criar e conduzir pequenos grupos de estudo de inglês: sugerir materiais, escolher o tema da semana e praticar a conversação juntos.",
+    "intro": "A maior parte da documentação, das discussões de open source, das palestras e das vagas remotas em software acontece em inglês. Ler já é um começo; falar com confiança exige prática. Este programa ajuda desenvolvedores a praticar juntos, em grupos pequenos e acolhedores.",
+    "signIn": "Entrar com o Google",
+    "createGroup": "Criar um grupo",
+    "myGroups": "Meus grupos",
+    "whyTitle": "Por que o inglês importa para desenvolvedores",
+    "why": [
+      "Documentação, notas de versão, RFCs e a maioria das respostas para problemas difíceis são escritas primeiro em inglês.",
+      "Projetos open source, issues e code reviews acontecem em inglês, então você consegue contribuir e ser entendido.",
+      "Times internacionais e remotos contratam quem sabe explicar trade-offs, fazer perguntas e conduzir reuniões em inglês.",
+      "Conversar toda semana sobre temas técnicos reais aumenta o vocabulário e a confiança mais rápido do que estudar sozinho."
+    ],
+    "howTitle": "Como funciona",
+    "how": [
+      "Entre com o Google e aceite os Termos de Uso e a Política de Privacidade.",
+      "Crie um grupo com nome, um resumo público curto, regras e horário dos encontros, ou peça para entrar em um grupo existente com o código de acesso dele.",
+      "O dono do grupo aprova cada pedido, então só membros aprovados abrem o quadro.",
+      "Os membros sugerem vídeos, artigos, livros ou podcasts; o dono escolhe o tema da semana por sorteio ou votação.",
+      "Encontrem-se na chamada de vocês e conversem sobre o tema em inglês. Errar faz parte da prática."
+    ],
+    "groupsTitle": "Grupos",
+    "groupsIntro": "Cada cartão mostra o nome e o resumo escritos por quem criou o grupo. Peça o código de acesso ao grupo antes de solicitar a entrada.",
+    "groupsEmpty": "Ainda não há grupos listados. Seja o primeiro a criar um.",
+    "groupsError": "Não foi possível carregar os grupos. Tente novamente mais tarde.",
+    "loading": "Carregando grupos…",
+    "loadMore": "Carregar mais grupos",
+    "openGroup": "Abrir grupo",
+    "signInToJoin": "Entre para participar",
+    "signInFailed": "Não foi possível entrar. Tente novamente.",
+    "policiesTitle": "Regras e privacidade",
+    "policiesText": "O programa é gratuito e mantido por Filipe Bojikian Rissi. Leia as regras antes de criar ou entrar em um grupo.",
+    "terms": "Termos de Uso",
+    "contentPolicy": "Política de conteúdo",
+    "privacy": "Política de Privacidade",
+    "contact": "Denunciar abuso ou fazer uma solicitação de dados",
+    "policyVersion": "Versão",
+    "backToProgram": "Voltar aos grupos de estudo",
+    "cookieNotice": "Usamos apenas cookies e armazenamento local estritamente necessários: a sessão de login, uma verificação temporária durante o login e suas preferências de idioma e de aviso. Sem analytics nem anúncios.",
+    "cookieNoticeLink": "Saiba mais na Política de Privacidade",
+    "cookieNoticeDismiss": "OK"
   }
 }

@@ -3,6 +3,31 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.4.0
+
+### Added
+
+- Turn the DevTalk board into the English study groups program: a public, indexed landing page with the listed groups (name and summary only), and versioned Terms of Use (with the content policy) and Privacy Policy, in English and Portuguese, with an informational cookie notice.
+- Add Google sign-in to the study group Worker (Authorization Code with PKCE S256, state and nonce, RS256 ID token verification against Google's cached JWKS), with explicit acceptance of the Terms and Privacy Policy and an 18+ confirmation before an account exists, re-acceptance when a policy version changes, 30-day `__Host-` sessions stored as SHA-256 hashes, and CSRF Origin and JSON checks.
+- Let signed-in users create up to 3 groups and ask to join others with the group's access code; the owner approves requests, runs draws and votes, deletes and restores content, chooses free or reviewed suggestions, rotates the code, removes members and deletes the group.
+- Add the platform admin (`STUDY_GROUP_PLATFORM_ADMIN_EMAILS`): manages every group (in groups they don't belong to, they don't suggest or vote), deletions with a mandatory 10 to 500 character reason, an audit log of deletions and restores, and in-app notices to owners.
+- Add account pages to edit the display name, download a JSON export of the account data, and delete the account (owned groups are deleted, other contributions stay as "Former member").
+- Add a daily Cron Trigger that purges deleted groups and content after 30 days, decided join requests after 30 days, the moderation log after 12 months, and expired sessions, and a join-with-code rate limiter.
+- Add a local fake Google IdP to the Docker stack for local sign-in and E2E tests.
+
+### Changed
+
+- Migrate the DevTalk board (`0002_groups_and_accounts.sql`) into the `devtalk` group with no owner; the first sign-in of a platform admin claims it, and old suggestions and votes keep their typed names.
+- Redirect the retired `/study-group/<slug>` URLs with a 301 to the DevTalk group, generated at build time from `STUDY_GROUP_SLUG`.
+- Deploy the study group Worker with the `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` and `STUDY_GROUP_PLATFORM_ADMIN_EMAILS` secrets; create the Google OAuth client and these secrets before the release (README, Study Groups).
+- Run the sandbox study group API as its own Worker, `fbrissi-dev-study-group-api-sandbox`, bound only to the sandbox D1 and trusting only the sandbox origin; Deploy Sandbox no longer migrates the production database or replaces the production Worker. Remove the sandbox route from the production Worker before the first sandbox deploy (README, Study Groups).
+- Fail the Deploy and Deploy Sandbox workflows before deploying anything when a required secret is empty.
+- Add a "Study groups" item to the site header in both locales.
+
+### Removed
+
+- Remove the access-code header, the typed member names (and clear the old `study-group:code` and `study-group:name` browser keys), and the email and PBKDF2 password settings login with `scripts/hash-study-group-password.mjs`; delete the `STUDY_GROUP_ADMIN_EMAIL` and `STUDY_GROUP_ADMIN_PASSWORD_HASH` secrets after the release.
+
 ## v0.3.2
 
 ### Changed

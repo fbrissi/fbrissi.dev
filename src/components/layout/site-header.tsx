@@ -18,7 +18,7 @@ const profileImageUrl = typeof profileImage === 'string' ? profileImage : profil
 
 type SiteHeaderProps = {
   locale: Locale;
-  activePage: 'home' | 'about' | 'projects' | 'openSource' | 'works' | 'articles' | 'contact';
+  activePage: 'home' | 'about' | 'projects' | 'openSource' | 'works' | 'articles' | 'contact' | 'studyGroups';
   currentPath?: string;
   messages?: Messages;
   profile?: Pick<Profile, 'name' | 'publicLinks'>;
@@ -31,6 +31,7 @@ const navItems = [
   { key: 'openSource', labelKey: 'openSource', path: '/open-source' },
   { key: 'works', labelKey: 'works', path: '/works' },
   { key: 'articles', labelKey: 'articles', path: '/articles' },
+  { key: 'studyGroups', labelKey: 'studyGroups', path: '/study-groups' },
   { key: 'contact', labelKey: 'contact', path: '/contact' }
 ] as const;
 
@@ -39,7 +40,7 @@ export function SiteHeader({ locale, activePage, currentPath, messages: provided
   const messages = providedMessages ?? (locale === 'pt-BR' ? ptMessages : enMessages);
   const profile = providedProfile ?? (locale === 'pt-BR' ? ptProfile : enProfile);
   const alternateLocale = getAlternateLocale(locale);
-  const path = currentPath ?? ({ home: '/', about: '/about', projects: '/projects', openSource: '/open-source', works: '/works', articles: '/articles', contact: '/contact' } as const)[activePage];
+  const path = currentPath ?? ({ home: '/', about: '/about', projects: '/projects', openSource: '/open-source', works: '/works', articles: '/articles', contact: '/contact', studyGroups: '/study-groups' } as const)[activePage];
 
   useEffect(() => {
     function handleScroll() {

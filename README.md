@@ -26,6 +26,11 @@ Public portfolio for Filipe Bojikian Rissi.
 - Articles, contributions, projects, and works are rendered from Markdown with raw HTML and syntax highlighting
 - Content collections live in `src/content/{articles,contributions,projects,works}/{locale}/`
 - SEO handled with Next Metadata, generated `robots.txt` and `sitemap.xml`, and JSON-LD
+- English study groups program: public, indexed landing, Terms and Privacy Policy pages in both locales
+  (`/study-groups`, `/pt-br/study-groups`), and English-only, `noindex` app pages (group board and settings,
+  my groups, account, admin) served by static shells; groups live at `/study-groups/g/<id>` through a
+  generated `_redirects` 200 rewrite. Google sign-in, groups and moderation run in the
+  `fbrissi-dev-study-group-api` Worker with Cloudflare D1
 
 ## Releases
 
@@ -113,12 +118,16 @@ Configured manually:
   `NEXT_PUBLIC_OG_IMAGE`
 - Variable `CI_RUNNER`: optional runner label for every workflow job (defaults
   to `ubuntu-latest`)
-- Secret `STUDY_GROUP_SLUG`: unguessable path segment of the unlisted study
-  group board (`/study-group/<slug>`) and its settings page
-- Secrets `STUDY_GROUP_ADMIN_EMAIL`, `STUDY_GROUP_ADMIN_PASSWORD_HASH`
-  (output of `node scripts/hash-study-group-password.mjs`, which reads the
-  password from stdin), and `STUDY_GROUP_SESSION_SECRET` (long random string):
-  study group settings login, pushed to the Worker on deploy
+- Secret `STUDY_GROUP_SLUG`: secret path segment of the retired v0.3 board
+  (`/study-group/<slug>`); the build turns it into a 301 to the DevTalk group
+  in `_redirects`. Drop it in a later release
+- Secrets `GOOGLE_OAUTH_CLIENT_ID` and `GOOGLE_OAUTH_CLIENT_SECRET`: the Google
+  OAuth client created by hand (see [Study Groups](#3-study-groups))
+- Secret `STUDY_GROUP_PLATFORM_ADMIN_EMAILS`: comma-separated verified Google
+  emails of the platform admins
+- Secret `STUDY_GROUP_SESSION_SECRET` (long random string): signs the
+  short-lived sign-in cookies
+- The deploy workflows push the last four to the study group Worker
 
 Published by Terraform, do not set them manually:
 
@@ -137,8 +146,9 @@ Optional environment variable:
 
 - `NEXT_PUBLIC_SITE_URL` for canonical URLs and metadata generation
 - `NEXT_PUBLIC_CONTACT_API_URL` to override the contact API URL
-- `NEXT_PUBLIC_STUDY_GROUP_API_URL` to override the study group API URL
-- `STUDY_GROUP_SLUG` to build the study group routes (`local` in Docker)
+- `STUDY_GROUP_API_PROXY_URL` for the study group API that `next dev` proxies
+  `/api/study-group/*` to (`http://study-group-api:8788` in Docker)
+- `STUDY_GROUP_SLUG` to generate the old board redirect (`local` in Docker)
 
 ## Terraform Configuration
 
@@ -253,6 +263,86 @@ The contact form uses **free** Cloudflare services to send emails without any mo
 
 **Total cost: $0/month**
 
+### 3. Study Groups
+
+The program stays on the Cloudflare Free plan: two Workers built from `workers/study-group-api/` (production
+`fbrissi-dev-study-group-api` on `fbrissi.dev` and `www.fbrissi.dev`, and sandbox
+`fbrissi-dev-study-group-api-sandbox` on `sandbox.fbrissi.dev`, from `[env.sandbox]`), each bound only to its own
+D1 database, with Rate Limiting bindings and one daily Cron Trigger each (2 of the account's 5). The cron purges
+deleted groups and content after 30 days, decided join requests after 30 days, the moderation log after 12 months,
+and expired sessions. The Deploy workflow only migrates and deploys production; Deploy Sandbox only migrates and
+deploys the sandbox. Both fail before deploying anything when a required secret is empty.
+
+**Manual setup (no API or Terraform support):** follow the "Manual setup by Filipe" checklist in
+[issue #45](https://github.com/fbrissi/fbrissi.dev/issues/45): Google Cloud project, OAuth consent screen
+(name only, scopes `openid email profile`, In production), a Web application OAuth client with these redirect
+URIs, and the GitHub secrets above.
+
+- Production: `https://fbrissi.dev/api/study-group/auth/callback`
+- Sandbox: `https://sandbox.fbrissi.dev/api/study-group/auth/callback`
+
+The Workers always use Google's fixed endpoints. The fake Google IdP below exists only in the local Docker stack.
+
+**Local Development**:
+
+1. `kool start` also runs the study group API (`node:sqlite` in `tmp/study-group/`) and a fake Google IdP at
+   http://localhost:8790. `next dev` proxies `/api/study-group/*` to the API, so cookies stay same-origin.
+2. Open http://localhost:3000/study-groups and sign in. The fake IdP lists test users: `admin@example.test`
+   (platform admin), `owner@example.test`, `member@example.test`, `outsider@example.test`, and
+   `unverified@example.test` (rejected, unverified email). It can also sign in any email and name.
+3. Use Chromium-based browsers locally: the `__Host-` cookies are `Secure`, which browsers accept on
+   `http://localhost`.
+4. `kool run e2e` runs the Playwright suite against the stack (it resets the local database).
+
+**v0.4.0 rehearsal on sandbox** (`0002_groups_and_accounts.sql` moves the DevTalk board into the `devtalk` group):
+
+1. In the Cloudflare dashboard, remove the `sandbox.fbrissi.dev/api/study-group/*` route from the
+   `fbrissi-dev-study-group-api` Worker (v0.3 served both hosts), so the new sandbox Worker can take it.
+2. Copy the production DevTalk data into the sandbox database, which is still on `0001`. Export the four tables
+   only (a full export also carries `d1_migrations`), outside the repository:
+
+   ```bash
+   npx wrangler d1 export fbrissi-dev-study-group --remote --no-schema \
+     --table group_info --table materials --table rounds --table votes --output /tmp/devtalk-data.sql
+   npx wrangler d1 execute fbrissi-dev-sandbox-study-group --remote --command "DELETE FROM votes; DELETE FROM rounds; DELETE FROM materials; DELETE FROM group_info;"
+   npx wrangler d1 execute fbrissi-dev-sandbox-study-group --remote --file /tmp/devtalk-data.sql
+   rm /tmp/devtalk-data.sql
+   ```
+
+3. Run Deploy Sandbox from `release/v0.4.0`. It migrates only the sandbox database and deploys only the sandbox
+   Worker; production is untouched.
+4. Sign in with an allowlisted admin (it claims DevTalk) and check the old materials, rounds and votes on
+   `https://sandbox.fbrissi.dev/study-groups/g/devtalk`. Check that `https://sandbox.fbrissi.dev/_redirects` returns
+   404 (Pages parses it and doesn't serve it).
+
+**v0.4.0 release runbook** (a short board outage is expected between the migration and the Worker deploy):
+
+1. Tell the DevTalk members, and close or cancel any open round (the migration cancels any round still open).
+   Keep the board quiet from the bookmark below until the deploy finishes: the release can wait up to 360 minutes
+   for the Terraform apply, and a restore drops any write made in that gap.
+2. Right before merging, record a D1 Time Travel bookmark and keep a data export:
+
+   ```bash
+   npx wrangler d1 time-travel info fbrissi-dev-study-group
+   npx wrangler d1 export fbrissi-dev-study-group --remote --no-schema \
+     --table group_info --table materials --table rounds --table votes --output /tmp/devtalk-v0.3.sql
+   ```
+
+3. Merge the release pull request. The Deploy workflow checks the required secrets first, then deploys Pages,
+   migrates the production database and deploys the production Worker.
+4. Rollback, if needed. Don't redeploy the `v0.3.2` tag: its `wrangler.toml` still claims the
+   `sandbox.fbrissi.dev/api/study-group/*` route, which the sandbox Worker now owns, so that deploy fails.
+   1. Restore the database: `npx wrangler d1 time-travel restore fbrissi-dev-study-group --bookmark=<bookmark>`.
+   2. Roll the production Worker back to its v0.3.2 version, from `workers/study-group-api/`:
+      `npx wrangler deployments list` to find it, then `npx wrangler rollback <version-id>`. Cron Triggers
+      belong to the Worker, not the version, so the daily trigger keeps firing against v0.3.2, which has no
+      `scheduled()` handler; remove it in the dashboard (Settings > Triggers) while rolled back.
+   3. Roll the Pages project back to the v0.3.2 deployment in the Cloudflare dashboard
+      (Workers & Pages > `fbrissi-dev` > Deployments > Rollback).
+5. Existing members sign in and ask to join DevTalk with the current access code.
+6. After the release, delete the obsolete `STUDY_GROUP_ADMIN_EMAIL` and `STUDY_GROUP_ADMIN_PASSWORD_HASH`
+   secrets, and the local exports.
+
 ## Validation
 
 Run these before shipping:
@@ -260,6 +350,7 @@ Run these before shipping:
 ```bash
 kool run yarn lint
 kool run yarn typecheck
+kool run yarn test:coverage
 kool run yarn build
 terraform fmt -recursive
 terraform init -backend=false

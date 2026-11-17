@@ -4,6 +4,8 @@
 /.next/
 /src/generated/
 /coverage/
+/playwright-report/
+/test-results/
 /public/resume/
 /public/robots.txt
 /public/sitemap.xml
@@ -21,3 +23,4 @@
 .env.local
 .env*.local
 /.env
+/public/_redirects

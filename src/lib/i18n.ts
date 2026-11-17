@@ -12,6 +12,9 @@ const localeSwitchablePaths = new Set([
   '/open-source',
   '/projects',
   '/works',
+  '/study-groups',
+  '/study-groups/terms',
+  '/study-groups/privacy',
 ]);
 
 export function isLocale(value: string): value is Locale {

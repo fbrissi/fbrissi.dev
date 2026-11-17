@@ -1,8 +1,5 @@
 import type { GroupInfo, Material, MaterialType, Round, TallyEntry } from '@/workers/study-group/contract';
 
-const nameStorageKey = 'study-group:name';
-export const accessCodeStorageKey = 'study-group:code';
-export const adminTokenStorageKey = 'study-group:admin-token';
 const dateFormat = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' });
 
 type StorageArea = 'localStorage' | 'sessionStorage';
@@ -23,25 +20,6 @@ export function writeStorage(area: StorageArea, key: string, value: string | nul
   } catch {
     // Ignored on purpose, see above.
   }
-}
-
-export function readStoredName(): string {
-  return readStorage('localStorage', nameStorageKey);
-}
-
-export function storeName(name: string): void {
-  writeStorage('localStorage', nameStorageKey, name);
-}
-
-const accessCodeAlphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
-
-export function generateAccessCode(length = 10): string {
-  const values = crypto.getRandomValues(new Uint32Array(length));
-  return Array.from(values, (value) => accessCodeAlphabet[value % accessCodeAlphabet.length]).join('');
-}
-
-export function normalizeName(name: string): string {
-  return name.trim().toLowerCase();
 }
 
 export function formatDate(iso: string | null): string {
@@ -72,16 +50,12 @@ export function totalVotes(tally: TallyEntry[]): number {
   return tally.reduce((sum, entry) => sum + entry.votes, 0);
 }
 
-export function findVote(tally: TallyEntry[], voterName: string): number | undefined {
-  const key = normalizeName(voterName);
-  if (!key) return undefined;
-  return tally.find((entry) => entry.voters.some((voter) => normalizeName(voter) === key))?.materialId;
-}
-
-export function applyVote(tally: TallyEntry[], materialId: number, voterName: string): TallyEntry[] {
-  const key = normalizeName(voterName);
+/** Optimistically moves the caller's vote, shown under their display name. */
+export function applyVote(tally: TallyEntry[], previous: number | null, materialId: number, voterName: string): TallyEntry[] {
   const next = tally.map((entry) => {
-    const voters = entry.voters.filter((voter) => normalizeName(voter) !== key);
+    if (entry.materialId !== previous) return entry;
+    const index = entry.voters.indexOf(voterName);
+    const voters = index === -1 ? entry.voters : entry.voters.filter((_voter, position) => position !== index);
     return { ...entry, voters, votes: voters.length };
   });
   const target = next.find((entry) => entry.materialId === materialId);
@@ -91,6 +65,11 @@ export function applyVote(tally: TallyEntry[], materialId: number, voterName: st
   target.voters = [...target.voters, voterName];
   target.votes = target.voters.length;
   return next;
+}
+
+/** Group pages share one static shell at /study-groups/g/<id>; the ID is read from the URL on the client. */
+export function groupIdFromPath(pathname: string): string | null {
+  return /^\/study-groups\/g\/([a-z0-9]{3,32})(?:\/|$)/.exec(pathname)?.[1] ?? null;
 }
 
 export function winnerNote(round: Round, tally: TallyEntry[]): string {

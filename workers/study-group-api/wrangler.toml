@@ -3,26 +3,28 @@ main = "../study-group-api.ts"
 compatibility_date = "2024-01-01"
 observability.enabled = true
 
+# Production Worker: only the production routes and the production D1. The sandbox runs as its own Worker
+# ([env.sandbox] below), so a sandbox deploy never touches production.
 routes = [
   { pattern = "fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" },
-  { pattern = "www.fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" },
-  { pattern = "sandbox.fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" }
+  { pattern = "www.fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" }
 ]
+
+# Daily retention purge (deleted groups and content after 30 days, audit log after 12 months, expired sessions).
+[triggers]
+crons = ["17 3 * * *"]
+
+[vars]
+STUDY_GROUP_ENVIRONMENT = "production"
 
 # The database IDs are created by Terraform (terraform/d1.tf) and injected by the deploy
 # workflows, which resolve them by name and replace the placeholders before deploying.
-# Secrets pushed by the deploy workflows: STUDY_GROUP_ADMIN_EMAIL, STUDY_GROUP_ADMIN_PASSWORD_HASH,
-# STUDY_GROUP_SESSION_SECRET.
+# Secrets pushed by the deploy workflows: GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET,
+# STUDY_GROUP_PLATFORM_ADMIN_EMAILS, STUDY_GROUP_SESSION_SECRET.
 [[d1_databases]]
 binding = "STUDY_GROUP_DB"
 database_name = "fbrissi-dev-study-group"
 database_id = "STUDY_GROUP_DB_ID"
-migrations_dir = "../study-group/migrations"
-
-[[d1_databases]]
-binding = "STUDY_GROUP_SANDBOX_DB"
-database_name = "fbrissi-dev-sandbox-study-group"
-database_id = "STUDY_GROUP_SANDBOX_DB_ID"
 migrations_dir = "../study-group/migrations"
 
 [[ratelimits]]
@@ -46,5 +48,66 @@ name = "STUDY_GROUP_LOGIN_RATE_LIMITER"
 namespace_id = "1005"
 
   [ratelimits.simple]
+  limit = 10
+  period = 60
+
+# Join-with-code attempts, keyed by user, to stop access code guessing.
+[[ratelimits]]
+name = "STUDY_GROUP_JOIN_RATE_LIMITER"
+namespace_id = "1006"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60
+
+# Sandbox Worker (fbrissi-dev-study-group-api-sandbox), deployed only by .github/workflows/sandbox.yml with
+# `--env sandbox`. Bindings, routes and vars aren't inherited, so each one is repeated here.
+[env.sandbox]
+name = "fbrissi-dev-study-group-api-sandbox"
+routes = [
+  { pattern = "sandbox.fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" }
+]
+
+[env.sandbox.triggers]
+crons = ["17 3 * * *"]
+
+[env.sandbox.vars]
+STUDY_GROUP_ENVIRONMENT = "sandbox"
+
+[[env.sandbox.d1_databases]]
+binding = "STUDY_GROUP_DB"
+database_name = "fbrissi-dev-sandbox-study-group"
+database_id = "STUDY_GROUP_SANDBOX_DB_ID"
+migrations_dir = "../study-group/migrations"
+
+[[env.sandbox.ratelimits]]
+name = "STUDY_GROUP_WRITE_RATE_LIMITER"
+namespace_id = "1013"
+
+  [env.sandbox.ratelimits.simple]
+  limit = 10
+  period = 60
+
+[[env.sandbox.ratelimits]]
+name = "STUDY_GROUP_READ_RATE_LIMITER"
+namespace_id = "1014"
+
+  [env.sandbox.ratelimits.simple]
+  limit = 60
+  period = 60
+
+[[env.sandbox.ratelimits]]
+name = "STUDY_GROUP_LOGIN_RATE_LIMITER"
+namespace_id = "1015"
+
+  [env.sandbox.ratelimits.simple]
+  limit = 10
+  period = 60
+
+[[env.sandbox.ratelimits]]
+name = "STUDY_GROUP_JOIN_RATE_LIMITER"
+namespace_id = "1016"
+
+  [env.sandbox.ratelimits.simple]
   limit = 5
   period = 60

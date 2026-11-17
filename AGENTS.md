@@ -10,7 +10,10 @@ Static bilingual portfolio built with Next.js, React 19, TypeScript, and Tailwin
 - `src/app/` defines the Next.js App Router routes and metadata.
 - Markdown content is compiled into a build-generated typed manifest.
 - Contact handling remains in Cloudflare Workers under `workers/`.
-- The unlisted study group board (`/study-group/<slug>`, English only, noindex) uses the `study-group-api` Worker backed by Cloudflare D1; migrations live in `workers/study-group/migrations/`.
+- The English study groups program has public, indexed pages in both locales (`/study-groups`, `/study-groups/terms`, `/study-groups/privacy`) and English-only, noindex app pages (board and settings at `/study-groups/g/<id>` through a `_redirects` 200 rewrite to static shells, plus `/study-groups/{new,my,account,welcome,admin}`).
+- The `study-group-api` Worker handles Google sign-in (Authorization Code + PKCE, `__Host-` session cookie), groups, membership, moderation and a daily retention cron, backed by Cloudflare D1; migrations live in `workers/study-group/migrations/`. Never edit an applied migration.
+- Production and sandbox are separate Workers from `workers/study-group-api/wrangler.toml` (`[env.sandbox]`), each bound only to its own D1 and origin. Deploy Sandbox must never migrate or deploy production.
+- The production Worker always uses Google's fixed endpoints; the fake Google IdP (`workers/local/fake-idp.ts`) runs only in the local Docker stack.
 
 ## Structure
 
@@ -52,7 +55,7 @@ kool run yarn test
 kool run yarn build
 ```
 
-The application runs at `http://localhost:3000`. Mailpit runs at `http://localhost:8025`.
+The application runs at `http://localhost:3000`. Mailpit runs at `http://localhost:8025`. The local study group API runs at `http://localhost:8788` and the fake Google IdP at `http://localhost:8790`.
 
 ## Content
 
@@ -71,8 +74,9 @@ Supported locales are `en` and `pt-BR`.
 - `VITE_TURNSTILE_SITE_KEY`: legacy public Turnstile key retained for older tagged releases
 - `NEXT_PUBLIC_CONTACT_API_URL`: optional local contact API override
 - `NEXT_PUBLIC_SITE_URL`: optional canonical site URL override
-- `NEXT_PUBLIC_STUDY_GROUP_API_URL`: optional local study group API override
-- `STUDY_GROUP_SLUG`: build-time slug of the unlisted `/study-group/<slug>` board; never commit it
+- `STUDY_GROUP_API_PROXY_URL`: study group API that `next dev` proxies `/api/study-group/*` to
+- `STUDY_GROUP_SLUG`: build-time slug of the retired `/study-group/<slug>` board, turned into a 301 in the generated `public/_redirects`; never commit it
+- Worker secrets pushed by the deploy workflows: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `STUDY_GROUP_PLATFORM_ADMIN_EMAILS`, `STUDY_GROUP_SESSION_SECRET`. The Google OAuth client is created by hand (README, Study Groups)
 
 ## Releases
 

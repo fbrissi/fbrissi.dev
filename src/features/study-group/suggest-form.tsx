@@ -1,46 +1,45 @@
 import { useRef, useState, type FormEvent } from 'react';
 
-import { createMaterialSchema, materialTypes, type CreateMaterialInput, type MaterialType } from '@/workers/study-group/contract';
+import { createMaterialSchema, materialTypes, type CreateMaterialInput, type Material, type MaterialType } from '@/workers/study-group/contract';
 
 import { StudyGroupApiError } from './api';
 import { typeLabel } from './helpers';
 import { Banner, buttonClass, cardClass, inputClass } from './ui';
 
-type FieldName = 'suggestedBy' | 'title' | 'url' | 'notes';
+type FieldName = 'title' | 'url' | 'notes';
 type FieldErrors = Partial<Record<FieldName, string>>;
 type FormStatus = 'idle' | 'submitting' | 'success' | 'error';
 
-const fieldOrder: FieldName[] = ['suggestedBy', 'title', 'url', 'notes'];
+const fieldOrder: FieldName[] = ['title', 'url', 'notes'];
 const notesLimit = 2000;
 
 function fieldMessage(field: FieldName, code: string): string {
   if (field === 'url') return 'Enter a full link starting with https:// (or http://).';
   if (field === 'notes') return `Use ${notesLimit} characters or fewer.`;
-  if (code === 'too_big') return `Use ${field === 'title' ? 200 : 60} characters or fewer.`;
-  return field === 'title' ? 'Please add a title.' : 'Please enter your name.';
+  if (code === 'too_big') return 'Use 200 characters or fewer.';
+  return 'Please add a title.';
 }
 
 type SuggestFormProps = {
-  name: string;
-  onNameChange: (name: string) => void;
-  onCreate: (input: CreateMaterialInput) => Promise<void>;
+  authorName: string;
+  onCreate: (input: CreateMaterialInput) => Promise<Material>;
 };
 
-export function SuggestForm({ name, onNameChange, onCreate }: SuggestFormProps) {
+export function SuggestForm({ authorName, onCreate }: SuggestFormProps) {
   const [type, setType] = useState<MaterialType>('article');
   const [title, setTitle] = useState('');
   const [url, setUrl] = useState('');
   const [notes, setNotes] = useState('');
   const [status, setStatus] = useState<FormStatus>('idle');
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
-  const [submittedBy, setSubmittedBy] = useState('');
+  const [pendingReview, setPendingReview] = useState(false);
   const fields = useRef<Partial<Record<FieldName, HTMLInputElement | HTMLTextAreaElement | null>>>({});
 
   const clearError = (field: FieldName) => setFieldErrors((previous) => ({ ...previous, [field]: undefined }));
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
-    const parsed = createMaterialSchema.safeParse({ suggestedBy: name, type, title, url: url.trim() || undefined, notes: notes.trim() || undefined });
+    const parsed = createMaterialSchema.safeParse({ type, title, url: url.trim() || undefined, notes: notes.trim() || undefined });
 
     if (!parsed.success) {
       const errors: FieldErrors = {};
@@ -56,8 +55,8 @@ export function SuggestForm({ name, onNameChange, onCreate }: SuggestFormProps) 
     setFieldErrors({});
     setStatus('submitting');
     try {
-      await onCreate(parsed.data);
-      setSubmittedBy(parsed.data.suggestedBy);
+      const material = await onCreate(parsed.data);
+      setPendingReview(material.status === 'pending');
       setStatus('success');
     } catch (error) {
       if (error instanceof StudyGroupApiError && error.status === 409) {
@@ -92,11 +91,11 @@ export function SuggestForm({ name, onNameChange, onCreate }: SuggestFormProps) 
   return (
     <div className={`${cardClass} p-6 sm:p-8`}>
       <h2 className="mb-1 text-2xl font-normal tracking-tight">Suggest material</h2>
-      <p className="mb-6 text-sm text-text-secondary">Anything you&apos;d like to talk about in English.</p>
+      <p className="mb-6 text-sm text-text-secondary">Anything you&apos;d like to talk about in English. Suggesting as <b className="font-normal text-text">{authorName}</b>.</p>
 
       {status === 'success' ? (
-        <Banner tone="success" title="Added to the list.">
-          <p className="text-text-secondary">Thanks, {submittedBy}! It&apos;s at the top of Open materials.</p>
+        <Banner tone="success" title={pendingReview ? 'Sent for review.' : 'Added to the list.'}>
+          <p className="text-text-secondary">{pendingReview ? 'The owner reviews new suggestions. You can see it marked as pending review.' : 'Thanks! It’s at the top of Open materials.'}</p>
           <button type="button" className={`${buttonClass.ghost} self-start px-0!`} onClick={suggestAnother}>Suggest another</button>
         </Banner>
       ) : (
@@ -106,18 +105,11 @@ export function SuggestForm({ name, onNameChange, onCreate }: SuggestFormProps) 
               <p className="text-text-secondary">Nothing was lost. Please try again in a moment.</p>
             </Banner>
           ) : null}
-          <div className="grid gap-5 sm:max-lg:grid-cols-2">
-            <div className="flex min-w-0 flex-col gap-2">
-              <label htmlFor="suggest-suggestedBy" className={labelClass}>Your name</label>
-              <input {...fieldProps('suggestedBy')} value={name} maxLength={60} autoComplete="name" onChange={(event) => { onNameChange(event.target.value); clearError('suggestedBy'); }} />
-              {errorText('suggestedBy')}
-            </div>
-            <div className="flex min-w-0 flex-col gap-2">
-              <label htmlFor="suggest-type" className={labelClass}>Type</label>
-              <select id="suggest-type" className={inputClass} value={type} onChange={(event) => setType(event.target.value as MaterialType)}>
-                {materialTypes.map((option) => <option key={option} value={option}>{typeLabel(option)}</option>)}
-              </select>
-            </div>
+          <div className="flex min-w-0 flex-col gap-2">
+            <label htmlFor="suggest-type" className={labelClass}>Type</label>
+            <select id="suggest-type" className={inputClass} value={type} onChange={(event) => setType(event.target.value as MaterialType)}>
+              {materialTypes.map((option) => <option key={option} value={option}>{typeLabel(option)}</option>)}
+            </select>
           </div>
           <div className="flex min-w-0 flex-col gap-2">
             <label htmlFor="suggest-title" className={labelClass}>Title</label>

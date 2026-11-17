@@ -285,6 +285,7 @@ describe('site chrome', () => {
     expect(screen.getAllByRole('link', { name: 'Início' }).every((link) => link.getAttribute('href') === '/pt-br')).toBe(true);
     expect(screen.getAllByRole('link', { name: 'Sobre mim' }).every((link) => link.getAttribute('href') === '/pt-br/about')).toBe(true);
     expect(screen.getAllByRole('link', { name: 'Contato' }).every((link) => link.getAttribute('href') === '/pt-br/contact')).toBe(true);
+    expect(screen.getAllByRole('link', { name: 'Grupos de estudo' }).every((link) => link.getAttribute('href') === '/pt-br/study-groups')).toBe(true);
     expect(screen.getAllByRole('img', { name: 'Filipe Bojikian Rissi' }).every((image) => image.getAttribute('src')?.includes('profile.png'))).toBe(true);
     expect(container.querySelector('canvas[aria-hidden="true"]')).toBeInTheDocument();
     expect(context.stroke).toHaveBeenCalled();

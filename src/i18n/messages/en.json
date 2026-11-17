@@ -12,6 +12,7 @@
     "openSource": "Open Source",
     "works": "Works",
     "articles": "Articles",
+    "studyGroups": "Study groups",
     "contact": "Contact",
     "resume": "Resume"
   },
@@ -98,5 +99,49 @@
   "articles": {
     "title": "Articles",
     "description": "Short, maintainable posts in Markdown."
+  },
+  "studyGroups": {
+    "eyebrow": "English for developers",
+    "title": "English study groups for developers",
+    "description": "A free program that helps developers create and run small English study groups: suggest materials, pick a weekly topic, and practice speaking together.",
+    "intro": "Most documentation, open-source discussion, conference talks and remote jobs in software happen in English. Reading it is a start; speaking it with confidence takes practice. This program helps developers practice together in small, friendly study groups.",
+    "signIn": "Sign in with Google",
+    "createGroup": "Create a group",
+    "myGroups": "My groups",
+    "whyTitle": "Why English matters for developers",
+    "why": [
+      "Docs, release notes, RFCs and most answers to hard problems are written in English first.",
+      "Open-source projects, issue trackers and code reviews happen in English, so you can contribute and be understood.",
+      "International and remote teams hire people who can explain trade-offs, ask questions and run meetings in English.",
+      "Talking about real technical topics every week builds vocabulary and confidence faster than studying alone."
+    ],
+    "howTitle": "How it works",
+    "how": [
+      "Sign in with Google and accept the Terms of Use and the Privacy Policy.",
+      "Create a group with a name, a short public summary, rules and a meeting schedule, or ask to join an existing one with its access code.",
+      "The group owner approves each request, so only approved members open the board.",
+      "Members suggest videos, articles, books or podcasts; the owner picks the weekly topic by a random draw or a vote.",
+      "Meet on your own call and talk about it in English. Mistakes are part of the practice."
+    ],
+    "groupsTitle": "Groups",
+    "groupsIntro": "Each card shows the name and the summary written by the group's creator. Ask the group for its access code before you request to join.",
+    "groupsEmpty": "No groups are listed yet. Be the first to create one.",
+    "groupsError": "Couldn't load the groups. Please try again later.",
+    "loading": "Loading groups…",
+    "loadMore": "Load more groups",
+    "openGroup": "Open group",
+    "signInToJoin": "Sign in to join",
+    "signInFailed": "Sign-in didn't work. Please try again.",
+    "policiesTitle": "Rules and privacy",
+    "policiesText": "The program is free and run by Filipe Bojikian Rissi. Read the rules before you create or join a group.",
+    "terms": "Terms of Use",
+    "contentPolicy": "Content policy",
+    "privacy": "Privacy Policy",
+    "contact": "Report abuse or send a data request",
+    "policyVersion": "Version",
+    "backToProgram": "Back to study groups",
+    "cookieNotice": "We only use strictly necessary cookies and local storage: a sign-in session, a short-lived sign-in check and your language and notice preferences. No analytics or ads.",
+    "cookieNoticeLink": "Learn more in the Privacy Policy",
+    "cookieNoticeDismiss": "OK"
   }
 }
