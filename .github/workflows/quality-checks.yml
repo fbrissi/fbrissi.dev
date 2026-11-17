@@ -35,16 +35,16 @@ jobs:
         uses: actions/cache/restore@v6
         with:
           path: node_modules
-          key: opencode-review-deps-v1-${{ hashFiles('yarn.lock') }}
+          key: code-review-deps-v1-node24-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
           restore-keys: |
-            opencode-review-deps-v1-
+            code-review-deps-v1-node24-${{ runner.os }}-${{ runner.arch }}-
       - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         run: yarn install --frozen-lockfile
       - if: ${{ steps.cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@v6
         with:
           path: node_modules
-          key: opencode-review-deps-v1-${{ hashFiles('yarn.lock') }}
+          key: code-review-deps-v1-node24-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
 
   quality:
     name: Quality / ${{ matrix.name }}
@@ -202,7 +202,7 @@ jobs:
           fi
 
       - name: Dispatch Code Review
-        if: ${{ github.event_name == 'pull_request' && !cancelled() }}
+        if: ${{ success() && github.event_name == 'pull_request' && vars.CODE_REVIEW_ENABLED != 'false' }}
         uses: actions/github-script@v9
         with:
           script: |
@@ -211,7 +211,8 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo,
               workflow_id: 'code-review.yml',
-              ref: pullRequest.head.ref,
+              // The default branch runs the caller, so a pull request cannot change its own reviewer.
+              ref: context.payload.repository.default_branch,
               inputs: {
                 pr_number: String(pullRequest.number),
               },
@@ -220,42 +221,6 @@ jobs:
   release-note:
     name: Quality / release-note
     if: ${{ github.event_name == 'pull_request' && github.base_ref == 'main' }}
-    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-          ref: ${{ github.event.pull_request.head.sha }}
-      - name: Validate new release note
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-        run: |
-          set -euo pipefail
-
-          mapfile -t versions < <(
-            git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- CHANGELOG.md \
-              | sed -nE 's/^\+## (v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?)$/\1/p'
-          )
-
-          if [ "${#versions[@]}" -ne 1 ]; then
-            echo 'CHANGELOG.md must add exactly one release heading in the form ## vMAJOR.MINOR.PATCH.'
-            exit 1
-          fi
-
-          version="${versions[0]}"
-          notes=$(awk -v heading="## $version" '
-            $0 == heading { found = 1; next }
-            found && /^## / { exit }
-            found { print }
-          ' CHANGELOG.md)
-
-          if [ -z "$(printf '%s' "$notes" | tr -d '[:space:]')" ]; then
-            echo "Release $version must include release notes."
-            exit 1
-          fi
-
-          if git rev-parse -q --verify "refs/tags/$version" >/dev/null; then
-            echo "Release tag already exists: $version"
-            exit 1
-          fi
+    uses: fbrissi/github-actions/.github/workflows/release-note.yml@v1
+    permissions:
+      contents: read
