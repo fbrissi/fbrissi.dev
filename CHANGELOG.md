@@ -9,6 +9,7 @@ All notable changes to this project are documented here. Release versions follow
 
 - Move the Code Review, release-note check, and release workflows to the shared reusable workflows in [`fbrissi/github-actions@v1`](https://github.com/fbrissi/github-actions). `code-review.yml`, `release.yml`, and `release-orchestrator.yml` are now thin callers, and releases gain idempotent tag and release creation.
 - Dispatch Code Review on `main` instead of the pull request branch, and only after the quality checks pass (`CODE_REVIEW_ENABLED=false` turns it off), so a pull request can no longer change its own reviewer and open pull requests use the current review setup without a rebase. The review can use OpenCode or Claude Code through the `AI_HARNESS` variable and runs in the `code-review` environment.
+- Split the GitHub App: `rissi-agent-ai` publishes the Code Review with a token scoped to read code and write reviews, and `rissi-terraform` manages GitHub Actions variables and secrets from Terraform Cloud.
 
 ## v0.3.1
 

@@ -101,8 +101,14 @@ Configured manually:
 - Secret `TFC_API_TOKEN`: Terraform Cloud team token with write access to the
   `fbrissi-dev` workspace (organization tokens cannot create runs)
 - Terraform Cloud workspace `fbrissi-dev`, Terraform variables `GITHUB_APP_ID`,
-  `GITHUB_APP_INSTALLATION_ID`, and sensitive `GITHUB_APP_PEM_FILE`: GitHub App
-  installed on this repository with Actions secrets and variables write access
+  `GITHUB_APP_INSTALLATION_ID`, and sensitive `GITHUB_APP_PEM_FILE`: the
+  `rissi-terraform` GitHub App, installed only on this repository with Actions
+  secrets and variables write access and nothing else
+- Variable `AGENT_APP_CLIENT_ID` and secret `AGENT_APP_PRIVATE_KEY`: the
+  `rissi-agent-ai` GitHub App that publishes the shared
+  [Code Review](https://github.com/fbrissi/github-actions#code-review), with
+  Contents write, Pull requests write, and Issues read; the shared workflow
+  scopes its token to reading code and writing reviews
 - Variables `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_PAGES_PROJECT_NAME`, and
   `NEXT_PUBLIC_OG_IMAGE`
 - Variable `CI_RUNNER`: optional runner label for every workflow job (defaults
