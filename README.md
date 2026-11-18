@@ -213,9 +213,18 @@ it. The account-wide `app.terraform.io` OIDC provider already exists.
 Outbound mail: Gmail and Spark "Send mail as" `@fbrissi.dev` use SES SMTP
 (`email-smtp.us-east-1.amazonaws.com`, port 587, TLS) with the
 `gmail_smtp_username` and sensitive `gmail_smtp_password` Terraform outputs of
-the `fbrissi-dev-gmail-smtp` user, which can send only as `fbrissi.dev`. While
-the account's SES is in the sandbox, it delivers only to verified identities,
-so keep `smtp.gmail.com` until production access is granted.
+the `fbrissi-dev-gmail-smtp` user, which can send only as `fbrissi.dev`.
+
+DMARC is `p=reject`. Aggregate reports go to Cloudflare DMARC Management
+(beta, free on every plan), not to an inbox; its Cloudflare-generated `rua`
+address is set in `cloudflare_dns_record.dmarc` so an apply keeps it. To review
+them, open [dash.cloudflare.com](https://dash.cloudflare.com), select the
+account and `fbrissi.dev`, then go to **Email** > **DMARC Management**: the
+graph shows the volume of messages and their DMARC result for up to 30 days,
+**View reports** lists the reports by date, and **View all** lists every
+sending source (use the source's menu > **Details**). A legitimate source that
+fails there is being rejected; align it with SES or Cloudflare before it sends
+again.
 
 ## Cloudflare Setup
 
