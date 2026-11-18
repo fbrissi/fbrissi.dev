@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.3.3
+
+### Changed
+
+- Set the DMARC policy to `p=reject`. SES now sends `contact@fbrissi.dev` from Gmail and Spark and Cloudflare sends the contact form, all aligned with `fbrissi.dev`.
+
 ## v0.3.2
 
 ### Changed
