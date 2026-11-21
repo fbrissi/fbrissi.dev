@@ -12,7 +12,7 @@ locals {
     for group in data.cloudflare_account_api_token_permission_groups_list.all.result :
     group.name => group.id if contains(group.scopes, "com.cloudflare.api.account.zone")
   }
-  deploy_account_permissions = ["Account Settings Read", "Pages Write", "Queues Write", "Workers Scripts Write"]
+  deploy_account_permissions = ["Account Settings Read", "D1 Write", "Pages Write", "Queues Write", "Workers Scripts Write"]
   deploy_zone_permissions    = ["Workers Routes Write", "Zone Read"]
 }
 

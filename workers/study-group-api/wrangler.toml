@@ -1,0 +1,50 @@
+name = "fbrissi-dev-study-group-api"
+main = "../study-group-api.ts"
+compatibility_date = "2024-01-01"
+observability.enabled = true
+
+routes = [
+  { pattern = "fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" },
+  { pattern = "www.fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" },
+  { pattern = "sandbox.fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" }
+]
+
+# The database IDs are created by Terraform (terraform/d1.tf) and injected by the deploy
+# workflows, which resolve them by name and replace the placeholders before deploying.
+# Secrets pushed by the deploy workflows: STUDY_GROUP_ADMIN_EMAIL, STUDY_GROUP_ADMIN_PASSWORD_HASH,
+# STUDY_GROUP_SESSION_SECRET.
+[[d1_databases]]
+binding = "STUDY_GROUP_DB"
+database_name = "fbrissi-dev-study-group"
+database_id = "STUDY_GROUP_DB_ID"
+migrations_dir = "../study-group/migrations"
+
+[[d1_databases]]
+binding = "STUDY_GROUP_SANDBOX_DB"
+database_name = "fbrissi-dev-sandbox-study-group"
+database_id = "STUDY_GROUP_SANDBOX_DB_ID"
+migrations_dir = "../study-group/migrations"
+
+[[ratelimits]]
+name = "STUDY_GROUP_WRITE_RATE_LIMITER"
+namespace_id = "1003"
+
+  [ratelimits.simple]
+  limit = 10
+  period = 60
+
+[[ratelimits]]
+name = "STUDY_GROUP_READ_RATE_LIMITER"
+namespace_id = "1004"
+
+  [ratelimits.simple]
+  limit = 60
+  period = 60
+
+[[ratelimits]]
+name = "STUDY_GROUP_LOGIN_RATE_LIMITER"
+namespace_id = "1005"
+
+  [ratelimits.simple]
+  limit = 5
+  period = 60

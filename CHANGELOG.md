@@ -3,6 +3,53 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.3.3
+
+### Changed
+
+- Set the DMARC policy to `p=reject`. SES now sends `contact@fbrissi.dev` from Gmail and Spark and Cloudflare sends the contact form, all aligned with `fbrissi.dev`.
+- Send DMARC aggregate reports to Cloudflare DMARC Management instead of an inbox, and document how to open its dashboard in the README.
+
+## v0.3.2
+
+### Changed
+
+- Move the Code Review, release-note check, and release workflows to the shared reusable workflows in [`fbrissi/github-actions@v1`](https://github.com/fbrissi/github-actions). `code-review.yml`, `release.yml`, and `release-orchestrator.yml` are now thin callers, and releases gain idempotent tag and release creation.
+- Dispatch Code Review on `main` instead of the pull request branch, and only after the quality checks pass (`CODE_REVIEW_ENABLED=false` turns it off), so a pull request can no longer change its own reviewer and open pull requests use the current review setup without a rebase. The review can use OpenCode or Claude Code through the `AI_HARNESS` variable and runs in the `code-review` environment.
+- Split the GitHub App: `rissi-agent-ai` publishes the Code Review with a token scoped to read code and write reviews, and `rissi-terraform` manages GitHub Actions variables and secrets from Terraform Cloud.
+- Update dependencies: `@aws-sdk/client-sqs` 3.1168.0, `axios` 1.21.1, `next` 16.4.6, `nodemailer` 10.5.0, `jsdom` 31.0.1, `typescript-eslint` 8.72.2, `vite` 8.3.8, and the Terraform provider lock file.
+- Run the dependency audit through `scripts/audit-high.mjs`, which fails on high or critical advisories except dated entries in `audit-allowlist.json`. Allow the unpatched `picomatch` ReDoS advisory (GHSA-fc5q-39xc-vjpf), reachable only through dev and build tooling, until 2026-12-31.
+
+## v0.3.1
+
+### Fixed
+
+- Parse the `wrangler d1 list --json` output without the trailing package-manager lines, so the deploy injects the study group D1 database IDs, applies the migrations, and deploys the study group API Worker (the login returned 405 because the Worker was never deployed).
+
+## v0.3.0
+
+### Added
+
+- Add the unlisted DevTalk study group board at `/study-group/<slug>` (English only, `noindex`, no-referrer, out of the sitemap): members suggest materials, browse open and discussed items, and run a weekly random draw or vote; the winner is marked discussed manually. Members unlock the board with a shared access code; deletes are soft and restorable.
+- Add the `/study-group/<slug>/settings` page, behind an email and PBKDF2 password login, to edit the group name, policy, meeting schedule and link, and access code, and to restore deleted materials.
+- Add the `fbrissi-dev-study-group-api` Worker on `/api/study-group/*`, with the `fbrissi-dev-study-group` and `fbrissi-dev-sandbox-study-group` D1 databases (Terraform), rate limits, migrations applied on deploy, and a local `node:sqlite` service in Docker. The Terraform `CLOUDFLARE_API_TOKEN` needs the D1 Write permission and the `STUDY_GROUP_*` secrets must exist before the apply and deploy.
+
+### Changed
+
+- Run every workflow job on `${{ vars.CI_RUNNER || 'ubuntu-latest' }}` so the runner can be switched with the `CI_RUNNER` variable.
+
+## v0.2.7
+
+### Added
+
+- Add the `fbrissi-dev-gmail-smtp` SES SMTP credential for Gmail and Spark "Send mail as" `@fbrissi.dev`, limited to `ses:SendRawEmail` on the `fbrissi.dev` identity, with the `gmail_smtp_username` and sensitive `gmail_smtp_password` Terraform outputs. The `fbrissi-dev-terraform` role needs the new `ProjectUsers` statement before the apply.
+
+## v0.2.6
+
+### Added
+
+- Manage the `fbrissi.dev` SES identity in Terraform with restricted AWS access (dynamic credentials for the `fbrissi-dev-terraform` role, scoped to that identity): import the identity and its MAIL FROM created by `oliblish-dev/nota-profile`, and create the three Easy DKIM CNAMEs and the `mail.fbrissi.dev` MX and SPF records, with the MAIL FROM rejecting mail when its MX is missing.
+
 ## v0.2.5
 
 ### Changed

@@ -91,7 +91,7 @@ The repository includes a minimal `Dockerfile` and `docker-compose.yml` so `kool
 Configured manually:
 
 - Secret `CLOUDFLARE_API_TOKEN`: Terraform credential with account permissions
-  Pages, Queues, Turnstile Sites, and Account API Tokens Write, plus Account
+  D1, Pages, Queues, Turnstile Sites, and Account API Tokens Write, plus Account
   Settings Read, and `fbrissi.dev` zone permissions DNS, Email Routing Rules,
   and Zone Settings Write, plus Zone Read. Account and zone permissions must be separate policy
   blocks. `.github/workflows/rotate-credentials.yml` copies it to the sensitive
@@ -101,10 +101,24 @@ Configured manually:
 - Secret `TFC_API_TOKEN`: Terraform Cloud team token with write access to the
   `fbrissi-dev` workspace (organization tokens cannot create runs)
 - Terraform Cloud workspace `fbrissi-dev`, Terraform variables `GITHUB_APP_ID`,
-  `GITHUB_APP_INSTALLATION_ID`, and sensitive `GITHUB_APP_PEM_FILE`: GitHub App
-  installed on this repository with Actions secrets and variables write access
+  `GITHUB_APP_INSTALLATION_ID`, and sensitive `GITHUB_APP_PEM_FILE`: the
+  `rissi-terraform` GitHub App, installed only on this repository with Actions
+  secrets and variables write access and nothing else
+- Variable `AGENT_APP_CLIENT_ID` and secret `AGENT_APP_PRIVATE_KEY`: the
+  `rissi-agent-ai` GitHub App that publishes the shared
+  [Code Review](https://github.com/fbrissi/github-actions#code-review), with
+  Contents write, Pull requests write, and Issues read; the shared workflow
+  scopes its token to reading code and writing reviews
 - Variables `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_PAGES_PROJECT_NAME`, and
   `NEXT_PUBLIC_OG_IMAGE`
+- Variable `CI_RUNNER`: optional runner label for every workflow job (defaults
+  to `ubuntu-latest`)
+- Secret `STUDY_GROUP_SLUG`: unguessable path segment of the unlisted study
+  group board (`/study-group/<slug>`) and its settings page
+- Secrets `STUDY_GROUP_ADMIN_EMAIL`, `STUDY_GROUP_ADMIN_PASSWORD_HASH`
+  (output of `node scripts/hash-study-group-password.mjs`, which reads the
+  password from stdin), and `STUDY_GROUP_SESSION_SECRET` (long random string):
+  study group settings login, pushed to the Worker on deploy
 
 Published by Terraform, do not set them manually:
 
@@ -123,6 +137,8 @@ Optional environment variable:
 
 - `NEXT_PUBLIC_SITE_URL` for canonical URLs and metadata generation
 - `NEXT_PUBLIC_CONTACT_API_URL` to override the contact API URL
+- `NEXT_PUBLIC_STUDY_GROUP_API_URL` to override the study group API URL
+- `STUDY_GROUP_SLUG` to build the study group routes (`local` in Docker)
 
 ## Terraform Configuration
 
@@ -130,6 +146,85 @@ Configured in `terraform/locals.tf`:
 
 - Cloudflare account ID
 - Pages project name, production branch, and custom domain
+
+## AWS Access
+
+Terraform manages only the `fbrissi.dev` SES identity (Easy DKIM, MAIL FROM
+`mail.fbrissi.dev`) and its SMTP credential in the shared AWS account
+`526983805816`, with the DNS records in the same apply. Terraform Cloud reaches AWS only through dynamic
+provider credentials (OIDC); no AWS key is stored. The role is created manually
+in the IAM console, once, before the first apply, and Terraform does not manage
+it. The account-wide `app.terraform.io` OIDC provider already exists.
+
+1. Role `fbrissi-dev-terraform` with this trust policy:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [{
+       "Effect": "Allow",
+       "Principal": { "Federated": "arn:aws:iam::526983805816:oidc-provider/app.terraform.io" },
+       "Action": "sts:AssumeRoleWithWebIdentity",
+       "Condition": {
+         "StringEquals": { "app.terraform.io:aud": "aws.workload.identity" },
+         "StringLike": { "app.terraform.io:sub": "organization:fbrissi:project:*:workspace:fbrissi-dev:run_phase:*" }
+       }
+     }]
+   }
+   ```
+
+2. Inline policy `fbrissi-dev-terraform` on the role, limited to the
+   `fbrissi.dev` identity and the `fbrissi-dev-*` IAM users. Add permissions
+   here before merging Terraform changes that need them:
+
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Sid": "SesIdentity",
+         "Effect": "Allow",
+         "Action": [
+           "ses:CreateEmailIdentity", "ses:DeleteEmailIdentity", "ses:GetEmailIdentity",
+           "ses:ListTagsForResource", "ses:PutEmailIdentityDkimSigningAttributes",
+           "ses:PutEmailIdentityMailFromAttributes", "ses:TagResource", "ses:UntagResource"
+         ],
+         "Resource": "arn:aws:ses:us-east-1:526983805816:identity/fbrissi.dev"
+       },
+       {
+         "Sid": "ProjectUsers",
+         "Effect": "Allow",
+         "Action": [
+           "iam:CreateAccessKey", "iam:CreateUser", "iam:DeleteAccessKey", "iam:DeleteUser",
+           "iam:DeleteUserPolicy", "iam:GetUser", "iam:GetUserPolicy", "iam:ListAccessKeys",
+           "iam:ListAttachedUserPolicies", "iam:ListGroupsForUser", "iam:ListUserPolicies",
+           "iam:ListUserTags", "iam:PutUserPolicy", "iam:TagUser", "iam:UntagUser"
+         ],
+         "Resource": "arn:aws:iam::526983805816:user/fbrissi-dev-*"
+       }
+     ]
+   }
+   ```
+
+3. In the `fbrissi-dev` workspace, set the environment variables
+   `TFC_AWS_PROVIDER_AUTH=true` and
+   `TFC_AWS_RUN_ROLE_ARN=arn:aws:iam::526983805816:role/fbrissi-dev-terraform`.
+
+Outbound mail: Gmail and Spark "Send mail as" `@fbrissi.dev` use SES SMTP
+(`email-smtp.us-east-1.amazonaws.com`, port 587, TLS) with the
+`gmail_smtp_username` and sensitive `gmail_smtp_password` Terraform outputs of
+the `fbrissi-dev-gmail-smtp` user, which can send only as `fbrissi.dev`.
+
+DMARC is `p=reject`. Aggregate reports go to Cloudflare DMARC Management
+(beta, free on every plan), not to an inbox; its Cloudflare-generated `rua`
+address is set in `cloudflare_dns_record.dmarc` so an apply keeps it. To review
+them, open [dash.cloudflare.com](https://dash.cloudflare.com), select the
+account and `fbrissi.dev`, then go to **Email** > **DMARC Management**: the
+graph shows the volume of messages and their DMARC result for up to 30 days,
+**View reports** lists the reports by date, and **View all** lists every
+sending source (use the source's menu > **Details**). A legitimate source that
+fails there is being rejected; align it with SES or Cloudflare before it sends
+again.
 
 ## Cloudflare Setup
 

@@ -7,6 +7,8 @@ services:
     environment:
       ASDF_NODEJS_VERSION: 20
       NEXT_PUBLIC_CONTACT_API_URL: http://localhost:8787/api/contact
+      NEXT_PUBLIC_STUDY_GROUP_API_URL: http://localhost:8788/api/study-group
+      STUDY_GROUP_SLUG: local
     volumes:
       - .:/app:delegated
     networks:
@@ -15,6 +17,7 @@ services:
     depends_on:
       - mailpit
       - contact-api
+      - study-group-api
 
   contact-api:
     image: kooldev/node:24
@@ -31,6 +34,24 @@ services:
     depends_on:
       localstack:
         condition: service_healthy
+
+  # Study group API backed by node:sqlite; data persists in the gitignored tmp/study-group/.
+  study-group-api:
+    image: kooldev/node:24
+    command: yarn dev:study-group-api
+    environment:
+      ASDF_NODEJS_VERSION: 24
+      STUDY_GROUP_DB_PATH: tmp/study-group/local.sqlite
+      # Fake local-only admin credentials (admin@example.test / study-group-dev-password). `$$` escapes `$` for Compose.
+      STUDY_GROUP_ADMIN_EMAIL: admin@example.test
+      STUDY_GROUP_ADMIN_PASSWORD_HASH: pbkdf2-sha256$$10000$$36v4+k2cgAL7ZzRBbB4d2g==$$uPoey7Z5RYq+xW7XDAHwytPj/QbcZGsBBMGnrSk2ZR0=
+      STUDY_GROUP_SESSION_SECRET: local-dev-session-secret-not-for-production
+    ports:
+      - "8788:8788"
+    volumes:
+      - .:/app:delegated
+    networks:
+      - kool_local
 
   contact-email-consumer:
     image: kooldev/node:24

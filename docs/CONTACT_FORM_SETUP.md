@@ -73,9 +73,9 @@ Configure the `fbrissi-dev` Terraform Cloud workspace:
   secret of the same name by the Rotate Deployment Credentials workflow (see the
   README for its permissions); do not set it manually.
 - `GITHUB_APP_ID`, `GITHUB_APP_INSTALLATION_ID`, and sensitive
-  `GITHUB_APP_PEM_FILE` - Terraform variables of a GitHub App installed on
-  `fbrissi/fbrissi.dev` with **Secrets: Read and write** and **Variables: Read
-  and write** repository permissions.
+  `GITHUB_APP_PEM_FILE` - Terraform variables of the `rissi-terraform` GitHub
+  App, installed only on `fbrissi/fbrissi.dev` with **Secrets: Read and write**
+  and **Variables: Read and write** repository permissions.
 
 Add this GitHub Actions secret:
 

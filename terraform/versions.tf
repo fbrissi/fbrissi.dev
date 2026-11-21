@@ -2,6 +2,10 @@ terraform {
   required_version = ">= 1.7.0"
 
   required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
     cloudflare = {
       source  = "cloudflare/cloudflare"
       version = "~> 5.0"
@@ -19,6 +23,17 @@ terraform {
     workspaces {
       name = "fbrissi-dev"
     }
+  }
+}
+
+# Credentials come from Terraform Cloud dynamic provider credentials (TFC_AWS_PROVIDER_AUTH and TFC_AWS_RUN_ROLE_ARN
+# workspace variables) for the manually created fbrissi-dev-terraform role; no AWS key is stored. See README "AWS Access".
+provider "aws" {
+  region              = local.aws_region
+  allowed_account_ids = [local.aws_account_id]
+
+  default_tags {
+    tags = local.aws_tags
   }
 }
 
