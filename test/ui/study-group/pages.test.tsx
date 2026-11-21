@@ -30,7 +30,7 @@ describe('program pages', () => {
     expect(screen.getAllByRole('listitem').length).toBeGreaterThan(8);
     const links = screen.getAllByRole('link').map((link) => link.getAttribute('href'));
     expect(links).toEqual(expect.arrayContaining([termsPath, `${termsPath}#content-policy`, privacyPath]));
-    expect(screen.queryByText(/funcionam em inglês/)).toSatisfy((note: HTMLElement | null) => (locale === 'pt-BR') === (note !== null));
+    expect(screen.queryByText(/tudo funciona em inglês/)).toSatisfy((note: HTMLElement | null) => (locale === 'pt-BR') === (note !== null));
     // Indexable copy: the H2 outline, a 7-question FAQ (H3s) and the no-JS text of the client-rendered list.
     expect(screen.getAllByRole('heading', { level: 2 })).toHaveLength(6);
     expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(7);

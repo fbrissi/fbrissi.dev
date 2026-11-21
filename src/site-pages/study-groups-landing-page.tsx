@@ -44,7 +44,12 @@ export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; api
         <section className="mb-16 flex flex-col gap-6">
           <h1 className="text-3xl font-normal tracking-tight sm:text-5xl">{messages.title}</h1>
           <p className="max-w-3xl text-lg leading-relaxed text-text-secondary">{messages.intro}</p>
-          {messages.appLanguageNote ? <p className="max-w-3xl leading-relaxed text-text-secondary">{messages.appLanguageNote}</p> : null}
+          {messages.appLanguageNote ? (
+            <aside role="note" className="max-w-3xl rounded-xl border border-accent/60 bg-bg-soft p-5 leading-relaxed">
+              <p className="text-text">{messages.appLanguageNote}</p>
+              <p lang="en" className="mt-2 font-medium text-accent">From here on, it&apos;s all in English.</p>
+            </aside>
+          ) : null}
           <ProgramActions locale={locale} />
         </section>
         <section className="mb-16" aria-labelledby="why-title">
