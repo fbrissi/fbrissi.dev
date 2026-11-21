@@ -29,6 +29,13 @@ All notable changes to this project are documented here. Release versions follow
 
 - Remove the access-code header, the typed member names (and clear the old `study-group:code` and `study-group:name` browser keys), and the email and PBKDF2 password settings login with `scripts/hash-study-group-password.mjs`; delete the `STUDY_GROUP_ADMIN_EMAIL` and `STUDY_GROUP_ADMIN_PASSWORD_HASH` secrets after the release.
 
+## v0.3.3
+
+### Changed
+
+- Set the DMARC policy to `p=reject`. SES now sends `contact@fbrissi.dev` from Gmail and Spark and Cloudflare sends the contact form, all aligned with `fbrissi.dev`.
+- Send DMARC aggregate reports to Cloudflare DMARC Management instead of an inbox, and document how to open its dashboard in the README.
+
 ## v0.3.2
 
 ### Changed

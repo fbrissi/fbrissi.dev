@@ -98,12 +98,13 @@ resource "cloudflare_email_routing_rule" "public_contact_alias" {
   depends_on = [cloudflare_email_routing_dns.domain]
 }
 
-# Monitor authentication failures for messages sent from the domain.
-# Change p=none to p=reject once the SES account moves from the sandbox to production access.
+# Every sender is aligned (SES for Gmail and Spark, Cloudflare for the contact form), so unaligned mail is rejected.
+# Aggregate reports go to Cloudflare DMARC Management (the rua address it generated) to catch a sender that falls out of
+# alignment; see the README for the dashboard.
 resource "cloudflare_dns_record" "dmarc" {
   zone_id = local.cloudflare_zone_id
   name    = "_dmarc"
   type    = "TXT"
-  content = "\"v=DMARC1; p=none; rua=mailto:${local.contact_email_to}\""
+  content = "\"v=DMARC1; p=reject; rua=mailto:dc890eea48ad42278f6dee56fad40f9d@dmarc-reports.cloudflare.net\""
   ttl     = 1
 }
