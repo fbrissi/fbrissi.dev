@@ -50,14 +50,59 @@ function error(status: number, message: string): Response {
   return Response.json({ error: message }, { status });
 }
 
+const avatarColors = ['#1a73e8', '#188038', '#e37400', '#a142f4', '#d93025'];
+
+const pageStyles = `
+:root{color-scheme:light dark;--bg:#f0f4f9;--card:#fff;--text:#1f1f1f;--muted:#5f6368;--line:#dadce0;--hover:#f1f3f4;--accent:#0b57d0;--accent-text:#fff;--warn-bg:#fef7e0;--warn:#8a5300}
+@media (prefers-color-scheme:dark){:root{--bg:#131314;--card:#1e1f20;--text:#e3e3e3;--muted:#9aa0a6;--line:#3c4043;--hover:#28292a;--accent:#a8c7fa;--accent-text:#062e6f;--warn-bg:#3d2e00;--warn:#fdd663}}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:grid;place-items:center;padding:24px 16px;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{width:100%;max-width:440px;background:var(--card);border-radius:28px;padding:36px 32px 28px}
+.badge{display:inline-block;margin-bottom:16px;padding:2px 10px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+h1{margin:0 0 4px;font-size:26px;font-weight:400}
+.lead{margin:0 0 24px;color:var(--muted)}
+.accounts{list-style:none;margin:0 0 24px;padding:0;border-top:1px solid var(--line)}
+.accounts li{border-bottom:1px solid var(--line)}
+.account{display:flex;align-items:center;gap:14px;width:100%;padding:12px 8px;border:0;background:none;color:inherit;font:inherit;text-align:left;cursor:pointer;border-radius:8px}
+.account:hover,.account:focus-visible{background:var(--hover);outline:none}
+.avatar{flex:none;display:grid;place-items:center;width:36px;height:36px;border-radius:50%;color:#fff;font-weight:600}
+.who{flex:1;min-width:0}
+.who strong{display:block;font-weight:500}
+.who span{display:block;color:var(--muted);font-size:13px;overflow:hidden;text-overflow:ellipsis}
+.tag{flex:none;padding:1px 8px;border-radius:999px;background:var(--warn-bg);color:var(--warn);font-size:11px;font-weight:600}
+.divider{display:flex;align-items:center;gap:12px;margin:0 0 16px;color:var(--muted);font-size:13px}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--line)}
+.custom{display:grid;gap:12px}
+label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+input{padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--text);font:inherit}
+input:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.primary{justify-self:end;margin-top:4px;padding:10px 24px;border:0;border-radius:999px;background:var(--accent);color:var(--accent-text);font:inherit;font-weight:500;cursor:pointer}
+.primary:hover{filter:brightness(1.08)}
+footer{margin-top:24px;color:var(--muted);font-size:12px;text-align:center}
+@media (max-width:480px){main{padding:28px 20px 24px;border-radius:20px}}`;
+
 function authorizePage(params: URLSearchParams, users: FakeUser[]): Response {
   const hidden = authorizeParams.map((name) => `<input type="hidden" name="${name}" value="${escapeHtml(params.get(name) ?? '')}">`).join('');
-  const buttons = users.map((user) => `<form method="post" action="/authorize">${hidden}<input type="hidden" name="sub" value="${escapeHtml(user.sub)}">`
-    + `<button type="submit">Sign in as ${escapeHtml(user.name)} (${escapeHtml(user.email)})</button></form>`).join('');
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Fake Google sign-in</title></head><body>
-<h1>Fake Google sign-in</h1><p>Local development only. Pick a test user or sign in as anyone.</p>${buttons}
-<form method="post" action="/authorize">${hidden}<label>Email <input name="email" type="email" required></label>
-<label>Name <input name="name" required></label><button type="submit">Sign in as this user</button></form></body></html>`;
+  const accounts = users.map((user, index) => {
+    const label = `Sign in as ${escapeHtml(user.name)} (${escapeHtml(user.email)})`;
+    const tag = user.emailVerified ? '' : '<span class="tag">Unverified email</span>';
+    return `<li><form method="post" action="/authorize">${hidden}<input type="hidden" name="sub" value="${escapeHtml(user.sub)}">`
+      + `<button class="account" type="submit" aria-label="${label}">`
+      + `<span class="avatar" style="background:${avatarColors[index % avatarColors.length]}" aria-hidden="true">${escapeHtml(user.givenName.charAt(0))}</span>`
+      + `<span class="who"><strong>${escapeHtml(user.name)}</strong><span>${escapeHtml(user.email)}</span></span>${tag}</button></form></li>`;
+  }).join('');
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fake Google sign-in</title><style>${pageStyles}</style></head><body><main>
+<span class="badge">Local development only</span>
+<h1>Choose an account</h1><p class="lead">Fake Google sign-in for the study groups app. Pick a test user or sign in as anyone.</p>
+<ul class="accounts">${accounts}</ul>
+<p class="divider">or use another account</p>
+<form class="custom" method="post" action="/authorize">${hidden}
+<label>Email <input name="email" type="email" autocomplete="off" placeholder="someone@example.test" required></label>
+<label>Name <input name="name" autocomplete="off" placeholder="Someone Example" required></label>
+<button class="primary" type="submit">Sign in as this user</button></form>
+<footer>No real Google account is used. Tokens are signed with a key generated at startup.</footer>
+</main></body></html>`;
   return new Response(html, { headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store' } });
 }
 
