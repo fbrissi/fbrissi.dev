@@ -136,7 +136,7 @@ describe('board for members', () => {
     expect(screen.getByText('Member')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /Join meeting/ })).toHaveAttribute('href', group.meetingUrl);
     expect(screen.queryByRole('link', { name: 'Group settings' })).not.toBeInTheDocument();
-    expect(screen.getByRole('list', { name: '' }).textContent ?? '').toBeTruthy();
+    expect(screen.getByText("Don't speak in Portuguese").closest('ol')).toBeInTheDocument();
 
     expect(await screen.findByText('Pending review')).toBeInTheDocument();
     expect(screen.getByText('example.com')).toBeInTheDocument();
