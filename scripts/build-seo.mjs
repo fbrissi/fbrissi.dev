@@ -1,15 +1,29 @@
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 
 const root = process.cwd();
+// Portuguese slugs that differ from the English path; the same source as src/lib/i18n.ts and the redirects.
+const localizedSlugs = JSON.parse(fs.readFileSync(new URL('./localized-slugs.json', import.meta.url), 'utf8'));
+const routeFor = (prefix, route) => `${prefix}${prefix ? localizedSlugs[route] ?? route : route}`;
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? process.env.VITE_SITE_URL ?? 'https://fbrissi.dev';
+const locales = [
+  { code: 'en', prefix: '' },
+  { code: 'pt-BR', prefix: '/pt-br' }
+];
+const collections = [
+  { name: 'articles', route: 'articles' },
+  { name: 'contributions', route: 'open-source' },
+  { name: 'projects', route: 'projects' },
+  { name: 'works', route: 'works' }
+];
 
-const programRoutes = ['/study-groups', '/study-groups/terms', '/study-groups/privacy'];
-// Group pages (board, settings, join, account, admin) are noindex and never listed (D2).
-const staticRoutes = ['/', '/about', '/articles', '/open-source', '/projects', '/works', '/contact', ...programRoutes, '/pt-br', '/pt-br/about', '/pt-br/articles', '/pt-br/open-source', '/pt-br/projects', '/pt-br/works', '/pt-br/contact', ...programRoutes.map((route) => `/pt-br${route}`)];
+function contentPath(...segments) {
+  return path.join(root, 'src', 'content', ...segments);
+}
 
 function readSlugs(collection, locale) {
-  const dir = path.join(root, 'src', 'content', collection, locale);
+  const dir = contentPath(collection, locale);
 
   if (!fs.existsSync(dir)) {
     return [];
@@ -22,23 +36,61 @@ function readSlugs(collection, locale) {
     .sort();
 }
 
-const routes = [
-  ...staticRoutes,
-  ...['articles', 'contributions', 'projects', 'works'].flatMap((collection) => readSlugs(collection, 'en').map((slug) => `/${collection === 'contributions' ? 'open-source' : collection}/${slug}`)),
-  ...['articles', 'contributions', 'projects', 'works'].flatMap((collection) => readSlugs(collection, 'pt-BR').map((slug) => `/pt-br/${collection === 'contributions' ? 'open-source' : collection}/${slug}`))
-];
+/** Date of the last commit that touched the file, or null outside a Git checkout or for uncommitted files. */
+function gitDate(file) {
+  try {
+    const realFile = fs.realpathSync(file);
+    const date = execFileSync('git', ['log', '-1', '--format=%cs', '--', path.basename(realFile)], { cwd: path.dirname(realFile), stdio: ['ignore', 'pipe', 'ignore'] }).toString().trim();
+    return date || null;
+  } catch {
+    return null;
+  }
+}
 
-const today = new Date().toISOString().slice(0, 10);
+/** Articles use their front-matter `updated` or `date`; other content uses its last commit (S-4). */
+function contentDate(file) {
+  const frontMatter = fs.readFileSync(file, 'utf8').split('\n---', 1)[0];
+  const declared = frontMatter.match(/^updated:\s*["']?(\d{4}-\d{2}-\d{2})/m) ?? frontMatter.match(/^date:\s*["']?(\d{4}-\d{2}-\d{2})/m);
+  return declared?.[1] ?? gitDate(file);
+}
 
-const sitemapEntries = routes
-  .map((route) => {
-    const isHome = route === '/' || route === '/pt-br';
-    const isDetailPage = route.includes('/articles/') || route.includes('/open-source/') || route.includes('/projects/') || route.includes('/works/');
-    const priority = isHome ? '1.0' : isDetailPage ? '0.7' : '0.8';
-    const changefreq = isDetailPage ? 'monthly' : 'weekly';
+function newest(dates) {
+  return dates.filter(Boolean).sort().at(-1) ?? null;
+}
 
-    return `  <url>\n    <loc>${siteUrl}${route}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`;
-  })
+const entries = [];
+
+for (const { code, prefix } of locales) {
+  // Home and About copy lives in the profile files and in the UI messages.
+  const profileDate = newest([gitDate(contentPath('profile', `${code}.json`)), gitDate(contentPath('profile', `${code}.md`)), gitDate(path.join(root, 'src', 'i18n', 'messages', `${code}.json`))]);
+  const detailDates = {};
+
+  for (const { name, route } of collections) {
+    detailDates[name] = readSlugs(name, code).map((slug) => {
+      const lastmod = contentDate(contentPath(name, code, `${slug}.md`));
+      entries.push({ route: `${prefix}/${route}/${slug}`, lastmod });
+      return lastmod;
+    });
+  }
+
+  const programDocument = (document) => gitDate(contentPath('study-groups', code, `${document}.md`));
+  // Group pages (board, settings, join, account, admin) are noindex and never listed (D2).
+  entries.push(
+    { route: prefix || '/', lastmod: profileDate },
+    { route: `${prefix}/about`, lastmod: profileDate },
+    { route: `${prefix}/articles`, lastmod: newest(detailDates.articles) },
+    { route: `${prefix}/projects`, lastmod: newest([...detailDates.projects, ...detailDates.contributions]) },
+    { route: `${prefix}/works`, lastmod: newest(detailDates.works) },
+    { route: `${prefix}/contact`, lastmod: null },
+    { route: `${prefix}/privacy`, lastmod: programDocument('privacy') },
+    // The landing copy lives in the UI messages.
+    { route: routeFor(prefix, '/study-groups'), lastmod: gitDate(path.join(root, 'src', 'i18n', 'messages', `${code}.json`)) },
+    { route: `${prefix}/study-groups/terms`, lastmod: programDocument('terms') }
+  );
+}
+
+const sitemapEntries = entries
+  .map(({ route, lastmod }) => `  <url>\n    <loc>${siteUrl}${route}</loc>\n${lastmod ? `    <lastmod>${lastmod}</lastmod>\n` : ''}  </url>`)
   .join('\n');
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${sitemapEntries}\n</urlset>\n`;

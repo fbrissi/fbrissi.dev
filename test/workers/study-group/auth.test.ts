@@ -31,7 +31,7 @@ function expectFailure(response: Response) {
 
 describe('Google sign-in', () => {
   it('redirects to the provider with PKCE S256, state, nonce and the openid email profile scopes', async () => {
-    const login = await h.handler(request('GET', '/auth/login?returnTo=/pt-br/study-groups'));
+    const login = await h.handler(request('GET', '/auth/login?returnTo=/pt-br/grupos-de-estudo-de-ingles'));
     const location = new URL(login.headers.get('Location')!);
 
     expect(location.origin + location.pathname).toBe('https://idp.test/authorize');
@@ -54,7 +54,9 @@ describe('Google sign-in', () => {
 
   it('only returns to program pages', () => {
     expect(safeReturnTo('/study-groups/g/abc123')).toBe('/study-groups/g/abc123');
-    expect(safeReturnTo('/pt-br/study-groups')).toBe('/pt-br/study-groups');
+    expect(safeReturnTo('/pt-br/grupos-de-estudo-de-ingles')).toBe('/pt-br/grupos-de-estudo-de-ingles');
+    expect(safeReturnTo('/pt-br/study-groups')).toBe('/study-groups/my');
+    expect(safeReturnTo('/pt-br/grupos-de-estudo-de-ingles/x')).toBe('/study-groups/my');
     expect(safeReturnTo('https://evil.test/study-groups')).toBe('/study-groups/my');
     expect(safeReturnTo('//evil.test/study-groups')).toBe('/study-groups/my');
     expect(safeReturnTo('/study-groups/../admin')).toBe('/study-groups/my');

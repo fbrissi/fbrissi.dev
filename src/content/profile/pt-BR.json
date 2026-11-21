@@ -1,7 +1,7 @@
 {
   "name": "Filipe Bojikian Rissi",
+  "shortName": "Filipe Rissi",
   "location": "Bauru, São Paulo, Brasil (UTC-3)",
-  "availability": "Aberto a oportunidades remotas",
   "focusAreas": [
     "Engenharia Backend",
     "Arquitetura em Cloud",
@@ -39,12 +39,15 @@
     }
   ],
   "careerHighlights": [
-    "Mais de 15 anos construindo software corporativo",
+    "Construindo software corporativo desde 2009",
     "Aplicações cloud-native em AWS e Kubernetes",
     "Backend em primeiro lugar, full stack quando necessário",
     "APIs, integrações e sistemas distribuídos",
     "Arquitetura de software e platform engineering",
-    "Liderança técnica e mentoria",
+    "Liderança técnica e mentoria"
+  ],
+  "credentials": [
+    "MBA em Engenharia de Software (IGTI, 2017–2018)",
     "Scrum Foundation Professional Certificate (CertiProf, ago/2019)",
     "Palestrante: Object Relational Mapping Com JPA (FATEC Bauru, nov/2017)"
   ],

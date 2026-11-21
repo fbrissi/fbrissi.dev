@@ -2,6 +2,9 @@
 title: "Registry lookup via web service using digital certificates for data encryption"
 description: "A 2010 computer science thesis proposing secure access to centralized records through SOAP, XML, and digital certificates."
 date: "2010-12-01"
+seoTitle: "Web service registry lookup with digital certificates (2010 thesis)"
+translationKey: "digital-certificates-thesis"
+socialImage: "/images/og/tcc-digital-certificates.png"
 image: "/images/articles/tcc-digital-certificates.svg"
 imageAlt: "Two registries exchanging data through a web service protected by a digital certificate"
 tags:

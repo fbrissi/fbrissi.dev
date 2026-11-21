@@ -20,35 +20,42 @@ export function createUnlistedNextMetadata({ title, description }: { title: stri
 export function createNextMetadata({
   locale,
   pathname,
+  alternatePathname = pathname,
   title,
   description,
-  keywords = [],
-  type = 'website'
+  image = socialImage,
+  type = 'website',
+  publishedTime,
+  modifiedTime
 }: {
   locale: Locale;
   pathname: string;
+  /** Path of the same page in the other locale when its slug differs, or null when the page has no translation. */
+  alternatePathname?: string | null;
   title: string;
   description: string;
-  keywords?: string[];
+  image?: string;
   type?: 'website' | 'article';
+  publishedTime?: string;
+  modifiedTime?: string;
 }): Metadata {
   const currentPath = localizedPath(locale, pathname);
   const alternateLocale = getAlternateLocale(locale);
-  const imageUrl = new URL(socialImage, siteUrl).toString();
+  const imageUrl = new URL(image, siteUrl).toString();
+  const paths = { [locale]: pathname, [alternateLocale]: alternatePathname } as Record<Locale, string | null>;
 
   return {
     metadataBase: new URL(siteUrl),
     title,
     description,
-    keywords,
-    authors: [{ name: 'Filipe Bojikian Rissi' }],
+    authors: [{ name: 'Filipe Bojikian Rissi', url: siteUrl }],
     robots: { index: true, follow: true, 'max-image-preview': 'large' },
     alternates: {
       canonical: currentPath,
       languages: {
-        en: localizedPath('en', pathname),
-        'pt-BR': localizedPath('pt-BR', pathname),
-        'x-default': localizedPath('en', pathname)
+        ...(paths.en === null ? {} : { en: localizedPath('en', paths.en) }),
+        ...(paths['pt-BR'] === null ? {} : { 'pt-BR': localizedPath('pt-BR', paths['pt-BR']) }),
+        ...(paths.en === null ? {} : { 'x-default': localizedPath('en', paths.en) })
       }
     },
     openGraph: {
@@ -58,8 +65,10 @@ export function createNextMetadata({
       siteName: 'Filipe Bojikian Rissi',
       locale: locale === 'pt-BR' ? 'pt_BR' : 'en_US',
       alternateLocale: alternateLocale === 'pt-BR' ? 'pt_BR' : 'en_US',
-      type,
-      images: [{ url: imageUrl, width: 1200, height: 630, type: 'image/png', alt: title }]
+      images: [{ url: imageUrl, width: 1200, height: 630, type: 'image/png', alt: title }],
+      ...(type === 'article'
+        ? { type, publishedTime, modifiedTime: modifiedTime ?? publishedTime, authors: [siteUrl] }
+        : { type })
     },
     twitter: {
       card: 'summary_large_image',

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 
 import { ArticlePage } from '@/site-pages/article-page';
 import { createNextMetadata } from '@/lib/next-metadata';
-import { getArticle, getArticleSlugs } from '@/lib/articles';
+import { getArticle, getArticleSlugs, getArticleTranslationSlug } from '@/lib/articles';
 import { getMessages } from '@/lib/site';
 
 export function generateStaticParams() {
@@ -15,7 +15,18 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const article = getArticle('pt-BR', slug);
   if (!article) return {};
   const messages = getMessages('pt-BR');
-  return createNextMetadata({ locale: 'pt-BR', pathname: `/articles/${slug}`, title: `${article.title} | ${messages.site.name}`, description: article.description, keywords: article.tags, type: 'article' });
+  const translationSlug = getArticleTranslationSlug('pt-BR', slug);
+  return createNextMetadata({
+    locale: 'pt-BR',
+    pathname: `/articles/${slug}`,
+    alternatePathname: translationSlug ? `/articles/${translationSlug}` : null,
+    title: `${article.seoTitle ?? article.title} | ${messages.site.name}`,
+    description: article.description,
+    image: article.socialImage,
+    type: 'article',
+    publishedTime: article.date,
+    modifiedTime: article.updated
+  });
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

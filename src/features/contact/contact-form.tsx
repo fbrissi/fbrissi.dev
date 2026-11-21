@@ -4,6 +4,9 @@ import { useState, useRef, useEffect } from 'react';
 import axios from 'axios';
 import { z } from 'zod';
 
+// Skip Zod's `new Function` capability probe: the site CSP has no 'unsafe-eval', and the probe logs a violation.
+z.config({ jitless: true });
+
 interface ContactFormProps {
   locale: 'en' | 'pt-BR';
   turnstileSiteKey: string;
@@ -302,6 +305,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
             type="text"
             id="name"
             name="name"
+            autoComplete="name"
             value={formState.name}
             onChange={handleChange}
             placeholder={t.namePlaceholder}
@@ -320,6 +324,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
             type="email"
             id="email"
             name="email"
+            autoComplete="email"
             value={formState.email}
             onChange={handleChange}
             placeholder={t.emailPlaceholder}

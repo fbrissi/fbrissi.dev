@@ -34,7 +34,8 @@ import { authorizationUrl, exchangeCode, pkceChallenge, verifyIdToken } from './
 
 export const CALLBACK_PATH = '/api/study-group/auth/callback';
 const defaultReturnTo = '/study-groups/my';
-const returnToPattern = /^\/(pt-br\/)?study-groups(\/[A-Za-z0-9_-]+)*\/?$/;
+// English program and app pages, or the Portuguese landing (its slug differs; see scripts/localized-slugs.json).
+const returnToPattern = /^\/(study-groups(\/[A-Za-z0-9_-]+)*|pt-br\/grupos-de-estudo-de-ingles)\/?$/;
 
 interface OauthFlow {
   state: string;

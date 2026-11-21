@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-import profileImage from '@/assets/images/profile.png';
+import profileImage from '@/assets/images/profile.webp';
 import { GridBackground } from '@/components/layout/grid-background';
 import { SiteEffects } from '@/components/layout/site-effects';
 import { AccountNav, ConsentBanner } from '@/features/study-group/app-chrome';
@@ -34,7 +34,7 @@ export function StudyGroupShell({ apiUrl, children }: { apiUrl?: string; childre
             <p>English study groups · Free program by Filipe Bojikian Rissi</p>
             <nav aria-label="Policies" className="flex flex-wrap gap-4">
               <a className="hover:text-accent" href="/study-groups/terms">Terms of Use</a>
-              <a className="hover:text-accent" href="/study-groups/privacy">Privacy Policy</a>
+              <a className="hover:text-accent" href="/privacy">Privacy Policy</a>
               <a className="hover:text-accent" href="/contact">Contact</a>
             </nav>
           </footer>

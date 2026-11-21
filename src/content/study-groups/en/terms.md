@@ -14,7 +14,7 @@ The program helps software developers practice English in small study groups. Me
 
 - You must be **18 years old or older**.
 - You sign in with a Google account with a verified email address.
-- You must accept these Terms and the [Privacy Policy](/study-groups/privacy) before your account is created.
+- You must accept these Terms and the [Privacy Policy](/privacy) before your account is created.
 - Use the program for English practice. One account per person.
 
 ## 3. Your account

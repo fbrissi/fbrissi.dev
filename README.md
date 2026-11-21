@@ -27,7 +27,7 @@ Public portfolio for Filipe Bojikian Rissi.
 - Content collections live in `src/content/{articles,contributions,projects,works}/{locale}/`
 - SEO handled with Next Metadata, generated `robots.txt` and `sitemap.xml`, and JSON-LD
 - English study groups program: public, indexed landing, Terms and Privacy Policy pages in both locales
-  (`/study-groups`, `/pt-br/study-groups`), and English-only, `noindex` app pages (group board and settings,
+  (`/study-groups`, `/pt-br/grupos-de-estudo-de-ingles`), and English-only, `noindex` app pages (group board and settings,
   my groups, account, admin) served by static shells; groups live at `/study-groups/g/<id>` through a
   generated `_redirects` 200 rewrite. Google sign-in, groups and moderation run in the
   `fbrissi-dev-study-group-api` Worker with Cloudflare D1

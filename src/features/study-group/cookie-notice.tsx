@@ -34,7 +34,7 @@ export function CookieNotice({ locale }: { locale: Locale }) {
     <aside aria-label={messages.privacy} className="fixed inset-x-3 bottom-3 z-60 mx-auto flex max-w-3xl flex-wrap items-center gap-3 rounded-xl border border-line bg-bg-card px-5 py-4 text-sm shadow-lg">
       <p className="min-w-0 flex-[1_1_320px] text-text-secondary">
         {messages.cookieNotice}{' '}
-        <a className="text-accent hover:text-accent-hover" href={`${localizedPath(locale, '/study-groups/privacy')}#cookies`}>{messages.cookieNoticeLink}</a>
+        <a className="text-accent hover:text-accent-hover" href={`${localizedPath(locale, '/privacy')}#cookies`}>{messages.cookieNoticeLink}</a>
       </p>
       <button type="button" className={buttonClass.primarySmall} onClick={dismiss}>{messages.cookieNoticeDismiss}</button>
     </aside>

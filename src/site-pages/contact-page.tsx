@@ -1,6 +1,8 @@
+import Link from 'next/link';
+
 import { SiteShell } from '@/components/layout/site-shell';
 import { ContactForm } from '@/features/contact/contact-form';
-import type { Locale } from '@/lib/i18n';
+import { localizedPath, type Locale } from '@/lib/i18n';
 import { getMessages, getProfile } from '@/lib/site';
 
 /* c8 ignore next: Vite environment variables are retained only as a migration fallback. */
@@ -18,6 +20,10 @@ export function ContactPage({ locale, turnstileSiteKey = process.env.NEXT_PUBLIC
         <div className="rounded-xl border border-line bg-bg-soft p-8 shadow-lg">
           <h2 className="mb-6 text-2xl font-normal tracking-tight">{messages.pages.contact.formTitle}</h2>
           <ContactForm locale={locale} turnstileSiteKey={turnstileSiteKey} contactApiUrl={contactApiUrl} />
+          <p className="mt-6 text-sm leading-relaxed text-text-secondary">
+            {messages.pages.contact.privacyNotice}{' '}
+            <Link className="text-accent transition-colors duration-300 hover:text-accent-hover" href={localizedPath(locale, '/privacy')}>{messages.pages.contact.privacyLink}</Link>.
+          </p>
         </div>
       </section>
       <section className="mb-16">

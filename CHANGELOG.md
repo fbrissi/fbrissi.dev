@@ -14,6 +14,12 @@ All notable changes to this project are documented here. Release versions follow
 - Add account pages to edit the display name, download a JSON export of the account data, and delete the account (owned groups are deleted, other contributions stay as "Former member").
 - Add a daily Cron Trigger that purges deleted groups and content after 30 days, decided join requests after 30 days, the moderation log after 12 months, and expired sessions, and a join-with-code rate limiter.
 - Add a local fake Google IdP to the Docker stack for local sign-in and E2E tests.
+- Add the Nota Profile, English Study Groups, ai-skills and github-actions projects in English and Portuguese, and feature Nota Profile on the home page with a sign-up link tagged with UTM parameters. fbrissi.dev moves to the end of the project list.
+- Add a site-wide Privacy Policy at `/privacy` and `/pt-br/privacy` that covers the contact form (Cloudflare and Google as processors, 12 months in the mailbox, up to 4 days in the dead-letter queue, the IP address sent to Turnstile verification, and up to 7 days of Cloudflare Workers Logs) and the study groups program (version `2026-11-21`, so members accept it again at their next visit). The contact form, the footer and the study groups pages link to it; `/study-groups/privacy` redirects there with a 301.
+- Add a skip link, `aria-current` on the navigation (`page` for the current page, `true` for its section), a global focus ring, a keyboard-operable resume menu that lists the page's language first and returns focus to its button, and a mobile menu with 44px rows (Escape returns focus to its button) that replaces the four-row wrapped navigation.
+- Add `ProfilePage` structured data to About and one full `Person` node (stable `@id`) reused by home, About and the article author, `WebPage` and `BreadcrumbList` markup on the detail pages, `SoftwareSourceCode` for projects with a GitHub repository, and a raster social image with publish dates for the article.
+- Add languages and credentials (MBA, IGTI, 2017–2018) to About, three linked proof points and a study groups card to home, and the employment type next to the dates of each role.
+- Add HSTS, `X-Frame-Options`, `Permissions-Policy` and a Content-Security-Policy for every page, and cache `/_next/static/*` as immutable.
 - Check the Cloudflare Terraform token before merge with the shared `fbrissi/github-actions` terraform-permissions workflow. `terraform/cloudflare-token-permissions.json` maps every Cloudflare resource and data source type to the permission groups it needs; CI fails when it drifts from `terraform/` or when the real `CLOUDFLARE_API_TOKEN` lacks a group. See `terraform/README.md`.
 
 ### Changed
@@ -23,7 +29,24 @@ All notable changes to this project are documented here. Release versions follow
 - Deploy the study group Worker with the `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET` and `STUDY_GROUP_PLATFORM_ADMIN_EMAILS` secrets; create the Google OAuth client and these secrets before the release (README, Study Groups).
 - Run the sandbox study group API as its own Worker, `fbrissi-dev-study-group-api-sandbox`, bound only to the sandbox D1 and trusting only the sandbox origin; Deploy Sandbox no longer migrates the production database or replaces the production Worker. Remove the sandbox route from the production Worker before the first sandbox deploy (README, Study Groups).
 - Fail the Deploy and Deploy Sandbox workflows before deploying anything when a required secret is empty.
-- Add a "Study groups" item to the site header in both locales.
+- Lead with "Backend & Cloud Engineer" / "Engenheiro Backend e Cloud" in the page titles, the `Person` job title and the profile, and replace the home banner, the commit-history embed and the repeated About text with a type-only hero (headline, proof subhead and calls to action). The large profile header now shows only on home; inner pages start compact.
+- Trim the header to Home, About, Experience (`/works`), Projects, English groups (`/study-groups`, "Grupos de inglês" at `/pt-br/grupos-de-estudo-de-ingles` in Portuguese), Contact and Resume: Open Source becomes a section of Projects (`/open-source` redirects with a 301 to `/projects#open-source`, contribution pages stay), the study groups program is also linked from the footer (with the same label) and a home card, and Articles return to the header once there are three posts.
+- List current roles first and the rest newest first by start date, and name the current role on About; say "since 2009" instead of "15+ years"; rename "Works" to "Experience"; write new meta descriptions; normalize the Mega Bilheteria, Exlink and Finch names.
+- Replace the flag dropdown with a direct `Português` / `English` link, and point the article hreflang and the language switch to the translated slug (the old cross-locale URLs redirect with a 301).
+- Build the sitemap `lastmod` from article dates and the last commit of each content file, without `changefreq` or `priority`, and drop the `keywords` meta tag and the root-layout title and description defaults.
+- Resize the header photo to a 5 KB WebP and the email avatar to 512 px, give images explicit sizes and lazy-load card images.
+- Raise the muted text contrast to 4.5:1, set body text to weight 400, show dates in sentence case at 14px, and drop eyebrows that repeat the page title.
+- Optimize the study groups landing for search: the Portuguese landing moves to `/pt-br/grupos-de-estudo-de-ingles` (`/pt-br/study-groups` redirects with a 301; the terms page and the English-only app pages keep their paths), new titles and descriptions ("Free English Study Groups for Devs | Filipe Bojikian Rissi" / "Grupos de Estudo de Inglês para Devs | Filipe Bojikian Rissi"), with the Portuguese slugs in one shared `scripts/localized-slugs.json` read by the site, the sitemap and the redirects, a why-practice-in-groups intro, a "Start your own group" section, a 7-question FAQ, a no-JavaScript text for the group list, `WebPage` and `BreadcrumbList` structured data, and "Join a free English study group" as the signed-out call to action, which still starts the Google sign-in. Home moves the program card right after Nota Profile, and About and the project page link to it with descriptive text.
+- Say the study group app is in English on the Portuguese program page, and add `autocomplete` to the contact form name and email.
+- Nota Profile: describe it as a product of Oliblish, say it is free during the beta without an end date, remove the placeholder stack notes, tag its links with the page locale in `utm_content`, link it with `noopener noreferrer`, and show it on home only as the featured card. Internal project links open in the same tab, and the location next to "Open project" is gone.
+- Open external links in Markdown bodies in a new tab with `noopener noreferrer`, show bullets and numbers on Markdown lists, and keep Markdown headings plain with a `#` link on hover or focus.
+- Show "Filipe Rissi" in the mobile header, and make the scrolled header opaque with a light blur.
+- Sign the contact confirmation email as "Backend & Cloud Engineer", and skip Zod's `new Function` probe so the CSP logs no violation.
+
+### Fixed
+
+- Fix the footer, which said the site was built with Vite, the fbrissi.dev project stack, the English "min read" on Portuguese articles, and the duplicate `<h1>` on every page (the header name is no longer a heading).
+- Restore the header background when a page loads already scrolled.
 
 ### Removed
 

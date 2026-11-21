@@ -3,15 +3,15 @@ title: "fbrissi.dev"
 description: "A bilingual, content-driven engineering portfolio with Cloudflare infrastructure, automated delivery, strict quality gates, and AI-assisted code review."
 url: "https://github.com/fbrissi/fbrissi.dev"
 stack:
+  - Next.js
   - React 19
   - TypeScript
-  - Vite
   - Cloudflare
   - Terraform
   - GitHub Actions
   - Vitest
   - AI-assisted Engineering
-order: 1
+order: 5
 ---
 
 `fbrissi.dev` is the public repository behind this portfolio. It is designed as a small production system rather than a static collection of pages: content, application code, serverless services, infrastructure, testing, releases, and AI-assisted review all live in one auditable codebase.

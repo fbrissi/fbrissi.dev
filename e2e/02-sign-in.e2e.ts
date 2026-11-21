@@ -73,7 +73,7 @@ test.describe('welcome and consent (2.2, D9, Q4)', () => {
     const adult = page.getByRole('checkbox', { name: /18 years old or older/ });
     for (const box of [terms, privacy, adult]) await expect(box).not.toBeChecked();
     await expect(page.getByRole('link', { name: 'Terms of Use and content policy' })).toHaveAttribute('href', '/study-groups/terms');
-    await expect(page.getByRole('link', { name: 'Privacy Policy' }).first()).toHaveAttribute('href', '/study-groups/privacy');
+    await expect(page.getByRole('link', { name: 'Privacy Policy' }).first()).toHaveAttribute('href', '/privacy');
 
     await terms.check();
     await privacy.check();

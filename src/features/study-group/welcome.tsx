@@ -75,7 +75,7 @@ export function WelcomeView() {
         </label>
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" checked={privacy} onChange={(event) => setPrivacy(event.target.checked)} />
-          <span>I have read and accept the <a className="text-accent" href="/study-groups/privacy" target="_blank" rel="noopener">Privacy Policy</a> (version {POLICY_VERSIONS.privacy}).</span>
+          <span>I have read and accept the <a className="text-accent" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> (version {POLICY_VERSIONS.privacy}).</span>
         </label>
         <label className="flex items-start gap-2 text-sm">
           <input type="checkbox" checked={adult} onChange={(event) => setAdult(event.target.checked)} />

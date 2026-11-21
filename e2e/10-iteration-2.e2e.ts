@@ -14,31 +14,73 @@ const profileOf = async (page: Page, groupId: string) => {
   return Object.fromEntries(Object.entries(settings).filter(([key]) => key !== 'id' && key !== 'accessCode'));
 };
 
-test.describe('site header nav link', () => {
-  for (const { path, label, href } of [
-    { path: '/', label: 'Study groups', href: '/study-groups' },
-    { path: '/about', label: 'Study groups', href: '/study-groups' },
-    { path: '/pt-br', label: 'Grupos de estudo', href: '/pt-br/study-groups' },
-    { path: '/pt-br/about', label: 'Grupos de estudo', href: '/pt-br/study-groups' }
+// The header (as "English groups"), the footer on every page and a card on home link to the program in the page's locale.
+test.describe('study groups links in the header, the footer and on home', () => {
+  for (const { path, header, footer, href } of [
+    { path: '/', header: 'English groups', footer: 'English groups', href: '/study-groups' },
+    { path: '/about', header: 'English groups', footer: 'English groups', href: '/study-groups' },
+    { path: '/pt-br', header: 'Grupos de inglês', footer: 'Grupos de inglês', href: '/pt-br/grupos-de-estudo-de-ingles' },
+    { path: '/pt-br/about', header: 'Grupos de inglês', footer: 'Grupos de inglês', href: '/pt-br/grupos-de-estudo-de-ingles' }
   ]) {
-    test(`${path} links to the program in its locale`, async ({ page }) => {
+    test(`${path} links to the program from the header and the footer in its locale`, async ({ page }) => {
       await page.goto(path);
-      const link = page.locator('header').getByRole('link', { name: label, exact: true }).filter({ visible: true });
-      await expect(link).toHaveCount(1);
-      await expect(link).toHaveAttribute('href', href);
-      await link.click();
+      const footerLink = page.locator('footer').getByRole('link', { name: footer, exact: true });
+      await expect(footerLink).toHaveCount(1);
+      await expect(footerLink).toHaveAttribute('href', href);
+      const headerLink = page.locator('header').getByRole('link', { name: header, exact: true }).filter({ visible: true });
+      await expect(headerLink).toHaveCount(1);
+      await expect(headerLink).toHaveAttribute('href', href);
+      await headerLink.click();
       await expect(page).toHaveURL(new RegExp(`${href}$`));
       await expect(page.getByRole('main').getByRole('heading', { level: 1 })).toBeVisible();
+      await expect(page.locator('header').getByRole('link', { name: header, exact: true }).filter({ visible: true })).toHaveAttribute('aria-current', 'page');
     });
   }
 
-  // The site header marks the active item visually (accent colour + underline); it doesn't use aria-current anywhere.
-  test('the link is highlighted as the active item on the landing pages', async ({ page }) => {
-    for (const [path, label] of [['/study-groups', 'Study groups'], ['/pt-br/study-groups', 'Grupos de estudo']]) {
+  test('the program terms page marks the header item as the current section', async ({ page }) => {
+    await page.goto('/study-groups/terms');
+    await expect(page.locator('header').getByRole('link', { name: 'English groups', exact: true }).filter({ visible: true })).toHaveAttribute('aria-current', 'true');
+  });
+
+  test('the header nav fits on one row from 1024px', async ({ page }) => {
+    for (const width of [1024, 1280]) {
+      await page.setViewportSize({ width, height: 800 });
+      for (const path of ['/about', '/pt-br/about']) {
+        await page.goto(path);
+        const tops = await page.locator('header nav[aria-label] a, header nav[aria-label] button').filter({ visible: true }).evaluateAll((items) => items.map((item) => Math.round(item.getBoundingClientRect().top)));
+        expect(new Set(tops).size, `${path} at ${width}px`).toBe(1);
+      }
+    }
+  });
+
+  test('the mobile menu lists the program between Projects and Contact with a 44px row', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/pt-br');
+    await page.getByRole('button', { name: 'Menu' }).click();
+    const menu = page.locator('#mobile-navigation');
+    await expect(menu.getByRole('link')).toHaveText(['Início', 'Sobre', 'Experiência', 'Projetos', 'Grupos de inglês', 'Contato']);
+    expect((await menu.getByRole('link', { name: 'Grupos de inglês' }).boundingBox())?.height).toBeGreaterThanOrEqual(44);
+  });
+
+  for (const { path, cta, href } of [
+    { path: '/', cta: 'Join a free English study group', href: '/study-groups' },
+    { path: '/pt-br', cta: 'Entre em um grupo de estudo de inglês grátis', href: '/pt-br/grupos-de-estudo-de-ingles' }
+  ]) {
+    test(`the ${path} home card opens the program`, async ({ page }) => {
+      await page.goto(path);
+      const link = page.getByRole('main').getByRole('link', { name: cta });
+      await expect(link).toHaveAttribute('href', href);
+      await link.click();
+      await expect(page).toHaveURL(new RegExp(`${href}$`));
+    });
+  }
+
+  test('the header marks the current page with aria-current', async ({ page }) => {
+    for (const [path, label] of [['/projects', 'Projects'], ['/pt-br/works', 'Experiência']]) {
       await page.goto(path);
       const link = page.locator('header').getByRole('link', { name: label, exact: true }).filter({ visible: true });
+      await expect(link).toHaveAttribute('aria-current', 'page');
       await expect(link).toHaveClass(/(^|\s)text-accent(\s|$)/);
-      await expect(page.locator('header').getByRole('link', { name: path.startsWith('/pt-br') ? 'Contato' : 'Contact', exact: true }).filter({ visible: true })).not.toHaveClass(/(^|\s)text-accent(\s|$)/);
     }
   });
 });

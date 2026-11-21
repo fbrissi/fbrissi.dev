@@ -78,7 +78,7 @@ export function ConsentBanner() {
       </label>
       <label className="flex items-start gap-2 text-sm">
         <input type="checkbox" checked={privacy} onChange={(event) => setPrivacy(event.target.checked)} />
-        <span>I accept the <a className="text-accent" href="/study-groups/privacy" target="_blank" rel="noopener">Privacy Policy</a> (version {POLICY_VERSIONS.privacy}).</span>
+        <span>I accept the <a className="text-accent" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> (version {POLICY_VERSIONS.privacy}).</span>
       </label>
       {error ? <Banner tone="error" title={error} /> : null}
       <button type="submit" className={`${buttonClass.primarySmall} self-start`} disabled={busy}>Accept and continue</button>

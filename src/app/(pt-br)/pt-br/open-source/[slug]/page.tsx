@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const contribution = getContribution('pt-BR', slug);
   if (!contribution) return {};
   const messages = getMessages('pt-BR');
-  return createNextMetadata({ locale: 'pt-BR', pathname: `/open-source/${slug}`, title: `${contribution.title} | ${messages.site.name}`, description: contribution.description, keywords: contribution.tags });
+  return createNextMetadata({ locale: 'pt-BR', pathname: `/open-source/${slug}`, title: `${contribution.title} | ${messages.site.name}`, description: contribution.description });
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

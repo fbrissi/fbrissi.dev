@@ -49,7 +49,7 @@ ${t.body(subject)}
 ${t.regards}
 
 Filipe Bojikian Rissi
-Staff Software Engineer
+Backend & Cloud Engineer
 
 Cloud Architecture • Distributed Systems • Kubernetes • AWS • Microservices
 
@@ -92,7 +92,7 @@ export function contactConfirmationEmailHtml(
             <td valign="middle" style="padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:14px;line-height:1.45;color:#222222;">
               <p style="margin:0 0 10px;font-size:14px;line-height:1.4;color:#222222;">${t.regards}</p>
               <p style="margin:0 0 2px;font-size:18px;line-height:1.3;font-weight:700;color:#111111;">Filipe Bojikian Rissi</p>
-              <p style="margin:0 0 12px;font-size:14px;line-height:1.4;color:#444444;">Staff Software Engineer</p>
+              <p style="margin:0 0 12px;font-size:14px;line-height:1.4;color:#444444;">Backend &amp; Cloud Engineer</p>
               <p style="margin:0 0 12px;font-size:13px;line-height:1.45;color:#555555;">Cloud Architecture • Distributed Systems • Kubernetes • AWS • Microservices</p>
               <p style="margin:0;font-size:14px;line-height:1.5;">
                 <a href="mailto:contact@fbrissi.dev" style="color:#2563eb;text-decoration:none;">contact@fbrissi.dev</a><br>

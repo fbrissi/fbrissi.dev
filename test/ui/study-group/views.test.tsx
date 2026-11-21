@@ -238,7 +238,8 @@ describe('program landing (1.1, 1.2)', () => {
       'GET /groups?cursor=next': { groups: [{ id: 'bbb1234567', name: 'Rust Talk', summary: 'About Rust' }], nextCursor: null }
     }, <><ProgramActions locale="en" /><GroupDirectory locale="en" /></>);
     expect(await screen.findByText("Sign-in didn't work. Please try again.")).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Sign in with Google' })).toHaveAttribute('href', '/api/study-group/auth/login?returnTo=%2Fstudy-groups%2Fmy');
+    expect(screen.getByRole('link', { name: 'Join a free English study group' })).toHaveAttribute('href', '/api/study-group/auth/login?returnTo=%2Fstudy-groups%2Fmy');
+    expect(screen.getByText("You'll sign in with Google")).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Create a group' })).toHaveAttribute('href', '/api/study-group/auth/login?returnTo=%2Fstudy-groups%2Fnew');
     expect(await screen.findByRole('link', { name: 'Sign in to join: Go Talk' })).toHaveAttribute('href', '/api/study-group/auth/login?returnTo=%2Fstudy-groups%2Fg%2Faaa1234567');
     fireEvent.click(screen.getByRole('button', { name: 'Load more groups' }));

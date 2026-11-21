@@ -35,11 +35,12 @@ export function ProgramActions({ locale }: { locale: Locale }) {
           </>
         ) : (
           <>
-            <a className={buttonClass.primary} href={signInHref('/study-groups/my')}>{messages.signIn}</a>
+            <a className={buttonClass.primary} href={signInHref('/study-groups/my')}>{messages.joinCta}</a>
             <a className={buttonClass.secondarySmall} href={signInHref('/study-groups/new')}>{messages.createGroup}</a>
           </>
         )}
       </div>
+      {user ? null : <p className="text-sm text-text-muted">{messages.signInNote}</p>}
     </div>
   );
 }

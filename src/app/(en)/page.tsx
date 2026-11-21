@@ -1,13 +1,13 @@
 import { HomePage } from '@/site-pages/home-page';
 import { createNextMetadata } from '@/lib/next-metadata';
-import { getProfile } from '@/lib/site';
+import { getMessages } from '@/lib/site';
 
+const messages = getMessages('en');
 export const metadata = createNextMetadata({
   locale: 'en',
   pathname: '/',
-  title: 'Filipe Bojikian Rissi | Staff Software Engineer',
-  description: getProfile('en').summary,
-  keywords: getProfile('en').skills.flatMap((group) => group.items)
+  title: `${messages.site.name} | ${messages.site.jobTitle}`,
+  description: messages.home.description
 });
 
 export default function Page() {

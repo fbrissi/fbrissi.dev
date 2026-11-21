@@ -1,5 +1,5 @@
 ---
-company: "exlink.us"
+company: "Exlink"
 title: "Engenheiro Full Stack"
 dateRange: "set de 2024 - mai de 2026"
 summary: "Desenvolvimento de uma plataforma multi-tenant para intercâmbio, com mensageria, análise de sentimento por IA, renderização de documentos e assinaturas remotas."

@@ -14,7 +14,7 @@ O programa ajuda desenvolvedores de software a praticar inglês em pequenos grup
 
 - Você precisa ter **18 anos ou mais**.
 - Você entra com uma conta Google com e-mail verificado.
-- Você precisa aceitar estes Termos e a [Política de Privacidade](/pt-br/study-groups/privacy) antes de a sua conta ser criada.
+- Você precisa aceitar estes Termos e a [Política de Privacidade](/pt-br/privacy) antes de a sua conta ser criada.
 - Use o programa para praticar inglês. Uma conta por pessoa.
 
 ## 3. Sua conta

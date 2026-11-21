@@ -48,12 +48,18 @@ describe('i18n', () => {
     expect(localizedPath('en', 'articles')).toBe('/articles');
     expect(localizedPath('pt-BR', '/')).toBe('/pt-br');
     expect(localizedPath('pt-BR', 'articles/example')).toBe('/pt-br/articles/example');
+    // The Portuguese program landing has its own slug; the terms page keeps the mirrored path.
+    expect(localizedPath('pt-BR', '/study-groups')).toBe('/pt-br/grupos-de-estudo-de-ingles');
+    expect(localizedPath('pt-BR', '/study-groups/terms')).toBe('/pt-br/study-groups/terms');
+    expect(localizedPath('en', '/study-groups')).toBe('/study-groups');
   });
 
   it('removes the Portuguese route prefix and preserves other paths', () => {
     expect(normalizeRoute('/pt-br')).toBe('/');
     expect(normalizeRoute('/pt-br/articles/example')).toBe('/articles/example');
     expect(normalizeRoute('/articles/example')).toBe('/articles/example');
+    expect(normalizeRoute('/pt-br/grupos-de-estudo-de-ingles')).toBe('/study-groups');
+    expect(normalizeRoute('/pt-br/study-groups/terms')).toBe('/study-groups/terms');
     expect(normalizeRoute('/pt-bravo')).toBe('avo');
     expect(normalizeRoute(new String('/pt-br') as unknown as string)).toBe('/');
   });

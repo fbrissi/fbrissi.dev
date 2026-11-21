@@ -1,3 +1,5 @@
+import localizedSlugs from '../../scripts/localized-slugs.json';
+
 export const locales = ['en', 'pt-BR'] as const;
 
 export type Locale = (typeof locales)[number];
@@ -14,8 +16,15 @@ const localeSwitchablePaths = new Set([
   '/works',
   '/study-groups',
   '/study-groups/terms',
-  '/study-groups/privacy',
+  '/privacy',
 ]);
+
+/**
+ * Portuguese slugs that differ from the English path (the rest mirror it under `/pt-br`). One JSON source shared with the
+ * sitemap and the redirects, so they can't drift.
+ */
+const portugueseSlugs: Record<string, string> = localizedSlugs;
+const englishPaths: Record<string, string> = Object.fromEntries(Object.entries(portugueseSlugs).map(([english, portuguese]) => [portuguese, english]));
 
 export function isLocale(value: string): value is Locale {
   return locales.includes(value as Locale);
@@ -33,14 +42,15 @@ export function localizedPath(locale: Locale, path: string): string {
   const normalized = path.startsWith('/') ? path : `/${path}`;
 
   if (locale === 'pt-BR') {
-    return normalized === '/' ? '/pt-br' : `/pt-br${normalized}`;
+    return normalized === '/' ? '/pt-br' : `/pt-br${portugueseSlugs[normalized] ?? normalized}`;
   }
 
   return normalized;
 }
 
 export function normalizeRoute(path: string): string {
-  return path === '/pt-br' ? '/' : path.replace(/^\/pt-br/, '') || '/';
+  const route = path === '/pt-br' ? '/' : path.replace(/^\/pt-br/, '') || '/';
+  return englishPaths[route] ?? route;
 }
 
 export function getPathLocale(path: string): Locale {

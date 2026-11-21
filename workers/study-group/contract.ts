@@ -1,9 +1,12 @@
 import { z } from 'zod';
 
+// Skip Zod's `new Function` capability probe: the site CSP has no 'unsafe-eval', and the probe logs a violation.
+z.config({ jitless: true });
+
 export const STUDY_GROUP_API_PREFIX = '/api/study-group';
 
 /** Current versions of the program documents; bumping one asks every user to accept it again (Q18). */
-export const POLICY_VERSIONS = { terms: '2026-11-16', privacy: '2026-11-16' } as const;
+export const POLICY_VERSIONS = { terms: '2026-11-16', privacy: '2026-11-21' } as const;
 export type PolicyDocument = keyof typeof POLICY_VERSIONS;
 
 export const materialTypes = ['video', 'article', 'book', 'podcast', 'other'] as const;

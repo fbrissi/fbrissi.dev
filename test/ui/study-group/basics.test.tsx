@@ -249,7 +249,9 @@ describe('account navigation and consent', () => {
     render(<SessionProvider><ConsentBanner /></SessionProvider>);
     expect(await screen.findByRole('heading', { name: 'We updated our Terms and Privacy Policy' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('href', '/study-groups/terms');
-    expect(screen.getAllByText(new RegExp(`version ${POLICY_VERSIONS.terms}`))).toHaveLength(2);
+    expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.getByText(new RegExp(`version ${POLICY_VERSIONS.terms}`))).toBeInTheDocument();
+    expect(screen.getByText(new RegExp(`version ${POLICY_VERSIONS.privacy}`))).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Accept and continue' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Check both boxes to continue.');
@@ -276,7 +278,7 @@ describe('cookie notice', () => {
   it('is informational, localized and remembers the dismissal (Q17)', () => {
     const { unmount } = render(<CookieNotice locale="pt-BR" />);
     expect(screen.getByRole('complementary', { name: 'Política de Privacidade' })).toHaveTextContent('Sem analytics nem anúncios.');
-    expect(screen.getByRole('link', { name: 'Saiba mais na Política de Privacidade' })).toHaveAttribute('href', '/pt-br/study-groups/privacy#cookies');
+    expect(screen.getByRole('link', { name: 'Saiba mais na Política de Privacidade' })).toHaveAttribute('href', '/pt-br/privacy#cookies');
     fireEvent.click(screen.getByRole('button', { name: 'OK' }));
     expect(screen.queryByRole('complementary')).not.toBeInTheDocument();
     expect(window.localStorage.getItem(cookieNoticeStorageKey)).toBe('1');
@@ -287,7 +289,7 @@ describe('cookie notice', () => {
     window.localStorage.clear();
     cleanup();
     render(<CookieNotice locale="en" />);
-    expect(screen.getByRole('link', { name: 'Learn more in the Privacy Policy' })).toHaveAttribute('href', '/study-groups/privacy#cookies');
+    expect(screen.getByRole('link', { name: 'Learn more in the Privacy Policy' })).toHaveAttribute('href', '/privacy#cookies');
   });
 });
 

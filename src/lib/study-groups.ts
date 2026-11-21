@@ -15,7 +15,7 @@ export interface ProgramDocument {
 export const programPaths = {
   landing: '/study-groups',
   terms: '/study-groups/terms',
-  privacy: '/study-groups/privacy'
+  privacy: '/privacy'
 } as const;
 
 export function getProgramDocument(locale: Locale, name: ProgramDocumentName): ProgramDocument {
