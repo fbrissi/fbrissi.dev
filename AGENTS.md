@@ -87,6 +87,12 @@ Every release must add exactly one `CHANGELOG.md` entry headed `## vMAJOR.MINOR.
 - `.github/workflows/rotate-credentials.yml` copies the manual Cloudflare token to Terraform Cloud (`bootstrap` and `manual` modes), and twice a year also replaces the deployment token and Turnstile widget and redeploys the latest tag (`automatic` mode).
 - Dependabot groups all updates into one pull request on the default branch, assigned to `fbrissi` (Terraform provider and TypeScript majors are ignored and upgraded manually); bring its changes into a `release/*` pull request, since pull requests into `main` require a new `CHANGELOG.md` release.
 
+## Terraform Credentials
+
+- When a change under `terraform/` adds a provider resource or data source type, a `cloudflare_ruleset` phase, or changes what an existing resource manages, update `terraform/cloudflare-token-permissions.json` and `terraform/README.md`; the shared `fbrissi/github-actions` terraform-permissions check validates both in CI.
+- Before the pull request is merged, tell the owner exactly which permission to add to which credential: the Cloudflare Terraform token (`CLOUDFLARE_API_TOKEN`), the manually created AWS role `fbrissi-dev-terraform`, or the `rissi-terraform` GitHub App.
+- Do not merge while the `Terraform / Cloudflare token permissions` check is red; the release apply would fail the same way.
+
 ## Validation
 
 ```bash

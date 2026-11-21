@@ -14,6 +14,7 @@ All notable changes to this project are documented here. Release versions follow
 - Add account pages to edit the display name, download a JSON export of the account data, and delete the account (owned groups are deleted, other contributions stay as "Former member").
 - Add a daily Cron Trigger that purges deleted groups and content after 30 days, decided join requests after 30 days, the moderation log after 12 months, and expired sessions, and a join-with-code rate limiter.
 - Add a local fake Google IdP to the Docker stack for local sign-in and E2E tests.
+- Check the Cloudflare Terraform token before merge with the shared `fbrissi/github-actions` terraform-permissions workflow. `terraform/cloudflare-token-permissions.json` maps every Cloudflare resource and data source type to the permission groups it needs; CI fails when it drifts from `terraform/` or when the real `CLOUDFLARE_API_TOKEN` lacks a group. See `terraform/README.md`.
 
 ### Changed
 

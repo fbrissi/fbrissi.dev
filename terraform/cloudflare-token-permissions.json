@@ -1,0 +1,161 @@
+{
+  "$comment": "Single source of truth for the Cloudflare API token Terraform uses. Each Cloudflare resource and data source type in terraform/*.tf maps to the API permission groups it needs, taken from the x-api-token-group values of the Cloudflare OpenAPI spec for every endpoint the type calls; anyOf lists other groups that also satisfy it. Checked in CI by the fbrissi/github-actions terraform-permissions reusable workflow (manifest format: actions/terraform-permissions/README.md).",
+  "credential": {
+    "githubSecret": "CLOUDFLARE_API_TOKEN",
+    "terraformCloudVariable": "CLOUDFLARE_API_TOKEN",
+    "syncHint": "run rotate-credentials.yml in manual mode"
+  },
+  "scopes": {
+    "account": {
+      "idLocal": "cloudflare_account_id"
+    },
+    "zone": {
+      "idLocal": "cloudflare_zone_id",
+      "nameLocal": "custom_domain"
+    }
+  },
+  "resources": {
+    "cloudflare_account_token": {
+      "endpoints": [
+        "/accounts/{account_id}/tokens",
+        "/accounts/{account_id}/tokens/{token_id}"
+      ],
+      "permissions": [
+        {
+          "scope": "account",
+          "group": "Account API Tokens Write"
+        }
+      ]
+    },
+    "cloudflare_d1_database": {
+      "endpoints": [
+        "/accounts/{account_id}/d1/database",
+        "/accounts/{account_id}/d1/database/{database_id}"
+      ],
+      "permissions": [
+        {
+          "scope": "account",
+          "group": "D1 Write"
+        }
+      ]
+    },
+    "cloudflare_dns_record": {
+      "endpoints": [
+        "/zones/{zone_id}/dns_records",
+        "/zones/{zone_id}/dns_records/{dns_record_id}"
+      ],
+      "permissions": [
+        {
+          "scope": "zone",
+          "group": "DNS Write"
+        }
+      ]
+    },
+    "cloudflare_email_routing_catch_all": {
+      "endpoints": [
+        "/zones/{zone_id}/email/routing/rules/catch_all"
+      ],
+      "permissions": [
+        {
+          "scope": "zone",
+          "group": "Email Routing Rules Write"
+        }
+      ]
+    },
+    "cloudflare_email_routing_dns": {
+      "endpoints": [
+        "/zones/{zone_id}/email/routing/dns",
+        "/zones/{zone_id}/email/routing"
+      ],
+      "permissions": [
+        {
+          "scope": "zone",
+          "group": "Zone Settings Write"
+        }
+      ]
+    },
+    "cloudflare_email_routing_rule": {
+      "endpoints": [
+        "/zones/{zone_id}/email/routing/rules",
+        "/zones/{zone_id}/email/routing/rules/{rule_identifier}"
+      ],
+      "permissions": [
+        {
+          "scope": "zone",
+          "group": "Email Routing Rules Write"
+        }
+      ]
+    },
+    "cloudflare_pages_domain": {
+      "endpoints": [
+        "/accounts/{account_id}/pages/projects/{project_name}/domains",
+        "/accounts/{account_id}/pages/projects/{project_name}/domains/{domain_name}"
+      ],
+      "permissions": [
+        {
+          "scope": "account",
+          "group": "Pages Write"
+        }
+      ]
+    },
+    "cloudflare_pages_project": {
+      "endpoints": [
+        "/accounts/{account_id}/pages/projects",
+        "/accounts/{account_id}/pages/projects/{project_name}"
+      ],
+      "permissions": [
+        {
+          "scope": "account",
+          "group": "Pages Write"
+        }
+      ]
+    },
+    "cloudflare_queue": {
+      "endpoints": [
+        "/accounts/{account_id}/queues",
+        "/accounts/{account_id}/queues/{queue_id}"
+      ],
+      "permissions": [
+        {
+          "scope": "account",
+          "group": "Queues Write",
+          "anyOf": [
+            "Workers Scripts Write",
+            "Workers Admin"
+          ]
+        }
+      ]
+    },
+    "cloudflare_turnstile_widget": {
+      "endpoints": [
+        "/accounts/{account_id}/challenges/widgets",
+        "/accounts/{account_id}/challenges/widgets/{sitekey}"
+      ],
+      "permissions": [
+        {
+          "scope": "account",
+          "group": "Turnstile Sites Write",
+          "anyOf": [
+            "Account Settings Write"
+          ]
+        }
+      ]
+    }
+  },
+  "dataSources": {
+    "cloudflare_account_api_token_permission_groups_list": {
+      "endpoints": [
+        "/accounts/{account_id}/tokens/permission_groups"
+      ],
+      "permissions": [
+        {
+          "scope": "account",
+          "group": "Account API Tokens Read",
+          "anyOf": [
+            "Account API Tokens Write"
+          ]
+        }
+      ]
+    }
+  }
+}

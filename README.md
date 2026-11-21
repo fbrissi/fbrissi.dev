@@ -95,12 +95,14 @@ The repository includes a minimal `Dockerfile` and `docker-compose.yml` so `kool
 
 Configured manually:
 
-- Secret `CLOUDFLARE_API_TOKEN`: Terraform credential with account permissions
-  D1, Pages, Queues, Turnstile Sites, and Account API Tokens Write, plus Account
-  Settings Read, and `fbrissi.dev` zone permissions DNS, Email Routing Rules,
-  and Zone Settings Write, plus Zone Read. Account and zone permissions must be separate policy
-  blocks. `.github/workflows/rotate-credentials.yml` copies it to the sensitive
-  Terraform Cloud Terraform variable `CLOUDFLARE_API_TOKEN`; run the workflow
+- Secret `CLOUDFLARE_API_TOKEN`: Terraform credential with the permission
+  groups listed in
+  [`terraform/cloudflare-token-permissions.json`](terraform/cloudflare-token-permissions.json)
+  (see [Credential permissions](terraform/README.md#credential-permissions)).
+  Account and zone permissions must be separate policy blocks.
+  `.github/workflows/rotate-credentials.yml` copies it to the sensitive
+  Terraform Cloud Terraform variable `CLOUDFLARE_API_TOKEN`, which must hold
+  the same token; run the workflow
   in `bootstrap` mode before the first apply and in `manual` mode after
   replacing the token.
 - Secret `TFC_API_TOKEN`: Terraform Cloud team token with write access to the

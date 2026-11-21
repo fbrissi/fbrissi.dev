@@ -173,10 +173,23 @@ jobs:
       - run: terraform init -backend=false
       - run: terraform validate
 
+  # Compares terraform/cloudflare-token-permissions.json with terraform/*.tf and with the real Terraform Cloudflare
+  # token, so a missing permission fails here instead of in the Terraform Cloud apply after merge.
+  terraform-permissions:
+    name: Terraform / Cloudflare token permissions
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    uses: fbrissi/github-actions/.github/workflows/terraform-permissions.yml@v1
+    permissions:
+      contents: read
+    with:
+      change-pattern: '^(terraform/|\.github/workflows/quality-checks\.yml$)'
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
   quality-jobs:
     name: Quality Checks
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
-    needs: [quality, terraform, release-note]
+    needs: [quality, terraform, terraform-permissions, release-note]
     if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     permissions:
       actions: write
@@ -186,13 +199,15 @@ jobs:
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
           TERRAFORM_RESULT: ${{ needs.terraform.result }}
+          TERRAFORM_PERMISSIONS_RESULT: ${{ needs.terraform-permissions.result }}
           RELEASE_NOTE_RESULT: ${{ needs.release-note.result }}
         run: |
           set -euo pipefail
 
-          if [ "$QUALITY_RESULT" != 'success' ] || [ "$TERRAFORM_RESULT" != 'success' ]; then
+          if [ "$QUALITY_RESULT" != 'success' ] || [ "$TERRAFORM_RESULT" != 'success' ] || [ "$TERRAFORM_PERMISSIONS_RESULT" != 'success' ]; then
             echo "Quality result: $QUALITY_RESULT"
             echo "Terraform result: $TERRAFORM_RESULT"
+            echo "Terraform permissions result: $TERRAFORM_PERMISSIONS_RESULT"
             exit 1
           fi
 
