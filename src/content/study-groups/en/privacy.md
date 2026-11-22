@@ -12,11 +12,11 @@ The controller is **Filipe Bojikian Rissi**, an individual based in Brazil. For 
 
 ## 2. Contact form
 
-- **Data:** the name, email address, subject and message you type in the form at [/contact](/contact), and the language of the page. Cloudflare Turnstile checks that the form is sent by a person before the message is accepted; to do that, the contact API sends your IP address to Cloudflare's Turnstile verification, and it also uses the IP address to rate-limit the form. The IP address is not part of the message and is not stored with it, but Cloudflare's operational logs of the Workers (Workers Logs) may keep request data, including the IP address, for up to 7 days.
+- **Data:** the name, email address, subject and message you type in the form at [/contact](/contact), and the language of the page. If you email contact@fbrissi.dev or contato@fbrissi.dev directly instead, the same applies to your email address, the message, its attachments and the usual email headers. Cloudflare Turnstile checks that the form is sent by a person before the message is accepted; to do that, Turnstile processes signals from your browser and device, and the contact API sends your IP address to Cloudflare's Turnstile verification, and it also uses the IP address to rate-limit the form. The IP address is not part of the message and is not stored with it, but Cloudflare's operational logs of the Workers (Workers Logs) may keep request data, including the IP address, for up to 7 days.
 - **Purpose:** to read and answer your message.
 - **Legal basis:** legitimate interest in answering a message you chose to send (LGPD art. 7, IX), or the steps before a contract you asked for, such as a job or a project (art. 7, V).
-- **Processors:** Cloudflare hosts the form, runs the contact API and its queue, sends the email and provides Turnstile. Google (Gmail) hosts the mailbox that receives the message. See section 6 for international transfers.
-- **Retention:** the message is kept in my mailbox for up to 12 months and then deleted. The queue removes it once the email is delivered; a message that can't be delivered after the retries stays in a dead-letter queue for up to 4 days (Cloudflare Queues' default retention) and is then discarded.
+- **Processors:** Cloudflare hosts the form, runs the contact API and its queue, sends the email, provides Turnstile and, through Cloudflare Email Routing, forwards emails sent directly to contact@fbrissi.dev and contato@fbrissi.dev. Google (Gmail) hosts the mailbox that receives the message. See section 6 for international transfers.
+- **Retention:** the message, whether it came from the form or was emailed directly, is kept in my mailbox for up to 12 months and then deleted. The queue removes it once the email is delivered; a message that can't be delivered after the retries stays in a dead-letter queue for up to 4 days (Cloudflare Queues' default retention) and is then discarded.
 - **Sharing:** your message is not shared with anyone else and is never used for marketing.
 
 ## 3. Study groups: data we collect
@@ -49,7 +49,7 @@ Consent is not the main legal basis. We record your acceptance of the Terms and 
 
 ## 6. Processors and international transfer
 
-- **Cloudflare** hosts the site, the contact API and its queue, sends the contact form email, provides Turnstile, and for the study groups runs the API, stores the database (Cloudflare D1) and applies rate limits.
+- **Cloudflare** hosts the site, the contact API and its queue, sends the contact form email, forwards emails sent to contact@fbrissi.dev and contato@fbrissi.dev (Email Routing), provides Turnstile, and for the study groups runs the API, stores the database (Cloudflare D1) and applies rate limits.
 - **Google** provides the study groups sign-in, and hosts the mailbox (Gmail) that receives contact form messages.
 
 Both may process data outside Brazil, including in the United States. These transfers rely on the processors' contractual commitments and data protection terms (LGPD art. 33).

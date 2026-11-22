@@ -12,11 +12,11 @@ O controlador é **Filipe Bojikian Rissi**, pessoa física residente no Brasil. 
 
 ## 2. Formulário de contato
 
-- **Dados:** o nome, o e-mail, o assunto e a mensagem que você digita no formulário em [/pt-br/contact](/pt-br/contact), e o idioma da página. O Cloudflare Turnstile verifica se o formulário foi enviado por uma pessoa antes de aceitar a mensagem; para isso, a API de contato envia o seu endereço IP à verificação do Turnstile da Cloudflare, e também usa o endereço IP para limitar o número de envios. O endereço IP não faz parte da mensagem nem é guardado com ela, mas os logs operacionais dos Workers da Cloudflare (Workers Logs) podem manter dados das requisições, inclusive o endereço IP, por até 7 dias.
+- **Dados:** o nome, o e-mail, o assunto e a mensagem que você digita no formulário em [/pt-br/contact](/pt-br/contact), e o idioma da página. Se você escrever direto para contact@fbrissi.dev ou contato@fbrissi.dev, vale o mesmo para o seu endereço de e-mail, a mensagem, os anexos e os cabeçalhos comuns de e-mail. O Cloudflare Turnstile verifica se o formulário foi enviado por uma pessoa antes de aceitar a mensagem; para isso, o Turnstile processa sinais do seu navegador e do seu dispositivo, e a API de contato envia o seu endereço IP à verificação do Turnstile da Cloudflare, e também usa o endereço IP para limitar o número de envios. O endereço IP não faz parte da mensagem nem é guardado com ela, mas os logs operacionais dos Workers da Cloudflare (Workers Logs) podem manter dados das requisições, inclusive o endereço IP, por até 7 dias.
 - **Finalidade:** ler e responder a sua mensagem.
 - **Base legal:** legítimo interesse em responder a uma mensagem que você decidiu enviar (LGPD art. 7º, IX), ou procedimentos preliminares a um contrato que você pediu, como uma vaga ou um projeto (art. 7º, V).
-- **Operadores:** a Cloudflare hospeda o formulário, executa a API de contato e a sua fila, envia o e-mail e fornece o Turnstile. O Google (Gmail) hospeda a caixa de e-mail que recebe a mensagem. Veja a seção 6 sobre transferência internacional.
-- **Retenção:** a mensagem fica na minha caixa de e-mail por até 12 meses e depois é apagada. A fila a remove assim que o e-mail é entregue; uma mensagem que não puder ser entregue após as novas tentativas fica em uma fila de mensagens não entregues por até 4 dias (a retenção padrão do Cloudflare Queues) e depois é descartada.
+- **Operadores:** a Cloudflare hospeda o formulário, executa a API de contato e a sua fila, envia o e-mail, fornece o Turnstile e, pelo Cloudflare Email Routing, encaminha os e-mails enviados direto para contact@fbrissi.dev e contato@fbrissi.dev. O Google (Gmail) hospeda a caixa de e-mail que recebe a mensagem. Veja a seção 6 sobre transferência internacional.
+- **Retenção:** a mensagem, venha ela do formulário ou de um e-mail direto, fica na minha caixa de e-mail por até 12 meses e depois é apagada. A fila a remove assim que o e-mail é entregue; uma mensagem que não puder ser entregue após as novas tentativas fica em uma fila de mensagens não entregues por até 4 dias (a retenção padrão do Cloudflare Queues) e depois é descartada.
 - **Compartilhamento:** a sua mensagem não é compartilhada com mais ninguém e nunca é usada para marketing.
 
 ## 3. Grupos de estudo: dados que coletamos
@@ -49,7 +49,7 @@ O consentimento não é a base legal principal. Registramos o seu aceite dos Ter
 
 ## 6. Operadores e transferência internacional
 
-- **Cloudflare** hospeda o site, a API de contato e a sua fila, envia o e-mail do formulário de contato, fornece o Turnstile e, nos grupos de estudo, executa a API, armazena o banco de dados (Cloudflare D1) e aplica os limites de requisições.
+- **Cloudflare** hospeda o site, a API de contato e a sua fila, envia o e-mail do formulário de contato, encaminha os e-mails enviados para contact@fbrissi.dev e contato@fbrissi.dev (Email Routing), fornece o Turnstile e, nos grupos de estudo, executa a API, armazena o banco de dados (Cloudflare D1) e aplica os limites de requisições.
 - **Google** fornece o login dos grupos de estudo e hospeda a caixa de e-mail (Gmail) que recebe as mensagens do formulário de contato.
 
 Ambos podem tratar dados fora do Brasil, inclusive nos Estados Unidos. Essas transferências se apoiam nos compromissos contratuais e nos termos de proteção de dados desses operadores (LGPD art. 33).
