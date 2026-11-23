@@ -1,22 +1,31 @@
 import type { ReactNode } from 'react';
 
-import { friendlyValidationMessages, groupProfileSchema, LIMITS, type GroupInfo, type GroupProfileInput, type ModerationMode } from '@/workers/study-group/contract';
+import {
+  friendlyValidationMessages,
+  groupProfileSchema,
+  LIMITS,
+  MEETING_REMINDER_LEADS,
+  meetingWeekdays,
+  type GroupInfo,
+  type GroupProfileInput,
+  type ModerationMode
+} from '@/workers/study-group/contract';
 
 import { hintClass, inputClass } from './ui';
 
 type TextField = 'name' | 'summary' | 'rules' | 'meetingDay' | 'meetingStart' | 'meetingEnd' | 'timezone' | 'meetingUrl';
 
-export type ProfileValues = Record<TextField, string> & { moderationMode: ModerationMode; listed: boolean };
+export type ProfileValues = Record<TextField, string> & { moderationMode: ModerationMode; listed: boolean; meetingReminders: boolean };
 export type ProfileErrors = Partial<Record<TextField, string>>;
 
 const messages: Record<TextField, string> = {
   name: `Use ${LIMITS.groupName.min} to ${LIMITS.groupName.max} characters.`,
   summary: `Use ${LIMITS.groupSummary.min} to ${LIMITS.groupSummary.max} characters.`,
   rules: 'Use up to 30 rules, each up to 300 characters.',
-  meetingDay: 'Enter a day (up to 20 characters).',
+  meetingDay: 'Choose the meeting day.',
   meetingStart: 'Use the HH:MM format.',
   meetingEnd: 'Use the HH:MM format.',
-  timezone: 'Enter a time zone, e.g. America/Sao_Paulo.',
+  timezone: 'Choose a time zone from the list.',
   meetingUrl: 'Enter a full link starting with https://, or leave it empty.'
 };
 
@@ -32,7 +41,8 @@ export const emptyProfile: ProfileValues = {
   timezone: 'America/Sao_Paulo',
   meetingUrl: '',
   moderationMode: 'free',
-  listed: true
+  listed: true,
+  meetingReminders: true
 };
 
 export function toProfileValues(group: GroupInfo): ProfileValues {
@@ -46,7 +56,8 @@ export function toProfileValues(group: GroupInfo): ProfileValues {
     timezone: group.timezone,
     meetingUrl: group.meetingUrl ?? '',
     moderationMode: group.moderationMode,
-    listed: group.listed
+    listed: group.listed,
+    meetingReminders: group.meetingReminders
   };
 }
 
@@ -63,6 +74,12 @@ export function parseProfile(values: ProfileValues): { data: GroupProfileInput }
     errors[field] = friendlyValidationMessages.includes(issue.message) ? issue.message : messages[field];
   }
   return { errors };
+}
+
+/** IANA time zones the browser knows, with UTC first; a saved value missing from the list is kept as an option. */
+function timeZoneOptions(current: string): string[] {
+  const zones = Intl.supportedValuesOf('timeZone').filter((zone) => zone !== 'UTC');
+  return ['UTC', ...zones, ...(current && current !== 'UTC' && !zones.includes(current) ? [current] : [])];
 }
 
 export function Field({ id, label, error, hint, children }: { id: string; label: string; error?: string; hint?: ReactNode; children: ReactNode }) {
@@ -99,7 +116,10 @@ export function GroupProfileFields({ values, errors, onChange }: { values: Profi
       </Field>
       <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <Field id="group-meetingDay" label="Meeting day" error={errors.meetingDay}>
-          <input {...inputProps('meetingDay')} maxLength={20} />
+          <select {...inputProps('meetingDay')}>
+            {(meetingWeekdays as readonly string[]).includes(values.meetingDay) ? null : <option value={values.meetingDay} disabled>Choose a day</option>}
+            {meetingWeekdays.map((day) => <option key={day} value={day}>{day}</option>)}
+          </select>
         </Field>
         <Field id="group-meetingStart" label="Starts at" error={errors.meetingStart}>
           <input {...inputProps('meetingStart')} type="time" />
@@ -108,7 +128,9 @@ export function GroupProfileFields({ values, errors, onChange }: { values: Profi
           <input {...inputProps('meetingEnd')} type="time" />
         </Field>
         <Field id="group-timezone" label="Time zone" error={errors.timezone}>
-          <input {...inputProps('timezone')} maxLength={64} />
+          <select {...inputProps('timezone')}>
+            {timeZoneOptions(values.timezone).map((zone) => <option key={zone} value={zone}>{zone.replaceAll('_', ' ')}</option>)}
+          </select>
         </Field>
       </div>
       <Field id="group-meetingUrl" label="Meeting link (optional)" error={errors.meetingUrl} hint={<span className={hintClass}>Visible to members only.</span>}>
@@ -123,6 +145,12 @@ export function GroupProfileFields({ values, errors, onChange }: { values: Profi
       <label className="flex items-start gap-2 text-sm text-text-secondary">
         <input type="checkbox" checked={values.listed} onChange={(event) => onChange({ listed: event.target.checked })} />
         <span>List this group on the public study groups page (name, icon and summary only).</span>
+      </label>
+      <label className="flex items-start gap-2 text-sm text-text-secondary">
+        <input type="checkbox" checked={values.meetingReminders} onChange={(event) => onChange({ meetingReminders: event.target.checked })} />
+        <span>
+          Email meeting reminders to the members, {MEETING_REMINDER_LEADS.day_before} hours and {MEETING_REMINDER_LEADS.same_day} hours before each meeting, in the group&apos;s time zone. Members who turned service emails off don&apos;t get them.
+        </span>
       </label>
     </>
   );

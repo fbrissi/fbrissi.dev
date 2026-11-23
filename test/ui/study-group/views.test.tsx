@@ -69,7 +69,7 @@ describe('create a group (3.1)', () => {
     await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith(`/study-groups/g/${group.id}/settings`));
     expect(bodyOf(fetchMock, 'POST /groups')).toEqual({
       name: 'Go Talk', summary: group.summary, rules: [], meetingDay: 'Monday', meetingStart: '20:00', meetingEnd: '21:00',
-      timezone: 'America/Sao_Paulo', meetingUrl: null, moderationMode: 'free', listed: true, acceptContentPolicy: true
+      timezone: 'America/Sao_Paulo', meetingUrl: null, moderationMode: 'free', listed: true, meetingReminders: true, acceptContentPolicy: true
     });
   });
 });

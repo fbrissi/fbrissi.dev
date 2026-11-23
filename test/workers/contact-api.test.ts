@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import contactApi from '@/workers/contact-api';
+import { contactApi } from '@/workers/contact-api';
 
 const corsHeaders = {
   'access-control-allow-origin': 'https://fbrissi.dev',

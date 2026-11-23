@@ -214,4 +214,64 @@ describe('notification sender', () => {
     expect(await sender()(fresh)).toBe('sent');
     expect(send.mock.calls[0][0].text).toContain('1 person is waiting');
   });
+  describe('meeting reminders (E5)', () => {
+    // Sunday 12:00 UTC; Go Talk meets on Monday 2026-11-23 at 20:00 UTC.
+    const meetingAt = '2026-11-23T20:00:00.000Z';
+    const reminder = (userId: string, lead = 'day_before', at = meetingAt) => insert('meeting_reminder', userId, JSON.stringify({ lead, meetingAt: at }));
+
+    beforeEach(async () => {
+      await db.batch([
+        db.prepare("UPDATE groups SET meeting_day = 'Monday', meeting_url = 'https://meet.example.com/abc' WHERE id = 'gotalk'"),
+        db.prepare("INSERT INTO group_members (group_id, user_id, joined_at) VALUES ('gotalk', 'member01', 'x')"),
+      ]);
+    });
+
+    it('sends the reminder with the meeting time, the meeting link and the board, with unsubscribe headers', async () => {
+      expect(await sender()(await reminder('member01'))).toBe('sent');
+      const email = send.mock.calls[0][0];
+      expect(email.to).toBe('member@example.test');
+      expect(email.subject).toBe('Reminder: Go Talk meets tomorrow at 20:00');
+      expect(email.text).toContain('Go Talk meets tomorrow, Monday, November 23, from 20:00 to 21:00 (UTC).');
+      expect(email.text).toContain('Join the meeting: https://meet.example.com/abc');
+      expect(email.text).toContain('Group board: https://fbrissi.dev/study-groups/g/gotalk');
+      expect(email.html).toContain('href="https://meet.example.com/abc"');
+      expect(email.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+
+      // The owner gets it too; without a meeting link, the button opens the board.
+      await db.prepare("UPDATE groups SET meeting_url = NULL WHERE id = 'gotalk'").run();
+      expect(await sender()(await reminder('owner001', 'same_day'))).toBe('sent');
+      const owner = send.mock.calls[1][0];
+      expect(owner.subject).toBe('Reminder: Go Talk meets today at 20:00');
+      expect(owner.text).toContain("The group doesn't have a meeting link yet.");
+      expect(owner.text).toContain('Open the group: https://fbrissi.dev/study-groups/g/gotalk');
+      expect(owner.text).not.toContain('Group board:');
+    });
+
+    it('drops a reminder that no longer applies when it is sent', async () => {
+      const skipped = async (id: number) => {
+        expect(await sender()(id)).toBe('skipped');
+        expect(send).not.toHaveBeenCalled();
+      };
+      // A meeting that already started, an outsider, a malformed payload and an unknown lead.
+      await skipped(await reminder('owner001', 'day_before', '2026-11-22T11:00:00.000Z'));
+      await db.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES ('outside1', 'x', 'x@example.test', 'X', 'x', 'x')").run();
+      await skipped(await reminder('outside1'));
+      await skipped(await insert('meeting_reminder', 'member01', '{}'));
+      await skipped(await reminder('member01', 'weekly'));
+      // The schedule changed after the reminder was written.
+      await db.prepare("UPDATE groups SET meeting_start = '19:00' WHERE id = 'gotalk'").run();
+      await skipped(await reminder('member01'));
+      await db.prepare("UPDATE groups SET meeting_start = '20:00' WHERE id = 'gotalk'").run();
+      // The owner turned reminders off.
+      await db.prepare("UPDATE groups SET meeting_reminders = 0 WHERE id = 'gotalk'").run();
+      await skipped(await reminder('member01'));
+      await db.prepare("UPDATE groups SET meeting_reminders = 1 WHERE id = 'gotalk'").run();
+      // The member turned service emails off, or was banned.
+      await db.prepare("INSERT INTO notification_preferences (user_id, email_enabled, updated_at) VALUES ('member01', 0, 'x')").run();
+      await skipped(await reminder('member01'));
+      await db.prepare('DELETE FROM notification_preferences').run();
+      await db.prepare("INSERT INTO bans (user_id, google_sub, email, reason, created_at, expires_at) VALUES ('member01', 'm', 'member@example.test', 'Reason text', 'x', '2999-01-01T00:00:00.000Z')").run();
+      await skipped(await reminder('member01'));
+    });
+  });
 });

@@ -5,7 +5,9 @@ import nodemailer from 'nodemailer';
 import { parseEmailAllowlist } from '../study-group/authorization';
 import { NOTIFICATION_LIMITS } from '../study-group/contract';
 import { createHandler } from '../study-group/handler';
+import { scheduleMeetingReminders } from '../study-group/meeting-reminders';
 import { createNotificationSender } from '../study-group/notification-sender';
+import { createRepository, type QueuedNotification } from '../study-group/repository';
 import { NOTIFICATIONS_FROM_ADDRESS, NOTIFICATIONS_REPLY_TO } from '../study-group/ses';
 import { openD1Sqlite } from './d1-sqlite';
 import { createFsBucket } from './fs-bucket';
@@ -51,6 +53,29 @@ const deliver = createNotificationSender({
   },
 });
 
+// Due emails are sent right away; a later one is sent by a timer at its time (lost on restart).
+async function notify(notifications: QueuedNotification[]): Promise<void> {
+  for (const { id, sendAfter } of notifications) {
+    const delay = Date.parse(sendAfter) - Date.now();
+    if (delay > 0) setTimeout(() => void deliver(id).catch((error: unknown) => console.error('Unable to send study group notification', id, error)), delay).unref();
+    else await deliver(id);
+  }
+}
+
+const runMeetingReminders = () => scheduleMeetingReminders(createRepository(db), notify, new Date());
+
+// The hourly cron of the deployed Worker ("7 * * * *"): a timer that fires at minute 7 of every hour.
+function scheduleHourlyReminders(): void {
+  const next = new Date();
+  next.setUTCMinutes(7, 0, 0);
+  if (next.getTime() <= Date.now()) next.setUTCHours(next.getUTCHours() + 1);
+  setTimeout(() => {
+    void runMeetingReminders().catch((error: unknown) => console.error('Unable to schedule meeting reminders', error));
+    scheduleHourlyReminders();
+  }, next.getTime() - Date.now()).unref();
+}
+scheduleHourlyReminders();
+
 // Local only: sign-in goes to the fake Google IdP (workers/local/fake-idp.ts). The browser reaches it on its public URL,
 // while this container calls the token and JWKS endpoints on the Docker network.
 const handler = createHandler({
@@ -72,17 +97,17 @@ const handler = createHandler({
   environment: 'local',
   unsubscribeSecret,
   icons,
-  // Due emails are sent before the response; a trailing digest is sent by a timer at its time (lost on restart).
-  async notify(notifications) {
-    for (const { id, sendAfter } of notifications) {
-      const delay = Date.parse(sendAfter) - Date.now();
-      if (delay > 0) setTimeout(() => void deliver(id).catch((error: unknown) => console.error('Unable to send study group notification', id, error)), delay).unref();
-      else await deliver(id);
-    }
-  },
+  notify,
 });
 
 createServer(async (request, response) => {
+  // Local only, on the Docker network (not proxied by the app): runs the hourly reminder scan now, for E2E and
+  // `kool run meeting-reminders`.
+  if (request.method === 'POST' && request.url === '/__local/meeting-reminders') {
+    response.writeHead(200, { 'content-type': 'application/json' });
+    response.end(JSON.stringify({ queued: await runMeetingReminders() }));
+    return;
+  }
   const body = await readBody(request);
   const result = await handler(new Request(`http://localhost:${port}${request.url}`, {
     method: request.method,

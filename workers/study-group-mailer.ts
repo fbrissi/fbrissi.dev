@@ -1,3 +1,6 @@
+import { withSentry } from '@sentry/cloudflare';
+
+import { workerSentryOptions, type SentryEnv } from './observability/sentry';
 import { parseEmailAllowlist } from './study-group/authorization';
 import { NOTIFICATION_LIMITS } from './study-group/contract';
 import { PRODUCTION_ORIGIN, SANDBOX_ORIGIN } from './study-group/environment';
@@ -5,7 +8,7 @@ import { createNotificationSender } from './study-group/notification-sender';
 import type { D1Like } from './study-group/repository';
 import { createSesSender } from './study-group/ses';
 
-export interface Env {
+export interface Env extends SentryEnv {
   /** The production or the sandbox database: each environment is its own Worker with its own binding. */
   STUDY_GROUP_DB: D1Like;
   STUDY_GROUP_ENVIRONMENT?: string;
@@ -44,7 +47,8 @@ function notificationId(body: unknown): number | null {
  * the SES credentials. Anything but `production` is treated as the sandbox: only allowlisted testers get email, and
  * subjects start with [SANDBOX].
  */
-const studyGroupMailer = {
+/** The Worker without Sentry (tests call it directly); the default export is the deployed, instrumented copy. */
+export const studyGroupMailer = {
   async queue(batch: QueueBatch, env: Env): Promise<void> {
     const production = env.STUDY_GROUP_ENVIRONMENT === 'production';
     const deliver = createNotificationSender({
@@ -81,4 +85,4 @@ const studyGroupMailer = {
   },
 };
 
-export default studyGroupMailer;
+export default withSentry(workerSentryOptions('study-group-mailer'), { ...studyGroupMailer });

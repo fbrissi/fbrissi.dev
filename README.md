@@ -117,6 +117,12 @@ Configured manually:
   `GITHUB_APP_INSTALLATION_ID`, and sensitive `GITHUB_APP_PEM_FILE`: the
   `rissi-terraform` GitHub App, installed only on this repository with Actions
   secrets and variables write access and nothing else
+- Terraform Cloud workspace `fbrissi-dev`, sensitive Terraform variable
+  `SENTRY_AUTH_TOKEN`: the token of an internal integration
+  (`fbrissi-dev-terraform`) of the `oliblish` Sentry organization (shared with
+  nota-profile), with Team and Project Read & Write and Organization Read, for
+  the `fbrissi-dev` team, project and client key in `terraform/sentry.tf`.
+  Organization auth tokens only have the `org:ci` scope and can't create them
 - Variable `AGENT_APP_CLIENT_ID` and secret `AGENT_APP_PRIVATE_KEY`: the
   `rissi-agent-ai` GitHub App that publishes the shared
   [Code Review](https://github.com/fbrissi/github-actions#code-review), with
@@ -158,6 +164,13 @@ Published by Terraform, do not set them manually:
   `fbrissi-dev-sandbox-study-group-mailer`
 - Variables `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `VITE_TURNSTILE_SITE_KEY`
   (legacy releases)
+- Variable `SENTRY_DSN`: the public client key of the `fbrissi-dev` Sentry
+  project. The Deploy workflow builds the site with it
+  (`NEXT_PUBLIC_SENTRY_DSN`) and passes it to the four Workers (`--var
+  SENTRY_DSN`), with the release tag as `SENTRY_RELEASE`. Only errors are sent,
+  without user, cookies, headers, bodies, query strings or email addresses
+  (`workers/observability/sentry-policy.ts`); the sandbox and local runs have no
+  DSN and send nothing
 
 In `automatic` mode (January 1 and July 1, or on demand),
 `.github/workflows/rotate-credentials.yml` replaces the deployment token, the
@@ -302,7 +315,8 @@ The contact form uses **free** Cloudflare services to send emails without any mo
 
 The program stays on the Cloudflare Free plan: the production API Worker `fbrissi-dev-study-group-api`
 (`workers/study-group-api/`, on `fbrissi.dev` and `www.fbrissi.dev`), bound only to the production D1 database, with
-Rate Limiting bindings and one daily Cron Trigger. The cron purges decided join requests after 30 days, the
+Rate Limiting bindings and two Cron Triggers. The hourly one (`7 * * * *`) writes the meeting reminders; the daily
+one (`17 3 * * *`, `DAILY_CRON` in `workers/study-group-api.ts`) purges decided join requests after 30 days, the
 moderation log after 12 months, expired sessions, the email outbox after 30 days and the icon upload counters after
 a day, re-drives the email outbox, and deletes orphaned icon objects. The Deploy workflow migrates and deploys
 production only, and fails before deploying anything when a required secret is empty.
@@ -383,6 +397,15 @@ notices use the contact form card (green header with the avatar) with the orange
   checks the preference, a cap of 20 emails per recipient and 500 in total per 24 hours, and calls SES v2
   `SendEmail` signed with SigV4 over WebCrypto. Temporary errors retry with backoff; the 6th failed attempt marks
   the row `failed`. The daily cron queues idle rows again, marks exhausted ones failed and logs the counts.
+- Meeting reminders (E5): the hourly cron reads the groups with reminders on in id order, 50 at a time, and, for a
+  meeting whose reminder is due within an hour either way (24 hours before, and 2 hours before, in the group's time
+  zone), writes one outbox row per owner and member (`meeting_reminder:<lead>:<group>:<meeting>:<user>` dedupe key)
+  and queues it with a delay until its time. A failed queue send leaves the rows pending, and the next run queues
+  again the reminders still pending 5 minutes to 2 hours after their time. Users with emails off and banned users get
+  no row. At send time the
+  mailer drops the reminder if the owner turned reminders off, the recipient left the group or was banned, the
+  schedule changed or the meeting already started. Groups saved before the weekday and time zone became selects get
+  no reminders until the owner picks a valid day and zone.
 - Users turn emails off or on in `/study-groups/account`, or with the one-click unsubscribe link
   (`List-Unsubscribe` and `List-Unsubscribe-Post`, an HMAC token signed with `STUDY_GROUP_UNSUBSCRIBE_SECRET` for one
   environment, valid for a year). `POST /api/study-group/unsubscribe` is the only route without the Origin and JSON
@@ -426,7 +449,8 @@ The Workers always use Google's fixed endpoints. The fake Google IdP below exist
 1. `kool start` also runs the study group API (`node:sqlite` in `tmp/study-group/`) and a fake Google IdP at
    http://localhost:8790. `next dev` proxies `/api/study-group/*` to the API, so cookies stay same-origin.
    Study group emails are sent in-process to Mailpit (http://localhost:8025) with a `[LOCAL]` subject prefix; a
-   trailing digest waits on a timer in the API process.
+   trailing digest waits on a timer in the API process. The reminder scan runs at minute 7 of every hour; run it now
+   with `kool run meeting-reminders`.
 2. Open http://localhost:3000/study-groups and sign in. The fake IdP lists test users: `admin@example.test`
    (platform admin), `owner@example.test`, `member@example.test`, `outsider@example.test`, and
    `unverified@example.test` (rejected, unverified email). It can also sign in any email and name.

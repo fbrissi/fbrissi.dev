@@ -1,10 +1,11 @@
-import { accountNoticeKinds, BAN_RETENTION_YEARS, NOTIFICATION_LIMITS, STUDY_GROUPS_EMAIL, type NotificationKind } from '../study-group/contract';
+import { accountNoticeKinds, BAN_RETENTION_YEARS, NOTIFICATION_LIMITS, STUDY_GROUPS_EMAIL, type MeetingReminderLead, type NotificationKind } from '../study-group/contract';
 import { environmentBadge, renderEmailHtml, renderEmailText, type EmailContent } from './email-layout';
 import type { StudyGroupEnvironment } from '../study-group/environment';
 
 /**
- * English-only service emails of the study groups program (E1–E4). User-written text (group names) is escaped and
- * never turned into a link; requester names and join messages are never included.
+ * English-only service emails of the study groups program (E1–E5). User-written text (group names) is escaped and
+ * never turned into a link; the one owner-set link is the group's http(s) meeting link, in the members' reminders
+ * (E5). Requester names and join messages are never included.
  */
 export interface StudyGroupEmailInput {
   kind: NotificationKind;
@@ -14,6 +15,17 @@ export interface StudyGroupEmailInput {
   pendingCount?: number;
   /** E4: the platform admin's reason. */
   reason?: string;
+  /** E5: the meeting a reminder is about, read from the group at send time. */
+  meeting?: {
+    lead: MeetingReminderLead;
+    /** ISO instant the meeting starts. */
+    startsAt: string;
+    /** Wall-clock HH:MM in the group's time zone. */
+    start: string;
+    end: string;
+    timezone: string;
+    url: string | null;
+  };
   appOrigin: string;
   unsubscribeUrl: string;
   environment: StudyGroupEnvironment;
@@ -30,6 +42,8 @@ interface Content {
   /** Paragraphs; the first is the main message. */
   paragraphs: string[];
   action: { label: string; url: string };
+  /** Detail rows after the paragraphs (the meeting time and links). */
+  fields?: { label: string; value: string; href?: string }[];
 }
 
 const groupPath = (id: string, page = '') => `/study-groups/g/${encodeURIComponent(id)}${page}`;
@@ -90,6 +104,26 @@ function content(input: StudyGroupEmailInput): Content {
         ],
         action: { label: 'Sign in', url: `${appOrigin}/study-groups/my` },
       };
+    case 'meeting_reminder': {
+      const meeting = input.meeting!;
+      const when = meeting.lead === 'day_before' ? 'tomorrow' : 'today';
+      const date = new Intl.DateTimeFormat('en-US', { timeZone: meeting.timezone, weekday: 'long', month: 'long', day: 'numeric' }).format(new Date(meeting.startsAt));
+      const board = `${appOrigin}${groupPath(input.groupId)}`;
+      return {
+        subject: `Reminder: ${groupName} meets ${when} at ${meeting.start}`,
+        paragraphs: [
+          `${groupName} meets ${when}, ${date}, from ${meeting.start} to ${meeting.end} (${meeting.timezone}).`,
+          meeting.url
+            ? 'Use the button below to join the meeting. The materials for the meeting are on the group board.'
+            : "The group doesn't have a meeting link yet. Check the group board for the materials and any news from the owner.",
+        ],
+        fields: [
+          { label: 'When', value: `${date}, ${meeting.start} to ${meeting.end} (${meeting.timezone})` },
+          ...(meeting.url ? [{ label: 'Group board', value: board, href: board }] : []),
+        ],
+        action: meeting.url ? { label: 'Join the meeting', url: meeting.url } : { label: 'Open the group', url: board },
+      };
+    }
     case 'icon_removed':
       return {
         subject: `The icon of your group ${groupName} was removed`,
@@ -117,7 +151,7 @@ function environmentNote(environment: StudyGroupEnvironment): string | null {
 
 /** The study group email in the shared layout; only the slots differ by kind. */
 function layout(input: StudyGroupEmailInput): EmailContent {
-  const { subject, paragraphs, action } = content(input);
+  const { subject, paragraphs, action, fields } = content(input);
   const note = environmentNote(input.environment);
   // Ban and restore notices ignore the email setting, so they offer no unsubscribe link.
   const accountNotice = accountNoticeKinds.includes(input.kind);
@@ -130,6 +164,7 @@ function layout(input: StudyGroupEmailInput): EmailContent {
     blocks: [
       { kind: 'paragraph', text: 'Hi,' },
       ...paragraphs.map((text) => ({ kind: 'paragraph' as const, text })),
+      ...(fields ? [{ kind: 'fields' as const, rows: fields }] : []),
       { kind: 'button', label: action.label, url: action.url },
       { kind: 'signature', avatarSize: 48, lines: [{ text: 'English Study Groups at fbrissi.dev', style: 'plain' }] },
       ...(note ? [{ kind: 'note' as const, text: note }] : []),

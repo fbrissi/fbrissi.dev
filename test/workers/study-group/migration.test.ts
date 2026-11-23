@@ -135,3 +135,41 @@ describe('0004 migration (no soft delete)', () => {
     expect(await names("SELECT name FROM sqlite_master WHERE name IN ('bans', 'icon_uploads') ORDER BY name")).toEqual(['bans', 'icon_uploads']);
   });
 });
+
+describe('0006 migration (meeting reminders)', () => {
+  it('turns reminders on, normalizes weekday names and keeps the outbox while allowing the reminder kind', async () => {
+    workDir = mkdtempSync(path.join(os.tmpdir(), 'study-group-migration-'));
+    const dir = path.join(workDir, 'migrations');
+    mkdirSync(dir);
+    const file = path.join(workDir, 'db.sqlite');
+    const before = ['0001_init.sql', '0002_groups_and_accounts.sql', '0003_notifications.sql', '0004_hard_delete.sql', '0005_icons_and_bans.sql'];
+    for (const name of before) copyFileSync(path.join(migrationsDir, name), path.join(dir, name));
+    const v5 = openD1Sqlite(file, dir);
+    const group = (id: string, day: string) => v5.prepare(
+      "INSERT INTO groups (id, owner_id, name, summary, meeting_day, meeting_start, meeting_end, timezone, access_code, created_at, updated_at) VALUES (?, 'owner001', ?, 'A group summary text', ?, '20:00', '21:00', 'UTC', 'c', 'x', 'x')"
+    ).bind(id, id, day);
+    await v5.batch([
+      v5.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES ('owner001', 's', 'o@example.test', 'O', 'x', 'x')"),
+      group('a', ' tuesdays '),
+      group('b', 'SUNDAY'),
+      group('c', 'Every other Friday'),
+      v5.prepare("INSERT INTO notifications (user_id, kind, group_id, payload, dedupe_key, status, attempts, created_at, send_after, sent_at) VALUES ('owner001', 'join_approved', 'a', '{\"groupName\":\"a\"}', 'k1', 'sent', 1, 'x', 'y', 'z')"),
+    ]);
+    copyFileSync(path.join(migrationsDir, '0006_meeting_reminders.sql'), path.join(dir, '0006_meeting_reminders.sql'));
+    const db = openD1Sqlite(file, dir);
+
+    expect((await db.prepare('SELECT id, meeting_day, meeting_reminders FROM groups ORDER BY id').all()).results).toEqual([
+      { id: 'a', meeting_day: 'Tuesday', meeting_reminders: 1 },
+      { id: 'b', meeting_day: 'Sunday', meeting_reminders: 1 },
+      { id: 'c', meeting_day: 'Every other Friday', meeting_reminders: 1 },
+      { id: 'devtalk', meeting_day: 'Monday', meeting_reminders: 1 },
+    ]);
+    expect(await db.prepare('SELECT id, kind, dedupe_key, status, attempts, sent_at FROM notifications').first())
+      .toEqual({ id: 1, kind: 'join_approved', dedupe_key: 'k1', status: 'sent', attempts: 1, sent_at: 'z' });
+    const next = await db.prepare("INSERT INTO notifications (user_id, kind, group_id, dedupe_key, created_at, send_after) VALUES ('owner001', 'meeting_reminder', 'a', 'k2', 'x', 'y') RETURNING id").first();
+    expect(next).toEqual({ id: 2 });
+    await expect(db.prepare("INSERT INTO notifications (user_id, kind, dedupe_key, created_at, send_after) VALUES ('owner001', 'other', 'k3', 'x', 'y')").run()).rejects.toThrow(/CHECK/);
+    expect((await db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'notifications' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results.map((row) => row.name))
+      .toEqual(['notifications_created_at', 'notifications_group_kind', 'notifications_status_created', 'notifications_user_sent']);
+  });
+});

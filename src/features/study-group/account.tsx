@@ -74,7 +74,7 @@ function EmailSection() {
   return (
     <section aria-labelledby="email-title" className={sectionClass}>
       <h2 id="email-title" className={sectionTitleClass}>Emails</h2>
-      <p className="mb-5 text-sm text-text-secondary">We email you about join requests to your groups, decisions on your requests, and groups of yours that the platform admin deletes. No marketing, ever. You&apos;ll still see everything in the app if you turn them off.</p>
+      <p className="mb-5 text-sm text-text-secondary">We email you about join requests to your groups, decisions on your requests, your groups&apos; meetings (a reminder the day before and on the day), and groups of yours that the platform admin deletes. No marketing, ever. You&apos;ll still see everything in the app if you turn them off.</p>
       <label className="mb-4 flex min-h-11 cursor-pointer items-center gap-3 text-sm">
         <input type="checkbox" className="h-5 w-5 shrink-0 accent-accent" checked={enabled ?? false} disabled={enabled === null} onChange={(event) => void change(event.target.checked)} />
         <span>Email me about my groups and requests</span>

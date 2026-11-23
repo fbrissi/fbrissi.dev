@@ -1,6 +1,8 @@
 name = "fbrissi-dev-contact-email-consumer"
 main = "../contact-email-consumer.ts"
 compatibility_date = "2024-01-01"
+# @sentry/cloudflare needs AsyncLocalStorage (node:async_hooks).
+compatibility_flags = ["nodejs_compat"]
 workers_dev = false
 observability.enabled = true
 

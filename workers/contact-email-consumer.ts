@@ -1,3 +1,6 @@
+import { withSentry } from '@sentry/cloudflare';
+
+import { reportError, workerSentryOptions, type SentryEnv } from './observability/sentry';
 import { EmailMessage } from 'cloudflare:email';
 import type { ContactMessage } from './contact-message';
 import { resolveContactEnvironment, resolveContactLocale } from './contact-message';
@@ -8,7 +11,7 @@ import {
 } from './templates/contact-confirmation-email';
 import { contactEmailHtml, contactEmailSubject, contactEmailText } from './templates/contact-email';
 
-export interface Env {
+export interface Env extends SentryEnv {
   CONTACT_EMAIL_TO: string;
   CONTACT_EMAIL_DISPLAY_TO: string;
   CONTACT_EMAIL_FROM: string;
@@ -24,20 +27,22 @@ interface QueueBatch {
   messages: QueueMessage[];
 }
 
-const contactEmailConsumer = {
+/** The Worker without Sentry (tests call it directly); the default export is the deployed, instrumented copy. */
+export const contactEmailConsumer = {
   async queue(batch: QueueBatch, env: Env): Promise<void> {
     for (const message of batch.messages) {
       try {
         await sendEmails(env, message.body);
       } catch (error) {
         console.error('Unable to deliver contact form email:', error);
+        reportError(error);
         message.retry();
       }
     }
   },
 };
 
-export default contactEmailConsumer;
+export default withSentry(workerSentryOptions('contact-email-consumer'), { ...contactEmailConsumer });
 
 async function sendEmails(env: Env, rawMessage: ContactMessage): Promise<void> {
   const message: ContactMessage = {
@@ -63,6 +68,7 @@ export async function sendConfirmationEmail(env: Env, message: ContactMessage): 
     ));
   } catch (error) {
     console.error('Unable to deliver contact form confirmation email:', error);
+    reportError(error);
   }
 }
 

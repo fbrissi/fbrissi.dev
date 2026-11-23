@@ -120,6 +120,11 @@ export interface GroupInput {
   meetingUrl?: string | null;
   moderationMode?: 'free' | 'review';
   listed?: boolean;
+  meetingDay?: string;
+  meetingStart?: string;
+  meetingEnd?: string;
+  timezone?: string;
+  meetingReminders?: boolean;
 }
 
 export function groupInput(label: string, overrides: Partial<GroupInput> = {}): GroupInput {

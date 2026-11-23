@@ -111,3 +111,8 @@ Feature: Groups and membership
     Given the migrated DevTalk group has no owner
     When the allowlisted admin signs in for the first time
     Then the admin owns DevTalk
+
+  Scenario: the owner picks the meeting day and time zone from lists and turns meeting reminders off
+    Given I own a group
+    When I choose another day and time zone from the lists and turn meeting reminders off in the settings
+    Then the settings keep the day, the time zone and reminders off

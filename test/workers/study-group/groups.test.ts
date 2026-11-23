@@ -241,6 +241,19 @@ describe('groups', () => {
     await expectJson(await call('GET', `/groups/${w.groupId}/materials`, w.member), 403);
   });
 
+  it('keeps the meeting reminder setting when a save leaves it out, and validates the schedule', async () => {
+    const created = await expectJson(await call('POST', '/groups', w.outsider, { ...groupInput, name: 'Quiet Group', meetingReminders: false, acceptContentPolicy: true }), 201);
+    expect(created.group).toMatchObject({ meetingReminders: false });
+    const path = `/groups/${created.group.id}/settings`;
+    const owner = w.outsider;
+    expect((await expectJson(await call('PUT', path, owner, { ...groupInput, timezone: 'europe/lisbon' }), 200)).settings).toMatchObject({ meetingReminders: false, timezone: 'Europe/Lisbon' });
+    expect((await expectJson(await call('PUT', path, owner, { ...groupInput, meetingReminders: true }), 200)).settings).toMatchObject({ meetingReminders: true });
+    expect((await expectJson(await call('PUT', path, owner, { ...groupInput, meetingReminders: false }), 200)).settings).toMatchObject({ meetingReminders: false });
+    await expectJson(await call('PUT', path, owner, { ...groupInput, meetingDay: 'Mon' }), 400);
+    await expectJson(await call('PUT', path, owner, { ...groupInput, timezone: 'BRT' }), 400);
+    expect((await expectJson(await call('GET', `/groups/${w.groupId}`, w.member), 200)).group).toMatchObject({ meetingReminders: true });
+  });
+
   it('updates the settings and rotates the access code without affecting members or pending requests (4.3, Q13)', async () => {
     const settings = await expectJson(await call('GET', `/groups/${w.groupId}/settings`, w.owner), 200);
     expect(settings).toEqual({ settings: expect.objectContaining({ accessCode: w.accessCode, name: 'Go Talk' }), notices: [], role: 'owner' });

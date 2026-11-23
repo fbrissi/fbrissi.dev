@@ -1,7 +1,7 @@
 ---
 title: Termos de Uso
 description: Termos de Uso e política de conteúdo do programa gratuito de grupos de estudo de inglês.
-version: '2026-11-24'
+version: '2026-11-25'
 ---
 
 Estes Termos de Uso regem o programa de grupos de estudo de inglês disponível em `fbrissi.dev/study-groups` (o "programa"). Ao criar uma conta, você concorda com eles. Para usuários no Brasil, esta versão em português prevalece sobre a [versão em inglês](/study-groups/terms).
@@ -20,7 +20,7 @@ O programa ajuda qualquer pessoa a praticar inglês em pequenos grupos de estudo
 ## 3. Sua conta
 
 - O seu nome de exibição começa como o seu primeiro nome no Google, e você pode alterá-lo quando quiser (de 1 a 40 caracteres). O seu e-mail nunca é mostrado a outros usuários.
-- Enviamos e-mails de serviço sobre os pedidos de entrada nos seus grupos, a decisão sobre os seus próprios pedidos e a remoção do seu grupo ou do ícone dele pelo administrador da plataforma, nunca marketing. Você pode desligá-los na página da conta ou pelo link de cancelamento em cada e-mail.
+- Enviamos e-mails de serviço sobre os pedidos de entrada nos seus grupos, a decisão sobre os seus próprios pedidos, lembretes dos encontros dos seus grupos (a menos que o dono os desligue para o grupo) e a remoção do seu grupo ou do ícone dele pelo administrador da plataforma, nunca marketing. Você pode desligá-los na página da conta ou pelo link de cancelamento em cada e-mail.
 - Você pode baixar os seus dados e excluir a sua conta na página da conta. Excluir a conta a apaga definitivamente, junto com os grupos dos quais você é dono, na hora; isso não pode ser desfeito. Sugestões e votos deixados em outros grupos permanecem, exibidos como "Former member" (ex-membro).
 
 <span id="content-policy"></span>

@@ -22,6 +22,10 @@ concurrency:
 jobs:
   deploy:
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    env:
+      # Sentry release of the site and the Workers; SENTRY_DSN is the Terraform-published repository variable (empty
+      # until the first apply, which leaves Sentry off).
+      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
     steps:
       - uses: actions/checkout@v7
         with:
@@ -74,6 +78,8 @@ jobs:
           NEXT_PUBLIC_OG_IMAGE: ${{ vars.NEXT_PUBLIC_OG_IMAGE }}
           STUDY_GROUP_SLUG: ${{ secrets.STUDY_GROUP_SLUG }}
           VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
+          NEXT_PUBLIC_SENTRY_DSN: ${{ vars.SENTRY_DSN }}
+          NEXT_PUBLIC_SENTRY_RELEASE: ${{ env.RELEASE_TAG }}
       - name: Deploy Cloudflare Pages
         id: pages
         uses: cloudflare/wrangler-action@v4
@@ -100,6 +106,7 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/contact-api
           wranglerVersion: '4'
+          command: deploy --var SENTRY_DSN:${{ vars.SENTRY_DSN }} --var SENTRY_RELEASE:${{ env.RELEASE_TAG }}
           secrets: TURNSTILE_SECRET_KEY
         env:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
@@ -110,6 +117,7 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/contact-email-consumer
           wranglerVersion: '4'
+          command: deploy --var SENTRY_DSN:${{ vars.SENTRY_DSN }} --var SENTRY_RELEASE:${{ env.RELEASE_TAG }}
       - name: List D1 databases
         id: d1
         uses: cloudflare/wrangler-action@v4
@@ -155,6 +163,7 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/study-group-mailer
           wranglerVersion: '4'
+          command: deploy --var SENTRY_DSN:${{ vars.SENTRY_DSN }} --var SENTRY_RELEASE:${{ env.RELEASE_TAG }}
           secrets: |
             STUDY_GROUP_SES_ACCESS_KEY_ID
             STUDY_GROUP_SES_SECRET_ACCESS_KEY
@@ -170,6 +179,7 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/study-group-api
           wranglerVersion: '4'
+          command: deploy --var SENTRY_DSN:${{ vars.SENTRY_DSN }} --var SENTRY_RELEASE:${{ env.RELEASE_TAG }}
           secrets: |
             GOOGLE_OAUTH_CLIENT_ID
             GOOGLE_OAUTH_CLIENT_SECRET

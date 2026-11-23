@@ -1,7 +1,7 @@
 ---
 title: Terms of Use
 description: Terms of Use and content policy of the free English study groups program.
-version: '2026-11-24'
+version: '2026-11-25'
 ---
 
 These Terms of Use govern the English study groups program available at `fbrissi.dev/study-groups` (the "program"). By creating an account you agree to them. Users in Brazil: the [Portuguese version](/pt-br/study-groups/terms) prevails.
@@ -20,7 +20,7 @@ The program helps anyone practice English in small study groups. Members suggest
 ## 3. Your account
 
 - Your display name defaults to your Google first name, and you can change it at any time (1 to 40 characters). Your email is never shown to other users.
-- We send you service emails about join requests to your groups, the decision on your own requests and the removal of your group or its icon by the platform admin, never marketing. You can turn them off on the account page or with the unsubscribe link in each email.
+- We send you service emails about join requests to your groups, the decision on your own requests, reminders of your groups' meetings (unless the owner turns them off for the group) and the removal of your group or its icon by the platform admin, never marketing. You can turn them off on the account page or with the unsubscribe link in each email.
 - You can download your data and delete your account on the account page. Deleting the account permanently deletes it and the groups you own, at once; it can't be undone. Suggestions and votes you left in other groups stay, shown as "Former member".
 
 <span id="content-policy"></span>

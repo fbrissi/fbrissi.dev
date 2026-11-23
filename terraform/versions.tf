@@ -18,6 +18,10 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.0"
     }
+    sentry = {
+      source  = "jianyuan/sentry"
+      version = "~> 0.15"
+    }
   }
 
   cloud {
@@ -43,6 +47,12 @@ provider "aws" {
 
 provider "cloudflare" {
   api_token = var.CLOUDFLARE_API_TOKEN
+}
+
+# The token of an internal integration of the oliblish Sentry organization (team and project read & write); see the
+# root README, "GitHub Secrets and Variables".
+provider "sentry" {
+  token = var.SENTRY_AUTH_TOKEN
 }
 
 provider "github" {

@@ -68,6 +68,29 @@ describe('group settings', () => {
     }
   });
 
+  it('asks for a weekday and a listed time zone when the saved ones are free text (from before the selects)', async () => {
+    const fetchMock = setup({ routes: {
+      [`GET ${base}/settings`]: { settings: { ...settings, meetingDay: 'Mondays', timezone: 'BRT' }, notices, role: 'owner' },
+      [`PUT ${base}/settings`]: { settings: { ...settings, meetingDay: 'Friday', timezone: 'UTC' }, notices: [], role: 'owner' }
+    } });
+    await screen.findByDisplayValue('Choose a day');
+    const form = screen.getByRole('region', { name: 'Group profile' });
+    const day = within(form).getByLabelText('Meeting day');
+    expect(within(day).getByRole('option', { name: 'Choose a day' })).toBeDisabled();
+    const zone = within(form).getByLabelText('Time zone');
+    expect(zone).toHaveValue('BRT');
+    expect(within(zone).getByRole('option', { name: 'UTC' })).toBeInTheDocument();
+    expect(within(zone).getByRole('option', { name: 'America/Sao Paulo' })).toBeInTheDocument();
+    fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
+    expect(within(form).getByText('Choose the meeting day.')).toBeInTheDocument();
+    expect(within(form).getByText('Choose a time zone from the list.')).toBeInTheDocument();
+    fireEvent.change(day, { target: { value: 'Friday' } });
+    fireEvent.change(zone, { target: { value: 'UTC' } });
+    fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
+    await waitFor(() => expect(calls(fetchMock)).toContain(`PUT ${base}/settings`));
+    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toMatchObject({ meetingDay: 'Friday', timezone: 'UTC', meetingReminders: true });
+  });
+
   it('saves the profile with validation (4.4)', async () => {
     let attempt = 0;
     const fetchMock = setup({ routes: { [`PUT ${base}/settings`]: () => (attempt++ === 0 ? apiError(403, 'consent_required') : { settings: { ...settings, name: 'Go Talk 2', moderationMode: 'review', listed: false }, notices: [], role: 'owner' }) } });
@@ -93,12 +116,13 @@ describe('group settings', () => {
     fireEvent.change(within(form).getByLabelText('Meeting link (optional)'), { target: { value: '' } });
     fireEvent.change(within(form).getByLabelText('Rules'), { target: { value: 'One\n\n Two ' } });
     fireEvent.change(within(form).getByLabelText('Suggestions'), { target: { value: 'review' } });
-    fireEvent.click(within(form).getByRole('checkbox'));
+    fireEvent.click(within(form).getByRole('checkbox', { name: /List this group/ }));
+    fireEvent.click(within(form).getByRole('checkbox', { name: /Email meeting reminders/ }));
     fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
     expect(await within(form).findByText('Accept the updated Terms and Privacy Policy to make changes.')).toBeInTheDocument();
     fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
     expect(await within(form).findByText('Settings saved.')).toBeInTheDocument();
-    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toEqual({ ...group, id: undefined, iconUrl: undefined, name: 'Go Talk 2', rules: ['One', 'Two'], meetingUrl: null, moderationMode: 'review', listed: false });
+    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toEqual({ ...group, id: undefined, iconUrl: undefined, name: 'Go Talk 2', rules: ['One', 'Two'], meetingUrl: null, moderationMode: 'review', listed: false, meetingReminders: false });
     expect(screen.getByText('Go Talk 2', { selector: 'p' })).toBeInTheDocument();
   });
 

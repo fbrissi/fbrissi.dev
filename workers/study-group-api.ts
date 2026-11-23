@@ -1,11 +1,15 @@
+import { withSentry } from '@sentry/cloudflare';
+
+import { workerSentryOptions, type SentryEnv } from './observability/sentry';
 import { parseEmailAllowlist } from './study-group/authorization';
 import { environmentOrigins, PRODUCTION_ORIGIN } from './study-group/environment';
 import { createHandler, type RateLimitKind } from './study-group/handler';
 import { deleteOrphanIcons, type BucketLike } from './study-group/icons';
+import { scheduleMeetingReminders } from './study-group/meeting-reminders';
 import { GOOGLE_OIDC, type CacheLike } from './study-group/oidc';
 import { createRepository, type D1Like, type QueuedNotification } from './study-group/repository';
 
-export interface Env {
+export interface Env extends SentryEnv {
   /** The production or the sandbox database: each environment is its own Worker with its own binding. */
   STUDY_GROUP_DB: D1Like;
   STUDY_GROUP_ENVIRONMENT?: string;
@@ -39,6 +43,11 @@ export { environmentOrigins };
 const REQUEUE_AFTER_MS = 30 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** The daily retention cron; every other trigger (hourly) is the meeting reminder scan. Must match wrangler.toml. */
+export const DAILY_CRON = '17 3 * * *';
+/** Cloudflare Queues accepts at most 100 messages per sendBatch. */
+const QUEUE_BATCH_SIZE = 100;
+
 /** Seconds until `sendAfter`, within the queue's 0 to 24-hour delay range. */
 export function delaySeconds(sendAfter: string, now: number): number {
   return Math.min(Math.max(Math.ceil((Date.parse(sendAfter) - now) / 1000), 0), DAY_MS / 1000);
@@ -47,7 +56,10 @@ export function delaySeconds(sendAfter: string, now: number): number {
 function notifier(env: Env): (notifications: QueuedNotification[]) => Promise<void> {
   return async (notifications) => {
     const now = Date.now();
-    await env.STUDY_GROUP_NOTIFY_QUEUE.sendBatch(notifications.map(({ id, sendAfter }) => ({ body: { id }, delaySeconds: delaySeconds(sendAfter, now) })));
+    for (let start = 0; start < notifications.length; start += QUEUE_BATCH_SIZE) {
+      await env.STUDY_GROUP_NOTIFY_QUEUE.sendBatch(notifications.slice(start, start + QUEUE_BATCH_SIZE)
+        .map(({ id, sendAfter }) => ({ body: { id }, delaySeconds: delaySeconds(sendAfter, now) })));
+    }
   };
 }
 
@@ -64,7 +76,8 @@ function defaultCache(): CacheLike | undefined {
  * no binding or variable can point it at another identity provider. The fake IdP exists only in the local Docker
  * stack (workers/local).
  */
-const studyGroupApi = {
+/** The Worker without Sentry (tests call it directly); the default export is the deployed, instrumented copy. */
+export const studyGroupApi = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     // Session cookies are host-only, so sign-in always runs on the canonical host.
@@ -102,12 +115,18 @@ const studyGroupApi = {
   },
 
   /**
-   * Daily retention purge (Q6) of this environment's database, then the email re-drive: idle outbox rows are queued
-   * again, exhausted ones are marked failed, and failures are logged as counts (never addresses).
+   * Hourly: the meeting reminder scan. Daily (DAILY_CRON): the retention purge (Q6) of this environment's database,
+   * then the email re-drive: idle outbox rows are queued again, exhausted ones are marked failed, and failures are
+   * logged as counts (never addresses).
    */
-  async scheduled(_controller: unknown, env: Env): Promise<void> {
+  async scheduled(controller: { cron: string }, env: Env): Promise<void> {
     const repository = createRepository(env.STUDY_GROUP_DB);
     const now = new Date();
+    if (controller.cron !== DAILY_CRON) {
+      const queued = await scheduleMeetingReminders(repository, notifier(env), now);
+      if (queued) console.log('Queued study group meeting reminders:', queued);
+      return;
+    }
     await repository.purgeExpired(now);
     const { requeue, failedLastDay } = await repository.recoverNotifications(
       new Date(now.getTime() - REQUEUE_AFTER_MS).toISOString(), new Date(now.getTime() - DAY_MS).toISOString(), 100
@@ -120,4 +139,4 @@ const studyGroupApi = {
   },
 };
 
-export default studyGroupApi;
+export default withSentry(workerSentryOptions('study-group-api'), { ...studyGroupApi });

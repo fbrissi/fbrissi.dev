@@ -1,6 +1,8 @@
 name = "fbrissi-dev-contact-api"
 main = "../contact-api.ts"
 compatibility_date = "2024-01-01"
+# @sentry/cloudflare needs AsyncLocalStorage (node:async_hooks).
+compatibility_flags = ["nodejs_compat"]
 observability.enabled = true
 
 # Production Worker: only the production hosts and queue. The sandbox contact API is its own Worker ([env.sandbox]

@@ -60,3 +60,14 @@ Feature: Service emails
   Scenario: a tampered unsubscribe link is refused and changes nothing
     When someone posts an unsubscribe link with a changed token
     Then it is refused and my email setting stays on
+
+  Scenario: the owner and the members get the meeting reminder on the day, with the time and the meeting link (E5)
+    Given my group meets in 2 hours and has members
+    When the hourly reminder scan runs
+    Then the owner and each member get one reminder with the time, the meeting link and the group board
+    And running the scan again sends no second reminder
+
+  Scenario: no meeting reminder for a member who turned emails off or for a group with reminders off
+    Given a member of my group turned service emails off, and my other group meets in 2 hours with reminders off
+    When the hourly reminder scan runs
+    Then the member with emails off and the other group's members get no reminder

@@ -22,7 +22,7 @@ afterEach(() => {
 
 const call = (method: string, path: string, cookie?: string, body?: unknown) => h.handler(request(method, path, { cookie, body }));
 const reason = 'Repeated political propaganda in suggestions';
-const groupBody = (name: string) => ({ name, summary: 'Weekly English practice about our own topics.', rules: [], meetingDay: 'Mon', meetingStart: '19:00', meetingEnd: '20:00', timezone: 'UTC', meetingUrl: null, moderationMode: 'free', listed: true, acceptContentPolicy: true });
+const groupBody = (name: string) => ({ name, summary: 'Weekly English practice about our own topics.', rules: [], meetingDay: 'Monday', meetingStart: '19:00', meetingEnd: '20:00', timezone: 'UTC', meetingUrl: null, moderationMode: 'free', listed: true, acceptContentPolicy: true });
 
 async function callback(user: { sub?: string; email?: string; name?: string }) {
   const { flow, params } = await startLogin(h);

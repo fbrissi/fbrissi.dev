@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   sendMail: vi.fn(),
   createNotificationSender: vi.fn(),
   deliver: vi.fn(),
+  scheduleMeetingReminders: vi.fn(),
 }));
 
 vi.mock('node:http', () => {
@@ -25,6 +26,7 @@ vi.mock('node:fs', () => ({ mkdirSync: mocks.mkdirSync, default: { mkdirSync: mo
 vi.mock('@/workers/local/d1-sqlite', () => ({ openD1Sqlite: mocks.openD1Sqlite }));
 vi.mock('@/workers/study-group/handler', () => ({ createHandler: mocks.createHandler }));
 vi.mock('@/workers/study-group/notification-sender', () => ({ createNotificationSender: mocks.createNotificationSender }));
+vi.mock('@/workers/study-group/meeting-reminders', () => ({ scheduleMeetingReminders: mocks.scheduleMeetingReminders }));
 vi.mock('nodemailer', () => ({ default: { createTransport: mocks.createTransport } }));
 
 async function request(method: string, url: string, body = '') {
@@ -118,6 +120,41 @@ describe('local study group API', () => {
       html: '<p>H</p>',
       headers: { 'List-Unsubscribe': '<x>' },
     });
+  });
+
+  it('runs the meeting reminder scan at minute 7 of every hour, and on a local-only trigger', async () => {
+    vi.useFakeTimers({ now: new Date('2026-11-29T10:30:00.000Z') });
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mocks.scheduleMeetingReminders.mockRejectedValueOnce(new Error('db busy')).mockResolvedValue(3);
+    await import('@/workers/local/study-group-api');
+    expect(mocks.scheduleMeetingReminders).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(37 * 60_000);
+    expect(mocks.scheduleMeetingReminders).toHaveBeenCalledTimes(1);
+    expect(error).toHaveBeenCalledWith('Unable to schedule meeting reminders', expect.any(Error));
+    await vi.advanceTimersByTimeAsync(60 * 60_000);
+    expect(mocks.scheduleMeetingReminders).toHaveBeenCalledTimes(2);
+    const [, notify, now] = mocks.scheduleMeetingReminders.mock.calls[1];
+    expect(now).toEqual(new Date('2026-11-29T12:07:00.000Z'));
+    expect(notify).toBe(mocks.createHandler.mock.calls[0][0].notify);
+
+    const triggered = await request('POST', '/__local/meeting-reminders');
+    expect(triggered.writeHead).toHaveBeenCalledWith(200, { 'content-type': 'application/json' });
+    expect(JSON.parse(triggered.end.mock.calls[0][0])).toEqual({ queued: 3 });
+    expect(mocks.handle).not.toHaveBeenCalled();
+    // Any other method goes to the shared handler.
+    mocks.handle.mockResolvedValueOnce(new Response(null, { status: 404 }));
+    await request('GET', '/__local/meeting-reminders');
+    expect(mocks.handle).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
+  });
+
+  it('runs the first scan within the hour when started before minute 7', async () => {
+    vi.useFakeTimers({ now: new Date('2026-11-29T10:05:00.000Z') });
+    mocks.scheduleMeetingReminders.mockResolvedValue(0);
+    await import('@/workers/local/study-group-api');
+    await vi.advanceTimersByTimeAsync(2 * 60_000);
+    expect(mocks.scheduleMeetingReminders).toHaveBeenCalledTimes(1);
+    vi.useRealTimers();
   });
 
   it('uses environment overrides', async () => {

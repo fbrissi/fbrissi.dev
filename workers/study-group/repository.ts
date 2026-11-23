@@ -15,6 +15,7 @@ import {
   type MaterialStatus,
   type MaterialType,
   type Member,
+  type MeetingReminderLead,
   type ModerationAction,
   type NotificationKind,
   type PolicyDocument,
@@ -77,6 +78,7 @@ interface GroupRow {
   access_code: string;
   moderation_mode: ModerationMode;
   listed: number;
+  meeting_reminders: number;
   created_at: string;
   icon_key: string | null;
   icon_content_type: string | null;
@@ -146,6 +148,22 @@ export interface OutboxNotice {
 /** An outbox row to hand to the mailer, not before `sendAfter`. */
 export interface QueuedNotification {
   id: number;
+  sendAfter: string;
+}
+
+/** A group's weekly schedule, as the hourly reminder scan reads it. */
+export interface ReminderGroup {
+  id: string;
+  meetingDay: string;
+  meetingStart: string;
+  timezone: string;
+}
+
+/** A reminder of one meeting of a group, to send to every recipient at `sendAfter`. */
+export interface DueReminder {
+  groupId: string;
+  lead: MeetingReminderLead;
+  meetingAt: string;
   sendAfter: string;
 }
 
@@ -408,10 +426,10 @@ export function createRepository(db: D1Like) {
 
     async createGroup(group: { id: string; ownerId: string; accessCode: string } & GroupProfileInput, now: string): Promise<GroupSettings> {
       const row = await one<GroupRow>(
-        `INSERT INTO groups (id, owner_id, name, summary, rules, meeting_day, meeting_start, meeting_end, timezone, meeting_url, access_code, moderation_mode, listed, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+        `INSERT INTO groups (id, owner_id, name, summary, rules, meeting_day, meeting_start, meeting_end, timezone, meeting_url, access_code, moderation_mode, listed, meeting_reminders, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         group.id, group.ownerId, group.name, group.summary, JSON.stringify(group.rules), group.meetingDay, group.meetingStart, group.meetingEnd,
-        group.timezone, group.meetingUrl, group.accessCode, group.moderationMode, group.listed ? 1 : 0, now, now
+        group.timezone, group.meetingUrl, group.accessCode, group.moderationMode, group.listed ? 1 : 0, group.meetingReminders === false ? 0 : 1, now, now
       );
       return toGroupSettings(row!);
     },
@@ -419,10 +437,10 @@ export function createRepository(db: D1Like) {
     async updateGroup(id: string, input: GroupProfileInput, now: string): Promise<GroupSettings> {
       const row = await one<GroupRow>(
         `UPDATE groups SET name = ?, summary = ?, rules = ?, meeting_day = ?, meeting_start = ?, meeting_end = ?, timezone = ?,
-           meeting_url = ?, moderation_mode = ?, listed = ?, updated_at = ?
+           meeting_url = ?, moderation_mode = ?, listed = ?, meeting_reminders = COALESCE(?, meeting_reminders), updated_at = ?
          WHERE id = ? RETURNING *`,
         input.name, input.summary, JSON.stringify(input.rules), input.meetingDay, input.meetingStart, input.meetingEnd, input.timezone,
-        input.meetingUrl, input.moderationMode, input.listed ? 1 : 0, now, id
+        input.meetingUrl, input.moderationMode, input.listed ? 1 : 0, input.meetingReminders === undefined ? null : input.meetingReminders ? 1 : 0, now, id
       );
       return toGroupSettings(row!);
     },
@@ -745,6 +763,38 @@ export function createRepository(db: D1Like) {
       return { requeue: queued([rows]), failedLastDay: failed.results[0].count };
     },
 
+    /** Reminders still pending whose send time is in (from, to]: written by an earlier scan whose queue send was lost. */
+    async listPendingReminders(from: string, to: string): Promise<QueuedNotification[]> {
+      return queued([await db.prepare(
+        "SELECT id, send_after FROM notifications WHERE kind = 'meeting_reminder' AND status = 'pending' AND send_after > ? AND send_after <= ? ORDER BY id"
+      ).bind(from, to).all()]);
+    },
+
+    /** One page of the groups with meeting reminders on, after `afterId` in id order (keyset paging). */
+    async listReminderGroups(afterId: string, limit: number): Promise<ReminderGroup[]> {
+      return many<ReminderGroup>(
+        `SELECT id, meeting_day AS meetingDay, meeting_start AS meetingStart, timezone FROM groups
+         WHERE id > ? AND meeting_reminders = 1 ORDER BY id LIMIT ?`,
+        afterId, limit
+      );
+    },
+
+    /**
+     * Writes one reminder per recipient (the owner and the members) of each due meeting, leaving out users who turned
+     * service emails off and banned users. The dedupe key makes a rerun of the cron write nothing new.
+     */
+    async queueMeetingReminders(reminders: DueReminder[], now: string): Promise<QueuedNotification[]> {
+      if (!reminders.length) return [];
+      return queued(await db.batch(reminders.map(({ groupId, lead, meetingAt, sendAfter }) => statement(
+        `INSERT INTO notifications (user_id, kind, group_id, payload, dedupe_key, created_at, send_after)
+         SELECT u.id, 'meeting_reminder', g.id, ?, 'meeting_reminder:' || ? || ':' || g.id || ':' || ? || ':' || u.id, ?, ?
+         FROM groups g JOIN users u ON u.id = g.owner_id OR u.id IN (SELECT gm.user_id FROM group_members gm WHERE gm.group_id = g.id)
+         WHERE g.id = ? AND g.meeting_reminders = 1 AND ${emailOn} AND ${notBanned('u.id')}
+         ON CONFLICT (dedupe_key) DO NOTHING RETURNING id, send_after`,
+        JSON.stringify({ lead, meetingAt }), lead, meetingAt, now, sendAfter, groupId
+      ))));
+    },
+
     // Group icons
 
     async countIconUploads(userId: string, groupId: string, since: string): Promise<{ user: number; group: number }> {
@@ -925,6 +975,7 @@ function toGroupInfo(row: GroupRow): GroupInfo {
     meetingUrl: row.meeting_url || null,
     moderationMode: row.moderation_mode,
     listed: row.listed === 1,
+    meetingReminders: row.meeting_reminders === 1,
   };
 }
 
