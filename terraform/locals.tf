@@ -14,10 +14,14 @@ locals {
   # `count = local.sandbox_enabled ? 1 : 0`, so turning it off destroys them on the next apply, and turning it on
   # creates them again (with an empty sandbox D1). The Worker `[env.sandbox]` blocks and .github/workflows/sandbox.yml
   # (gated by the SANDBOX_ENABLED repository variable) stay as the reference for how the sandbox is built.
-  sandbox_enabled   = false
-  sandbox_count     = local.sandbox_enabled ? 1 : 0
-  github_owner      = "fbrissi"
-  github_repository = "fbrissi.dev"
+  sandbox_enabled = false
+  sandbox_count   = local.sandbox_enabled ? 1 : 0
+  # The sandbox contact queues outlive the sandbox for one release: the production contact Workers deployed before
+  # v0.4.1 still bind them, and Cloudflare refuses to delete a queue that a Worker binds. The v0.4.1 deploy unbinds
+  # them; a later release switches this to local.sandbox_count so the next apply deletes them.
+  sandbox_contact_queue_count = 1
+  github_owner                = "fbrissi"
+  github_repository           = "fbrissi.dev"
 
   # Contact Form - Email addresses
   contact_email_to     = "f.b.rissi@gmail.com"  # Verified Worker Email binding destination
