@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import type { CreateMaterialInput, CurrentUser, GroupInfo, GroupRole, Material, Member, Round, RoundMode, TallyEntry } from '@/workers/study-group/contract';
 
@@ -10,6 +10,7 @@ import { GroupHeader } from './group-header';
 import { applyVote, isEligible, pluralize } from './helpers';
 import { DiscussedList, MaterialCard, MaterialListSkeleton } from './materials';
 import { RoundPanel } from './round-panel';
+import { useReasonDialog } from './reason-dialog';
 import { SuggestForm } from './suggest-form';
 import { Banner, buttonClass, cardClass, hintClass, StateCard } from './ui';
 
@@ -17,12 +18,6 @@ type LoadState = 'loading' | 'ready' | 'error';
 
 export const pollIntervalMs = 8000;
 export const highlightMs = 3000;
-
-/** Asks the platform admin for the mandatory deletion reason; returns null when cancelled. */
-export function askReason(what: string): string | null {
-  const reason = window.prompt(`Reason for deleting ${what} (10 to 500 characters). It is recorded in the moderation log and shown to the owner.`);
-  return reason === null ? null : reason.trim();
-}
 
 type BoardProps = {
   api: StudyGroupApi;
@@ -44,6 +39,8 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const [highlightId, setHighlightId] = useState<number | null>(null);
+  const { dialog, ask } = useReasonDialog();
+  const openTitle = useRef<HTMLHeadingElement>(null);
 
   const applyRound = ({ round: nextRound, tally: nextTally, myVote: nextVote }: { round: Round | null; tally: TallyEntry[]; myVote: number | null }) => {
     setRound(nextRound);
@@ -114,10 +111,15 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
   const replaceMaterial = (updated: Material) => setMaterials((list) => list.map((item) => (item.id === updated.id ? updated : item)));
   const setStatus = (material: Material, status: 'open' | 'discussed') => run(async () => replaceMaterial((await api.updateMaterial(groupId, material.id, { status })).material));
   const approve = (material: Material) => run(async () => replaceMaterial((await api.approveMaterial(groupId, material.id)).material));
-  const deleteMaterial = (material: Material) => {
+  const deleteMaterial = async (material: Material) => {
     let reason: string | undefined;
     if (role === 'platform_admin') {
-      const answer = askReason(`“${material.title}”`);
+      const answer = await ask({
+        title: `Delete “${material.title}” permanently?`,
+        text: 'The suggestion and its votes are deleted. This can’t be undone. The reason is recorded in the moderation log and shown to the owner.',
+        confirmLabel: 'Delete permanently',
+        destructive: true,
+      });
       if (answer === null) return;
       reason = answer;
     }
@@ -125,7 +127,9 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
       await api.deleteMaterial(groupId, material.id, reason);
       setMaterials((list) => list.filter((item) => item.id !== material.id));
       setTally((entries) => entries.filter((entry) => entry.materialId !== material.id));
-    }, reason === undefined ? `Delete “${material.title}”? It will be removed from the board.` : undefined);
+      // The deleted card took its button with it: move the focus to the list heading.
+      openTitle.current?.focus();
+    }, reason === undefined ? `Delete “${material.title}” permanently? The suggestion and its votes are deleted. This can’t be undone.` : undefined);
   };
 
   const vote = async (roundId: number, material: Material) => {
@@ -155,6 +159,7 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
   return (
     <>
       <GroupHeader group={group} role={role} />
+      {dialog}
       {actionError ? <div className="mb-6"><Banner tone="error" title={actionError} /></div> : null}
       {loadState === 'ready' ? (
         <RoundPanel
@@ -173,7 +178,7 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
         <div className="min-w-0">
           <section className="mb-12" aria-labelledby="open-title">
             <div className="mb-5 flex flex-wrap items-baseline justify-between gap-3">
-              <h2 id="open-title" className="text-2xl font-normal tracking-tight">Open materials</h2>
+              <h2 id="open-title" ref={openTitle} tabIndex={-1} className="text-2xl font-normal tracking-tight focus:outline-none">Open materials</h2>
               {loadState === 'ready' && openMaterials.length ? <span className="text-sm text-text-muted">{pluralize(openMaterials.length, 'item')} · newest first</span> : null}
             </div>
             {loadState === 'loading' ? <MaterialListSkeleton /> : null}
@@ -210,7 +215,7 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
                       vote={round?.status === 'open' && material.status === 'open' ? { eligible: isEligible(material, round), voters, mine: myVote === material.id, onVote: canParticipate ? () => void vote(round.id, material) : undefined } : undefined}
                       onSetStatus={(item, status) => void setStatus(item, status)}
                       onApprove={(item) => void approve(item)}
-                      onDelete={deleteMaterial}
+                      onDelete={(material) => void deleteMaterial(material)}
                     />
                   );
                 })}

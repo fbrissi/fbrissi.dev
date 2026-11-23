@@ -16,7 +16,7 @@ evidence:
   - label: "Jetstream PR #712"
     url: "https://github.com/laravel/jetstream/pull/712"
 featured: true
-order: 3
+order: 4
 ---
 
 ## Validation exception handling

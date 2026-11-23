@@ -75,9 +75,9 @@ test.describe('member and owner permissions', () => {
       ['DELETE', `${g}/materials/${ownerMaterial}`, {}],
       ['DELETE', `${g}/materials/${memberMaterial}`, {}],
       ['POST', `${g}/materials/${memberMaterial}/approve`],
-      ['POST', `${g}/materials/${memberMaterial}/restore`],
-      ['GET', `${g}/materials/deleted`],
+      ['DELETE', `${g}/icon`, {}],
       ['GET', '/admin/groups'],
+      ['GET', '/admin/users'],
       ['GET', '/admin/moderation-log']
     ];
     for (const [method, path, body] of calls) {

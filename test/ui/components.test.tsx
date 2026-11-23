@@ -218,6 +218,8 @@ describe('interactive components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(await screen.findByRole('heading', { name: 'Something went wrong' })).toBeInTheDocument();
+    // The error state points back to the contact form, never to a mailto link.
+    expect(screen.getByRole('link', { name: 'Reload the contact form' })).toHaveAttribute('href', '/contact');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(screen.getByRole('button', { name: 'Send message' })).toBeEnabled();
   });

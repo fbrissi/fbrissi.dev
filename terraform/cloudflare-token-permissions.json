@@ -126,6 +126,18 @@
         }
       ]
     },
+    "cloudflare_r2_bucket": {
+      "endpoints": [
+        "/accounts/{account_id}/r2/buckets",
+        "/accounts/{account_id}/r2/buckets/{bucket_name}"
+      ],
+      "permissions": [
+        {
+          "scope": "account",
+          "group": "Workers R2 Storage Write"
+        }
+      ]
+    },
     "cloudflare_turnstile_widget": {
       "endpoints": [
         "/accounts/{account_id}/challenges/widgets",

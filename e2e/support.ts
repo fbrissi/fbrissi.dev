@@ -177,7 +177,24 @@ export function groupUrl(id: string, page: '' | '/settings' = ''): string {
   return `/study-groups/g/${id}${page}`;
 }
 
-/** Accepts the next `window.confirm` / `window.prompt`, answering a prompt with `answer`. */
-export function acceptNextDialog(page: Page, answer?: string): void {
-  page.once('dialog', (dialog) => void dialog.accept(answer));
+/** Accepts the next `window.confirm`. */
+export function acceptNextDialog(page: Page): void {
+  page.once('dialog', (dialog) => void dialog.accept());
+}
+
+/**
+ * Answers the platform admin's in-page reason dialog that the last click opened: submits `reason`, or cancels when
+ * it is null. Returns the dialog locator.
+ */
+export async function answerReasonDialog(page: Page, reason: string | null) {
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  if (reason === null) {
+    await dialog.getByRole('button', { name: 'Cancel' }).click();
+  } else {
+    await dialog.getByLabel(/^Reason/).fill(reason);
+    await dialog.getByRole('button').last().click();
+  }
+  await expect(dialog).toHaveCount(0);
+  return dialog;
 }

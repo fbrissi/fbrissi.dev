@@ -45,7 +45,7 @@ describe('composed site pages', () => {
     expect(screen.queryByText(/remote/i)).not.toBeInTheDocument();
     expect(screen.queryByRole('heading', { name: /cloud-native engineering/i })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'See my experience' })).toHaveAttribute('href', '/works');
-    expect(screen.getByRole('link', { name: 'Email me' })).toHaveAttribute('href', 'mailto:contact@fbrissi.dev');
+    expect(screen.getByRole('link', { name: 'Contact me' })).toHaveAttribute('href', '/contact');
     expect(screen.getByRole('link', { name: 'Download resume (PDF)' })).toHaveAttribute('href', '/resume/filipe-bojikian-rissi-resume-en.pdf');
     expect(screen.getByRole('link', { name: 'Read more about me' })).toHaveAttribute('href', '/about');
     expect(screen.getByRole('link', { name: /Keycloak contributor/ })).toHaveAttribute('href', '/open-source/keycloak');
@@ -189,7 +189,7 @@ describe('composed site pages', () => {
   it('renders contact and about page content in Portuguese', () => {
     const { container } = render(<><ContactPage locale="pt-BR" /><AboutPage locale="pt-BR" /></>);
     expect(screen.getByText('Contact form (pt-BR)')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Política de Privacidade' })).toHaveAttribute('href', '/pt-br/privacy');
+    expect(screen.getAllByRole('link', { name: 'Política de Privacidade' }).map((link) => link.getAttribute('href'))).toEqual(['/pt-br/privacy', '/pt-br/privacy#international-transfer']);
     expect(screen.getByRole('heading', { level: 2, name: 'Certificações e palestras' })).toBeInTheDocument();
     expect(screen.getByText(/Inglês — proficiência profissional/)).toBeInTheDocument();
     expect(screen.getByText(/Atualmente, na/)).toBeInTheDocument();
@@ -198,6 +198,10 @@ describe('composed site pages', () => {
     expect(JSON.parse(container.querySelector('script[type="application/ld+json"]')!.textContent!)).toMatchObject({ '@type': 'ProfilePage', url: 'https://fbrissi.dev/pt-br/about', mainEntity: { '@type': 'Person', '@id': 'https://fbrissi.dev/#person', name: 'Filipe Bojikian Rissi', url: 'https://fbrissi.dev/', jobTitle: 'Engenheiro Backend e Cloud', sameAs: ['https://github.com/fbrissi', 'https://www.linkedin.com/in/fbrissi/', 'https://gitlab.com/fbrissi'] } });
     expect(screen.getByText('MBA em Engenharia de Software (IGTI, 2017–2018)')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'contact@fbrissi.dev' })).toHaveAttribute('href', 'mailto:contact@fbrissi.dev');
+    const paragraphs = Array.from(container.querySelectorAll('p')).map((paragraph) => paragraph.textContent);
+    expect(paragraphs).toContain('Os e-mails para este endereço são tratados pelos fornecedores listados na Política de Privacidade, alguns deles fora do Brasil.');
+    expect(paragraphs).toContain('Uso seu nome e e-mail só para responder a esta mensagem. Eles são tratados pelos fornecedores listados na Política de Privacidade, alguns deles fora do Brasil.');
+    expect(paragraphs.join(' ')).not.toContain('Veja a');
     expect(screen.getByRole('link', { name: '+55 (14) 99143-4121' })).toHaveAttribute('href', 'https://wa.me/5514991434121');
     expect(screen.getByRole('heading', { level: 1, name: /sobre/i })).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: /engenharia cloud-native/i })).toBeInTheDocument();

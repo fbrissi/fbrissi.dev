@@ -1,0 +1,52 @@
+name = "fbrissi-dev-study-group-mailer"
+main = "../study-group-mailer.ts"
+compatibility_date = "2024-01-01"
+workers_dev = false
+observability.enabled = true
+
+# Production mailer: consumes only the production notifications queue and reads only the production D1. The sandbox
+# runs as its own Worker ([env.sandbox] below), so a sandbox deploy never touches production.
+# Secrets pushed by the deploy workflows: STUDY_GROUP_SES_ACCESS_KEY_ID, STUDY_GROUP_SES_SECRET_ACCESS_KEY,
+# STUDY_GROUP_UNSUBSCRIBE_SECRET (and STUDY_GROUP_EMAIL_ALLOWLIST on the sandbox).
+[[queues.consumers]]
+queue = "fbrissi-dev-study-group-notify"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 30
+dead_letter_queue = "fbrissi-dev-study-group-notify-dlq"
+
+[vars]
+STUDY_GROUP_ENVIRONMENT = "production"
+STUDY_GROUP_SES_REGION = "us-east-1"
+STUDY_GROUP_EMAIL_DAILY_CAP = "500"
+
+# The database IDs are injected by the deploy workflows, like in workers/study-group-api/wrangler.toml.
+[[d1_databases]]
+binding = "STUDY_GROUP_DB"
+database_name = "fbrissi-dev-study-group"
+database_id = "STUDY_GROUP_DB_ID"
+
+# Sandbox mailer (fbrissi-dev-study-group-mailer-sandbox), deployed only by .github/workflows/sandbox.yml with
+# `--env sandbox`. Bindings and vars aren't inherited, so each one is repeated here.
+[env.sandbox]
+name = "fbrissi-dev-study-group-mailer-sandbox"
+workers_dev = false
+
+[[env.sandbox.queues.consumers]]
+queue = "fbrissi-dev-sandbox-study-group-notify"
+max_batch_size = 10
+max_batch_timeout = 5
+max_retries = 5
+retry_delay = 30
+dead_letter_queue = "fbrissi-dev-sandbox-study-group-notify-dlq"
+
+[env.sandbox.vars]
+STUDY_GROUP_ENVIRONMENT = "sandbox"
+STUDY_GROUP_SES_REGION = "us-east-1"
+STUDY_GROUP_EMAIL_DAILY_CAP = "100"
+
+[[env.sandbox.d1_databases]]
+binding = "STUDY_GROUP_DB"
+database_name = "fbrissi-dev-sandbox-study-group"
+database_id = "STUDY_GROUP_SANDBOX_DB_ID"

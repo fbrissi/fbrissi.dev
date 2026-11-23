@@ -1,3 +1,4 @@
+import { fireEvent, screen, within } from '@testing-library/react';
 import { vi } from 'vitest';
 
 import type { CurrentUser, GroupInfo, Material, Round } from '@/workers/study-group/contract';
@@ -40,11 +41,12 @@ export function bodyOf(fetchMock: ReturnType<typeof stubApi>, key: string): unkn
   return call ? JSON.parse((call[1] as RequestInit).body as string) : undefined;
 }
 
-export const user: CurrentUser = { id: 'user0001', displayName: 'Olivia', isPlatformAdmin: false, needsConsent: false };
-export const admin: CurrentUser = { id: 'admin001', displayName: 'Ada', isPlatformAdmin: true, needsConsent: false };
+export const user: CurrentUser = { id: 'user0001', displayName: 'Olivia', isPlatformAdmin: false, needsConsent: false, pendingConsents: [] };
+export const admin: CurrentUser = { id: 'admin001', displayName: 'Ada', isPlatformAdmin: true, needsConsent: false, pendingConsents: [] };
 
 export const group: GroupInfo = {
   id: 'gotalk1234',
+  iconUrl: null,
   name: 'Go Talk',
   summary: 'Weekly English practice about Go and cloud tools.',
   rules: ["Don't speak in Portuguese", 'Be kind'],
@@ -63,3 +65,15 @@ export function material(id: number, overrides: Partial<Material> = {}): Materia
 
 export const votingRound: Round = { id: 7, mode: 'vote', status: 'open', createdAt: '2026-11-10T20:00:00Z', closedAt: null, winnerMaterialId: null };
 export const closedRound: Round = { ...votingRound, status: 'closed', closedAt: '2026-11-10T21:00:00Z', winnerMaterialId: 1 };
+
+/** Answers the admin's reason dialog: cancels it (null) or submits the reason. Returns the dialog element. */
+export async function answerReason(reason: string | null): Promise<HTMLElement> {
+  const dialog = await screen.findByRole('dialog');
+  if (reason === null) {
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+  } else {
+    fireEvent.change(within(dialog).getByLabelText(/^Reason/), { target: { value: reason } });
+    fireEvent.submit(within(dialog).getByLabelText(/^Reason/).closest('form')!);
+  }
+  return dialog;
+}

@@ -93,7 +93,7 @@ describe('materials', () => {
     await expectJson(await call('POST', `/rounds/${round.id}/votes`, w.admin, { materialId: materials[0].id }), 201);
   });
 
-  it('lets only the owner mark, delete and restore materials (D6)', async () => {
+  it('lets only the owner mark and delete materials, and deletes them permanently (D6)', async () => {
     const material = await suggest(w.member, 'Talk', { url: 'https://example.com/t' });
     await expectJson(await call('PATCH', `/materials/${material.id}`, w.member, { status: 'discussed' }), 403);
     await expectJson(await call('DELETE', `/materials/${material.id}`, w.member), 403);
@@ -106,41 +106,28 @@ describe('materials', () => {
     await suggest(w.member, 'Same link', { url: 'https://example.com/t' });
     await expectJson(await call('PATCH', `/materials/${material.id}`, w.owner, { status: 'open' }), 409, { error: 'This URL is already open in another suggestion' });
 
+    const { round } = await expectJson(await call('POST', '/rounds', w.owner, { mode: 'draw' }), 201);
     expect((await call('DELETE', `/materials/${material.id}`, w.owner)).status).toBe(204);
     await expectJson(await call('DELETE', `/materials/${material.id}`, w.owner), 404);
-    const { materials } = await expectJson(await call('GET', '/materials/deleted', w.owner), 200);
-    expect(materials).toEqual([expect.objectContaining({ id: material.id, deletedAt: expect.any(String), deletedByAdmin: false })]);
-    await expectJson(await call('GET', '/materials/deleted', w.member), 403);
-
-    const restored = await expectJson(await call('POST', `/materials/${material.id}/restore`, w.owner), 200);
-    expect(restored.material.id).toBe(material.id);
-    await expectJson(await call('POST', `/materials/${material.id}/restore`, w.owner), 404, { error: 'Deleted material not found' });
-  });
-
-  it('reports a URL conflict when restoring', async () => {
-    const material = await suggest(w.member, 'Talk', { url: 'https://example.com/t' });
-    await call('DELETE', `/materials/${material.id}`, w.owner);
+    expect(await h.db.prepare('SELECT COUNT(*) AS count FROM materials WHERE id = ?').bind(material.id).first()).toEqual({ count: 0 });
+    await expectJson(await call('GET', '/materials/deleted', w.owner), 404);
+    await expectJson(await call('POST', `/materials/${material.id}/restore`, w.owner), 404);
+    // A round it won keeps no winner; nothing of the suggestion is left.
+    expect((await call('DELETE', `/materials/${round.winnerMaterialId}`, w.owner)).status).toBe(204);
+    expect(await h.db.prepare('SELECT winner_material_id FROM rounds WHERE id = ?').bind(round.id).first()).toEqual({ winner_material_id: null });
+    // Its URL can be suggested again right away.
     await suggest(w.member, 'Again', { url: 'https://example.com/t' });
-    await expectJson(await call('POST', `/materials/${material.id}/restore`, w.owner), 409, { error: 'This URL is already open in another suggestion' });
   });
 
-  it('keeps admin deletions out of the owner’s reach (Q6)', async () => {
+  it('logs admin deletions with the reason and shows them to the owner, even after the material is gone (Q6)', async () => {
     const material = await suggest(w.member, 'Spam link');
     await expectJson(await call('DELETE', `/materials/${material.id}`, w.admin, {}), 400);
     expect((await call('DELETE', `/materials/${material.id}`, w.admin, { reason: 'Unrelated self-promotion' })).status).toBe(204);
-    const { materials } = await (await call('GET', '/materials/deleted', w.owner)).json();
-    expect(materials[0].deletedByAdmin).toBe(true);
-    await expectJson(await call('POST', `/materials/${material.id}/restore`, w.owner), 403, { error: 'Only the platform admin can restore this material' });
-    await expectJson(await call('POST', `/materials/${material.id}/restore`, w.admin), 200);
     const { notices } = await (await call('GET', '/settings', w.owner)).json();
     expect(notices).toEqual([expect.objectContaining({ action: 'delete_material', label: 'Spam link', reason: 'Unrelated self-promotion' })]);
     const { actions } = await (await h.handler(request('GET', '/admin/moderation-log', { cookie: w.admin }))).json();
-    expect(actions[0]).toMatchObject({ action: 'restore_material', targetType: 'material', targetId: String(material.id), label: 'Spam link', actorName: 'Ada', reason: 'Restored by the platform admin' });
-
-    // The owner's own restores aren't audited.
-    await call('DELETE', `/materials/${material.id}`, w.owner);
-    await expectJson(await call('POST', `/materials/${material.id}/restore`, w.owner), 200);
-    expect((await (await h.handler(request('GET', '/admin/moderation-log', { cookie: w.admin }))).json()).actions).toHaveLength(2);
+    expect(actions[0]).toMatchObject({ action: 'delete_material', targetType: 'material', targetId: String(material.id), label: 'Spam link', actorName: 'Ada' });
+    expect(JSON.stringify(actions)).not.toContain('restore');
   });
 });
 
@@ -256,11 +243,9 @@ describe('rounds and votes', () => {
     for (const [pattern, path, body] of [
       [/^UPDATE materials SET status/, '/materials/1', { status: 'open' }],
       [/^INSERT INTO rounds/, '/rounds', { mode: 'draw' }],
-      [/^UPDATE materials SET deleted_at = NULL/, '/materials/1/restore', {}],
     ] as const) {
       const failing = await createHarness({ db: failQuery(h.db, pattern, new Error('boom')) });
       const method = path === '/materials/1' ? 'PATCH' : 'POST';
-      if (path.endsWith('restore')) await call('DELETE', '/materials/1', w.owner);
       await expectJson(await failing.handler(request(method, `/groups/${w.groupId}${path}`, { cookie: w.owner, body })), 500);
     }
     expect(console.error).toHaveBeenCalled();

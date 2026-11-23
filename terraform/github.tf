@@ -23,3 +23,30 @@ resource "github_actions_secret" "cloudflare_deploy_api_token" {
   secret_name = "CLOUDFLARE_DEPLOY_API_TOKEN"
   value       = cloudflare_account_token.deploy.value
 }
+
+# SES keys of the study group mailer Workers, pushed to them by the Deploy and Deploy Sandbox workflows.
+resource "github_actions_secret" "study_group_ses_access_key_id" {
+  repository  = local.github_repository
+  secret_name = "STUDY_GROUP_SES_ACCESS_KEY_ID"
+  value       = aws_iam_access_key.study_group_mailer.id
+}
+
+resource "github_actions_secret" "study_group_ses_secret_access_key" {
+  repository  = local.github_repository
+  secret_name = "STUDY_GROUP_SES_SECRET_ACCESS_KEY"
+  value       = aws_iam_access_key.study_group_mailer.secret
+}
+
+resource "github_actions_secret" "study_group_sandbox_ses_access_key_id" {
+  count       = local.sandbox_count
+  repository  = local.github_repository
+  secret_name = "STUDY_GROUP_SANDBOX_SES_ACCESS_KEY_ID"
+  value       = aws_iam_access_key.study_group_mailer_sandbox[0].id
+}
+
+resource "github_actions_secret" "study_group_sandbox_ses_secret_access_key" {
+  count       = local.sandbox_count
+  repository  = local.github_repository
+  secret_name = "STUDY_GROUP_SANDBOX_SES_SECRET_ACCESS_KEY"
+  value       = aws_iam_access_key.study_group_mailer_sandbox[0].secret
+}

@@ -4,6 +4,7 @@ import { expect } from 'vitest';
 import { createFakeIdp } from '@/workers/local/fake-idp';
 import { openD1Sqlite } from '@/workers/local/d1-sqlite';
 import { createHandler, type StudyGroupHandlerDeps } from '@/workers/study-group/handler';
+import type { BucketLike } from '@/workers/study-group/icons';
 import type { D1Like } from '@/workers/study-group/repository';
 
 export const migrationsDir = fileURLToPath(new URL('../../../workers/study-group/migrations', import.meta.url));
@@ -13,6 +14,29 @@ export const issuer = 'https://idp.test';
 export const clientId = 'client-id';
 export const clientSecret = 'client-secret';
 export const sessionSecret = 'test-session-secret';
+
+/** In-memory stand-in for the R2 icon bucket, with the same interface subset. */
+export function memoryBucket(objects = new Map<string, { data: Uint8Array; contentType?: string; uploaded: Date }>()): BucketLike & { objects: typeof objects } {
+  return {
+    objects,
+    async put(key, value, options) {
+      objects.set(key, { data: value, contentType: options?.httpMetadata?.contentType, uploaded: new Date() });
+    },
+    async get(key) {
+      const object = objects.get(key);
+      return object ? { arrayBuffer: async () => object.data.slice().buffer as ArrayBuffer, httpMetadata: { contentType: object.contentType } } : null;
+    },
+    async delete(keys) {
+      for (const key of Array.isArray(keys) ? keys : [keys]) objects.delete(key);
+    },
+    async list(options) {
+      const keys = [...objects.keys()].filter((key) => key.startsWith(options?.prefix ?? '')).sort();
+      const start = options?.cursor ? Number(options.cursor) : 0;
+      const slice = keys.slice(start, start + 2);
+      return { objects: slice.map((key) => ({ key, uploaded: objects.get(key)!.uploaded })), truncated: start + 2 < keys.length, cursor: String(start + 2) };
+    },
+  };
+}
 
 export type FakeIdp = Awaited<ReturnType<typeof createFakeIdp>>;
 

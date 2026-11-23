@@ -1,10 +1,12 @@
 import type { z } from 'zod';
 import type { Role } from './authorization';
-import type { ErrorResponse } from './contract';
+import { REASON_REQUIRED_MESSAGE, type ErrorResponse } from './contract';
 import type { CacheLike, JwksProvider, OidcClient } from './oidc';
-import type { GroupRecord, SessionUser, StudyGroupRepository } from './repository';
+import type { BucketLike } from './icons';
+import { deleteIconObjects, signIconUrl, validIconUrls } from './icons';
+import type { GroupRecord, QueuedNotification, SessionUser, StoredIcon, StudyGroupRepository } from './repository';
 
-export type RateLimitKind = 'read' | 'write' | 'auth' | 'join';
+export type RateLimitKind = 'read' | 'write' | 'auth' | 'join' | 'icon';
 export type FetchLike = (input: Request | string, init?: RequestInit) => Promise<Response>;
 
 export class HttpError extends Error {
@@ -31,6 +33,14 @@ export interface AppConfig {
   cache?: CacheLike;
   clock: () => Date;
   pick: <T>(items: T[]) => T;
+  /** Environment name signed into unsubscribe links, so a link only works where it was sent from. */
+  environment: string;
+  /** Verifies one-click unsubscribe links; they are rejected while it is empty. */
+  unsubscribeSecret: string;
+  /** Hands new outbox rows to the mailer (the notifications queue, or an in-process sender locally). */
+  notify?: (notifications: QueuedNotification[]) => Promise<void>;
+  /** The private group icon bucket (R2, or a local folder). Icons are off without it or without the session secret. */
+  icons?: BucketLike;
 }
 
 export interface RequestContext {
@@ -58,6 +68,64 @@ export function now(context: RequestContext): string {
   return context.app.clock().toISOString();
 }
 
+/**
+ * Queues the outbox rows a write created. The state change is already committed, so a queue failure is only logged
+ * (with the row IDs, never an address); the daily cron queues rows that were never picked up.
+ */
+export async function enqueueNotifications(context: RequestContext, notifications: QueuedNotification[]): Promise<void> {
+  if (!notifications.length || !context.app.notify) return;
+  try {
+    await context.app.notify(notifications);
+  } catch (error) {
+    console.error('Unable to queue study group notifications:', notifications.map((item) => item.id), error instanceof Error ? error.message : error);
+  }
+}
+
+/** The signed URL of a stored icon, or null when there is none or icons are off. */
+export async function iconUrl(context: RequestContext, icon: StoredIcon | null): Promise<string | null> {
+  const { app } = context;
+  return icon && app.icons && app.sessionSecret ? signIconUrl(app.sessionSecret, icon.key, app.clock()) : null;
+}
+
+/**
+ * Deletes icon objects after their rows are gone and purges every still-valid signed URL of them from the edge cache.
+ * The Cache API is per data center, so the purge only reaches the data center that handles this request; a copy cached
+ * elsewhere (and in browsers) can be served until its link expires, at most 2 hours.
+ */
+export async function removeIcons(context: RequestContext, keys: string[]): Promise<void> {
+  const { app } = context;
+  await deleteIconObjects(app.icons, keys);
+  if (!app.cache || !app.sessionSecret) return;
+  for (const key of keys) {
+    for (const path of await validIconUrls(app.sessionSecret, key, app.clock())) await app.cache.delete(new Request(`${context.url.origin}${path}`));
+  }
+}
+
+/** Reads a raw body up to `limit` bytes; a larger body is refused before it is read in full (413). */
+export async function readLimitedBody(request: Request, limit: number, message: string): Promise<Uint8Array> {
+  if (Number(request.headers.get('Content-Length')) > limit) throw new HttpError(413, message);
+  const reader = request.body?.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const chunk = reader ? await reader.read() : { done: true as const, value: undefined };
+    if (chunk.done) break;
+    total += chunk.value.length;
+    if (total > limit) {
+      await reader!.cancel();
+      throw new HttpError(413, message);
+    }
+    chunks.push(chunk.value);
+  }
+  const body = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    body.set(chunk, offset);
+    offset += chunk.length;
+  }
+  return body;
+}
+
 export async function parseBody<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
   let body: unknown;
   try {
@@ -66,7 +134,11 @@ export async function parseBody<T>(request: Request, schema: z.ZodType<T>): Prom
     throw new HttpError(400, 'Invalid JSON body');
   }
   const result = schema.safeParse(body);
-  if (!result.success) throw new HttpError(400, 'Invalid request', result.error.issues);
+  if (!result.success) {
+    // A bad moderation reason gets the same plain message on every admin route.
+    const reasonIssue = result.error.issues.some((issue) => issue.path[0] === 'reason');
+    throw new HttpError(400, reasonIssue ? REASON_REQUIRED_MESSAGE : 'Invalid request', result.error.issues);
+  }
   return result.data;
 }
 

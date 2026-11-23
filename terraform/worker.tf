@@ -5,6 +5,7 @@ resource "cloudflare_queue" "contact_form" {
 }
 
 resource "cloudflare_queue" "contact_form_sandbox" {
+  count      = local.sandbox_count
   account_id = local.cloudflare_account_id
   queue_name = "${local.project_name}-sandbox-contact-form"
 }
@@ -16,15 +17,40 @@ resource "cloudflare_queue" "contact_form_dead_letter" {
 }
 
 resource "cloudflare_queue" "contact_form_sandbox_dead_letter" {
+  count      = local.sandbox_count
   account_id = local.cloudflare_account_id
   queue_name = "${local.project_name}-sandbox-contact-form-dlq"
+}
+
+# Study group email notifications: the API Worker queues outbox row IDs and the mailer Worker sends them through SES.
+resource "cloudflare_queue" "study_group_notify" {
+  account_id = local.cloudflare_account_id
+  queue_name = "${local.project_name}-study-group-notify"
+}
+
+resource "cloudflare_queue" "study_group_notify_sandbox" {
+  count      = local.sandbox_count
+  account_id = local.cloudflare_account_id
+  queue_name = "${local.project_name}-sandbox-study-group-notify"
+}
+
+# Receive notifications whose delivery exhausted the mailer retries.
+resource "cloudflare_queue" "study_group_notify_dead_letter" {
+  account_id = local.cloudflare_account_id
+  queue_name = "${local.project_name}-study-group-notify-dlq"
+}
+
+resource "cloudflare_queue" "study_group_notify_sandbox_dead_letter" {
+  count      = local.sandbox_count
+  account_id = local.cloudflare_account_id
+  queue_name = "${local.project_name}-sandbox-study-group-notify-dlq"
 }
 
 # Turnstile Widget (anti-spam)
 resource "cloudflare_turnstile_widget" "contact_form" {
   account_id = local.cloudflare_account_id
   name       = "${local.project_name}-contact-form"
-  domains    = [local.custom_domain, local.sandbox_domain, "www.${local.custom_domain}"]
+  domains    = concat([local.custom_domain, "www.${local.custom_domain}"], local.sandbox_enabled ? [local.sandbox_domain] : [])
   mode       = "managed"
 
   lifecycle {

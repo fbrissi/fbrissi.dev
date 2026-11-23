@@ -39,3 +39,23 @@ test('an outdated policy acceptance blocks writes until the user accepts again',
   expect((await suggest(page, group.id, 'Allowed again')).status).toBe('open');
   await page.context().close();
 });
+
+/** When only one document changes, only that one is asked for again. */
+test('an outdated Terms acceptance asks again only for the Terms', async ({ browser }) => {
+  const page = await sessionFor(browser, freshUser('TermsOnly'));
+  const userId = (await api<{ user: { id: string } }>(page, 'GET', '/me')).body.user.id;
+  const database = new DatabaseSync(databasePath);
+  database.prepare("UPDATE consents SET version = '2000-01-01' WHERE user_id = ? AND document = 'terms'").run(userId);
+  database.close();
+
+  expect((await api<{ user: { pendingConsents: string[] } }>(page, 'GET', '/me')).body.user.pendingConsents).toEqual(['terms']);
+  await page.goto('/study-groups/my');
+  const banner = page.locator('form[aria-labelledby="consent-title"]');
+  await expect(banner.getByRole('heading', { name: 'We updated our Terms of Use' })).toBeVisible();
+  await expect(banner.getByRole('checkbox')).toHaveCount(1);
+  await banner.getByRole('checkbox', { name: /Terms of Use/ }).check();
+  await banner.getByRole('button', { name: 'Accept and continue' }).click();
+  await expect(banner).toBeHidden();
+  expect((await api<{ user: { needsConsent: boolean } }>(page, 'GET', '/me')).body.user.needsConsent).toBe(false);
+  await page.context().close();
+});

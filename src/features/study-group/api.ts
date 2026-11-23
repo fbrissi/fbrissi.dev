@@ -2,6 +2,7 @@ import {
   STUDY_GROUP_API_PREFIX,
   type AcceptPoliciesInput,
   type AdminGroupListResponse,
+  type AdminUserListResponse,
   type CastVoteInput,
   type CreateGroupInput,
   type CreateGroupResponse,
@@ -9,6 +10,8 @@ import {
   type CreateRoundInput,
   type CurrentRoundResponse,
   type DeleteGroupInput,
+  type EmailPreferencesInput,
+  type EmailPreferencesResponse,
   type ErrorResponse,
   type GroupListResponse,
   type GroupPreviewResponse,
@@ -18,7 +21,6 @@ import {
   type JoinGroupInput,
   type JoinRequestsResponse,
   type JoinResponse,
-  type ListDeletedMaterialsResponse,
   type ListMaterialsResponse,
   type MaterialResponse,
   type MeResponse,
@@ -94,6 +96,20 @@ export function createStudyGroupApi(baseUrl: string = defaultStudyGroupApiUrl) {
     return payload as T;
   }
 
+  /** Raw image upload (the icon): the file is the body, with its own content type. */
+  async function upload<T>(path: string, file: Blob): Promise<T> {
+    const response = await fetch(`${root}${path}`, {
+      method: 'PUT',
+      cache: 'no-store',
+      credentials: 'same-origin',
+      headers: { Accept: 'application/json', 'Content-Type': file.type },
+      body: file
+    });
+    const payload = (await response.json().catch(() => null)) as T | ErrorResponse | null;
+    if (!response.ok) throw new StudyGroupApiError(response.status, (payload as ErrorResponse | null)?.error ?? `Request failed with status ${response.status}`);
+    return payload as T;
+  }
+
   const group = (id: string) => `/groups/${encodeURIComponent(id)}`;
 
   return {
@@ -103,6 +119,9 @@ export function createStudyGroupApi(baseUrl: string = defaultStudyGroupApiUrl) {
     acceptPolicies: (input: AcceptPoliciesInput) => request<MeResponse>('/me/consents', 'POST', input),
     myGroups: () => request<MyGroupsResponse>('/me/groups'),
     exportUrl: () => `${root}/me/export`,
+    getEmailPreferences: () => request<EmailPreferencesResponse>('/me/notifications'),
+    updateEmailPreferences: (input: EmailPreferencesInput) => request<EmailPreferencesResponse>('/me/notifications', 'PUT', input),
+    unsubscribe: (token: string) => request<EmailPreferencesResponse>(`/unsubscribe${query({ t: token })}`, 'POST'),
     logout: () => request<void>('/auth/logout', 'POST'),
     getSignup: () => request<PendingSignupResponse>('/auth/signup'),
     completeSignup: (input: SignupInput) => request<{ returnTo: string }>('/auth/signup', 'POST', input),
@@ -123,6 +142,8 @@ export function createStudyGroupApi(baseUrl: string = defaultStudyGroupApiUrl) {
     listRequests: (id: string) => request<JoinRequestsResponse>(`${group(id)}/requests`),
     approveRequest: (id: string, requestId: number) => request<void>(`${group(id)}/requests/${requestId}/approve`, 'POST'),
     rejectRequest: (id: string, requestId: number) => request<void>(`${group(id)}/requests/${requestId}/reject`, 'POST'),
+    uploadIcon: (id: string, file: Blob) => upload<{ iconUrl: string }>(`${group(id)}/icon`, file),
+    deleteIcon: (id: string, reason?: string) => request<void>(`${group(id)}/icon`, 'DELETE', reason ? { reason } : {}),
     deleteRequestMessage: (id: string, requestId: number, reason: string) => request<void>(`${group(id)}/requests/${requestId}/message`, 'DELETE', { reason }),
 
     listMaterials: (id: string) => request<ListMaterialsResponse>(`${group(id)}/materials?status=all`),
@@ -130,8 +151,6 @@ export function createStudyGroupApi(baseUrl: string = defaultStudyGroupApiUrl) {
     updateMaterial: (id: string, materialId: number, input: UpdateMaterialInput) => request<MaterialResponse>(`${group(id)}/materials/${materialId}`, 'PATCH', input),
     approveMaterial: (id: string, materialId: number) => request<MaterialResponse>(`${group(id)}/materials/${materialId}/approve`, 'POST'),
     deleteMaterial: (id: string, materialId: number, reason?: string) => request<void>(`${group(id)}/materials/${materialId}`, 'DELETE', reason ? { reason } : {}),
-    listDeletedMaterials: (id: string) => request<ListDeletedMaterialsResponse>(`${group(id)}/materials/deleted`),
-    restoreMaterial: (id: string, materialId: number) => request<MaterialResponse>(`${group(id)}/materials/${materialId}/restore`, 'POST'),
     getCurrentRound: (id: string) => request<CurrentRoundResponse>(`${group(id)}/rounds/current`),
     createRound: (id: string, input: CreateRoundInput) => request<RoundResponse>(`${group(id)}/rounds`, 'POST', input),
     castVote: (id: string, roundId: number, input: CastVoteInput) => request<RoundResponse>(`${group(id)}/rounds/${roundId}/votes`, 'POST', input),
@@ -139,7 +158,11 @@ export function createStudyGroupApi(baseUrl: string = defaultStudyGroupApiUrl) {
     cancelRound: (id: string, roundId: number) => request<RoundResponse>(`${group(id)}/rounds/${roundId}/cancel`, 'POST'),
 
     adminGroups: (cursor?: string | null) => request<AdminGroupListResponse>(`/admin/groups${query({ cursor })}`),
-    moderationLog: (cursor?: string | null) => request<ModerationLogResponse>(`/admin/moderation-log${query({ cursor })}`)
+    moderationLog: (cursor?: string | null) => request<ModerationLogResponse>(`/admin/moderation-log${query({ cursor })}`),
+    adminUsers: (search: string, cursor?: string | null) => request<AdminUserListResponse>(`/admin/users${query({ q: search, cursor })}`),
+    banUser: (userId: string, reason: string) => request<void>(`/admin/users/${encodeURIComponent(userId)}/ban`, 'POST', { reason }),
+    renewBan: (userId: string, reason: string) => request<void>(`/admin/users/${encodeURIComponent(userId)}/ban/renew`, 'POST', { reason }),
+    unbanUser: (userId: string, reason: string) => request<void>(`/admin/users/${encodeURIComponent(userId)}/ban`, 'DELETE', { reason })
   };
 }
 

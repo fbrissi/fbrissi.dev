@@ -9,11 +9,20 @@ import { breadcrumbList, pageUrl, personId, personNode, websiteId } from '@/lib/
 import { programPaths } from '@/lib/study-groups';
 
 const sectionTitleClass = 'mb-6 text-2xl font-normal tracking-tight sm:text-3xl';
+const policyLinkClass = 'text-accent hover:text-accent-hover';
 
-/** Public, indexed program page (D1): why practice in groups, how it works, starting a group, the listed groups and a FAQ. */
+/**
+ * Public, indexed program page (D1): why practice in groups, how it works, starting a group, the listed groups and a
+ * FAQ. The Portuguese page (`/pt-br/grupos-de-estudo-de-ingles`) is an entry door for Portuguese searches: only its
+ * title, meta description and one notice are in Portuguese; the content is the English page, on purpose, because
+ * the practice starts with reading.
+ */
 export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; apiUrl?: string }) {
   const allMessages = getMessages(locale);
-  const messages = allMessages.studyGroups;
+  const messages = getMessages('en').studyGroups;
+  const entryNote = locale === 'pt-BR' ? allMessages.studyGroups.appLanguageNote : null;
+  // The Terms, the Privacy Policy and the contact page are bilingual (LGPD): each landing links to its own language.
+  const policyLanguage = locale === 'pt-BR' ? 'pt-BR' : undefined;
   const url = pageUrl(locale, programPaths.landing);
   // WebPage and BreadcrumbList only: the group list is client-rendered and the program is not a course or an event.
   const { '@context': context, ...breadcrumb } = breadcrumbList(locale, [{ name: allMessages.nav.englishGroups, path: programPaths.landing }]);
@@ -24,11 +33,12 @@ export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; api
         '@type': 'WebPage',
         '@id': `${url}#webpage`,
         url,
-        name: messages.title,
-        description: messages.seoDescription,
-        inLanguage: locale,
+        name: allMessages.studyGroups.seoTitle,
+        description: allMessages.studyGroups.seoDescription,
+        // The content is in English on both pages; only the Portuguese page's title, description and notice aren't.
+        inLanguage: 'en',
         isPartOf: { '@id': websiteId },
-        about: { '@type': 'Thing', name: locale === 'pt-BR' ? 'Prática de inglês para desenvolvedores de software' : 'English language practice for software developers' },
+        about: { '@type': 'Thing', name: 'English language practice for software developers' },
         author: personNode(locale),
         publisher: { '@id': personId },
         breadcrumb: { '@id': `${url}#breadcrumb` }
@@ -40,17 +50,17 @@ export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; api
   return (
     <SiteShell locale={locale} activePage="studyGroups" pathname={programPaths.landing}>
       <StructuredData data={structuredData} />
+      <div lang="en">
       <SessionProvider apiUrl={apiUrl}>
         <section className="mb-16 flex flex-col gap-6">
-          <h1 className="text-3xl font-normal tracking-tight sm:text-5xl">{messages.title}</h1>
-          <p className="max-w-3xl text-lg leading-relaxed text-text-secondary">{messages.intro}</p>
-          {messages.appLanguageNote ? (
-            <aside role="note" className="max-w-3xl rounded-xl border border-accent/60 bg-bg-soft p-5 leading-relaxed">
-              <p className="text-text">{messages.appLanguageNote}</p>
-              <p lang="en" className="mt-2 font-medium text-accent">From here on, it&apos;s all in English.</p>
+          {entryNote ? (
+            <aside role="note" lang="pt-BR" className="max-w-3xl rounded-xl border-2 border-accent bg-bg-soft p-5 leading-relaxed">
+              <p className="text-lg text-text">{entryNote}</p>
             </aside>
           ) : null}
-          <ProgramActions locale={locale} />
+          <h1 className="text-3xl font-normal tracking-tight sm:text-5xl">{messages.title}</h1>
+          <p className="max-w-3xl text-lg leading-relaxed text-text-secondary">{messages.intro}</p>
+          <ProgramActions locale="en" />
         </section>
         <section className="mb-16" aria-labelledby="why-title">
           <h2 id="why-title" className={sectionTitleClass}>{messages.whyTitle}</h2>
@@ -72,7 +82,7 @@ export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; api
         <section className="mb-16" aria-labelledby="groups-title">
           <h2 id="groups-title" className={sectionTitleClass}>{messages.groupsTitle}</h2>
           <p className="mb-6 max-w-3xl text-text-secondary">{messages.groupsIntro}</p>
-          <GroupDirectory locale={locale} />
+          <GroupDirectory locale="en" />
           <noscript><p className="text-text-secondary">{messages.groupsNoScript}</p></noscript>
         </section>
       </SessionProvider>
@@ -91,13 +101,14 @@ export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; api
         <h2 id="policies-title" className={sectionTitleClass}>{messages.policiesTitle}</h2>
         <p className="mb-4 max-w-3xl text-text-secondary">{messages.policiesText}</p>
         <ul className="flex flex-wrap gap-x-6 gap-y-2">
-          <li><a className="text-accent hover:text-accent-hover" href={localizedPath(locale, programPaths.terms)}>{messages.terms}</a></li>
-          <li><a className="text-accent hover:text-accent-hover" href={`${localizedPath(locale, programPaths.terms)}#content-policy`}>{messages.contentPolicy}</a></li>
-          <li><a className="text-accent hover:text-accent-hover" href={localizedPath(locale, programPaths.privacy)}>{messages.privacy}</a></li>
-          <li><a className="text-accent hover:text-accent-hover" href={localizedPath(locale, '/contact')}>{messages.contact}</a></li>
+          <li><a className={policyLinkClass} hrefLang={policyLanguage} href={localizedPath(locale, programPaths.terms)}>{messages.terms}</a></li>
+          <li><a className={policyLinkClass} hrefLang={policyLanguage} href={`${localizedPath(locale, programPaths.terms)}#content-policy`}>{messages.contentPolicy}</a></li>
+          <li><a className={policyLinkClass} hrefLang={policyLanguage} href={localizedPath(locale, programPaths.privacy)}>{messages.privacy}</a></li>
+          <li><a className={policyLinkClass} hrefLang={policyLanguage} href={localizedPath(locale, '/contact')}>{messages.contact}</a></li>
         </ul>
       </section>
-      <CookieNotice locale={locale} />
+      </div>
+      <CookieNotice locale="en" policyLocale={locale} />
     </SiteShell>
   );
 }

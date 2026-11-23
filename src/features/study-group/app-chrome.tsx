@@ -2,7 +2,7 @@
 
 import { useState, type FormEvent } from 'react';
 
-import { POLICY_VERSIONS } from '@/workers/study-group/contract';
+import { POLICY_VERSIONS, type PolicyDocument } from '@/workers/study-group/contract';
 
 import { errorMessage, signInHref } from './api';
 import { currentPath, navigate } from './navigation';
@@ -42,44 +42,54 @@ export function AccountNav() {
   );
 }
 
-/** Asks for the current policy versions again; writes stay blocked until the user accepts, reading does not (Q18). */
+const consentDocuments = {
+  terms: { label: 'Terms of Use', href: '/study-groups/terms' },
+  privacy: { label: 'Privacy Policy', href: '/privacy' }
+} as const;
+
+/**
+ * Asks again only for the documents whose version changed; writes stay blocked until the user accepts, reading does
+ * not (Q18).
+ */
 export function ConsentBanner() {
   const { api, user, setUser } = useSession();
-  const [terms, setTerms] = useState(false);
-  const [privacy, setPrivacy] = useState(false);
+  const [checked, setChecked] = useState<Partial<Record<PolicyDocument, boolean>>>({});
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
 
   if (!user?.needsConsent) return null;
+  const pending = user.pendingConsents;
 
   const accept = async (event: FormEvent) => {
     event.preventDefault();
-    if (!terms || !privacy) {
-      setError('Check both boxes to continue.');
+    if (pending.some((document) => !checked[document])) {
+      setError(pending.length > 1 ? 'Check both boxes to continue.' : 'Check the box to continue.');
       return;
     }
     setBusy(true);
     setError('');
     try {
-      setUser((await api.acceptPolicies({ acceptTerms: true, acceptPrivacy: true })).user);
+      setUser((await api.acceptPolicies({
+        ...(pending.includes('terms') ? { acceptTerms: true } : {}),
+        ...(pending.includes('privacy') ? { acceptPrivacy: true } : {})
+      })).user);
     } catch (acceptError) {
       setError(errorMessage(acceptError));
       setBusy(false);
     }
   };
 
+  const title = pending.length > 1 ? 'Terms and Privacy Policy' : consentDocuments[pending[0]].label;
   return (
     <form onSubmit={accept} noValidate className={`${cardClass} mb-8 flex flex-col gap-3 border-accent p-5`} aria-labelledby="consent-title">
-      <h2 id="consent-title" className="text-lg font-normal">We updated our Terms and Privacy Policy</h2>
-      <p className="text-sm text-text-secondary">You can keep reading, but you need to accept the new versions before you make changes.</p>
-      <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} />
-        <span>I accept the <a className="text-accent" href="/study-groups/terms" target="_blank" rel="noopener">Terms of Use</a> (version {POLICY_VERSIONS.terms}).</span>
-      </label>
-      <label className="flex items-start gap-2 text-sm">
-        <input type="checkbox" checked={privacy} onChange={(event) => setPrivacy(event.target.checked)} />
-        <span>I accept the <a className="text-accent" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> (version {POLICY_VERSIONS.privacy}).</span>
-      </label>
+      <h2 id="consent-title" className="text-lg font-normal">We updated our {title}</h2>
+      <p className="text-sm text-text-secondary">You can keep reading, but you need to accept the new {pending.length > 1 ? 'versions' : 'version'} before you make changes.</p>
+      {pending.map((document) => (
+        <label key={document} className="flex items-start gap-2 text-sm">
+          <input type="checkbox" checked={checked[document] ?? false} onChange={(event) => setChecked((current) => ({ ...current, [document]: event.target.checked }))} />
+          <span>I accept the <a className="text-accent" href={consentDocuments[document].href} target="_blank" rel="noopener">{consentDocuments[document].label}</a> (version {POLICY_VERSIONS[document]}).</span>
+        </label>
+      ))}
       {error ? <Banner tone="error" title={error} /> : null}
       <button type="submit" className={`${buttonClass.primarySmall} self-start`} disabled={busy}>Accept and continue</button>
     </form>

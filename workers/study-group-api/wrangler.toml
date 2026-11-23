@@ -20,12 +20,23 @@ STUDY_GROUP_ENVIRONMENT = "production"
 # The database IDs are created by Terraform (terraform/d1.tf) and injected by the deploy
 # workflows, which resolve them by name and replace the placeholders before deploying.
 # Secrets pushed by the deploy workflows: GOOGLE_OAUTH_CLIENT_ID, GOOGLE_OAUTH_CLIENT_SECRET,
-# STUDY_GROUP_PLATFORM_ADMIN_EMAILS, STUDY_GROUP_SESSION_SECRET.
+# STUDY_GROUP_PLATFORM_ADMIN_EMAILS, STUDY_GROUP_SESSION_SECRET, STUDY_GROUP_UNSUBSCRIBE_SECRET.
 [[d1_databases]]
 binding = "STUDY_GROUP_DB"
 database_name = "fbrissi-dev-study-group"
 database_id = "STUDY_GROUP_DB_ID"
 migrations_dir = "../study-group/migrations"
+
+# Email notifications: the outbox row ID goes to this queue, which only the production mailer Worker consumes
+# (workers/study-group-mailer/). This Worker never holds the SES credentials.
+[[queues.producers]]
+binding = "STUDY_GROUP_NOTIFY_QUEUE"
+queue = "fbrissi-dev-study-group-notify"
+
+# Group icons: a private R2 bucket (terraform/r2.tf), read only through this Worker's signed URLs.
+[[r2_buckets]]
+binding = "STUDY_GROUP_ICONS"
+bucket_name = "fbrissi-dev-study-group-icons"
 
 [[ratelimits]]
 name = "STUDY_GROUP_WRITE_RATE_LIMITER"
@@ -60,6 +71,15 @@ namespace_id = "1006"
   limit = 5
   period = 60
 
+# Icon uploads, keyed by user, on top of the daily caps.
+[[ratelimits]]
+name = "STUDY_GROUP_ICON_RATE_LIMITER"
+namespace_id = "1007"
+
+  [ratelimits.simple]
+  limit = 3
+  period = 60
+
 # Sandbox Worker (fbrissi-dev-study-group-api-sandbox), deployed only by .github/workflows/sandbox.yml with
 # `--env sandbox`. Bindings, routes and vars aren't inherited, so each one is repeated here.
 [env.sandbox]
@@ -79,6 +99,14 @@ binding = "STUDY_GROUP_DB"
 database_name = "fbrissi-dev-sandbox-study-group"
 database_id = "STUDY_GROUP_SANDBOX_DB_ID"
 migrations_dir = "../study-group/migrations"
+
+[[env.sandbox.queues.producers]]
+binding = "STUDY_GROUP_NOTIFY_QUEUE"
+queue = "fbrissi-dev-sandbox-study-group-notify"
+
+[[env.sandbox.r2_buckets]]
+binding = "STUDY_GROUP_ICONS"
+bucket_name = "fbrissi-dev-sandbox-study-group-icons"
 
 [[env.sandbox.ratelimits]]
 name = "STUDY_GROUP_WRITE_RATE_LIMITER"
@@ -110,4 +138,12 @@ namespace_id = "1016"
 
   [env.sandbox.ratelimits.simple]
   limit = 5
+  period = 60
+
+[[env.sandbox.ratelimits]]
+name = "STUDY_GROUP_ICON_RATE_LIMITER"
+namespace_id = "1017"
+
+  [env.sandbox.ratelimits.simple]
+  limit = 3
   period = 60

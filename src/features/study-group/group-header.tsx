@@ -1,6 +1,7 @@
 import type { GroupInfo, GroupRole } from '@/workers/study-group/contract';
 
 import { groupPath } from './api';
+import { GroupIcon } from './group-icon';
 import { formatMeeting } from './helpers';
 import { buttonClass, eyebrowClass } from './ui';
 
@@ -11,7 +12,10 @@ export function GroupHeader({ group, role }: { group: GroupInfo; role: GroupRole
   return (
     <section className="mb-10">
       <p className={eyebrowClass}>Weekly English study group</p>
-      <h1 className="mb-4 mt-2 text-3xl font-normal leading-tight tracking-tight wrap-anywhere sm:text-5xl">{group.name}</h1>
+      <div className="mb-4 mt-2 flex items-center gap-4">
+        <GroupIcon url={group.iconUrl} size={64} />
+        <h1 className="text-3xl font-normal leading-tight tracking-tight wrap-anywhere sm:text-5xl">{group.name}</h1>
+      </div>
       <p className="max-w-3xl text-lg leading-relaxed text-text-secondary wrap-anywhere">{group.summary}</p>
       {group.rules.length ? (
         <div className="mt-6">

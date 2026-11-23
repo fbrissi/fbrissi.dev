@@ -5,9 +5,17 @@ z.config({ jitless: true });
 
 export const STUDY_GROUP_API_PREFIX = '/api/study-group';
 
-/** Current versions of the program documents; bumping one asks every user to accept it again (Q18). */
-export const POLICY_VERSIONS = { terms: '2026-11-16', privacy: '2026-11-21' } as const;
+/** Current versions (dates) of the program documents, shown on the pages and recorded when a user accepts them. */
+export const POLICY_VERSIONS = { terms: '2026-11-22', privacy: '2026-11-22' } as const;
 export type PolicyDocument = keyof typeof POLICY_VERSIONS;
+
+/**
+ * The latest version of each document with a material change (new processors, purposes, legal bases, transfers or
+ * user obligations). Users must have accepted this version or a later one; a minor edit only moves POLICY_VERSIONS and
+ * takes effect on publication without asking anyone again (Q18). The 2026-11-22 versions are material: they add
+ * Amazon SES and Cloudflare R2, service emails, icons, bans and the transfer grounds.
+ */
+export const MATERIAL_POLICY_VERSIONS: Record<PolicyDocument, string> = { terms: '2026-11-22', privacy: '2026-11-22' };
 
 export const materialTypes = ['video', 'article', 'book', 'podcast', 'other'] as const;
 export const materialStatuses = ['pending', 'open', 'discussed'] as const;
@@ -35,6 +43,35 @@ export const LIMITS = {
   suggestionsPerUserPerGroupPerDay: 20,
 } as const;
 
+/** Service emails (E1–E4). The owner digest is coalesced per group, and a rejected user waits before asking again. */
+export const NOTIFICATION_LIMITS = {
+  joinDigestWindowHours: 6,
+  rejoinCooldownDays: 7,
+  emailsPerRecipientPerDay: 20,
+  defaultEmailsPerDay: 500,
+  /** Queue deliveries per email: the first plus the mailer's `max_retries` (5); then the row is marked failed. */
+  maxDeliveryAttempts: 6,
+  /** A 'sending' claim older than this belongs to a mailer that stopped; another delivery may take it over. */
+  claimTimeoutMinutes: 10,
+} as const;
+
+/** Group icons (app pages only): stored privately in R2 and served through short-lived signed URLs. */
+export const ICON_LIMITS = {
+  maxBytes: 256 * 1024,
+  maxPixels: 512,
+  uploadsPerUserPerDay: 10,
+  uploadsPerGroupPerDay: 5,
+  contentTypes: ['image/png', 'image/jpeg', 'image/webp'],
+} as const;
+export type IconContentType = (typeof ICON_LIMITS.contentTypes)[number];
+
+export const notificationKinds = ['join_request', 'join_approved', 'join_rejected', 'group_deleted', 'icon_removed', 'account_banned', 'account_restored'] as const;
+export type NotificationKind = (typeof notificationKinds)[number];
+/** Notices about the account itself (ban and restore): sent even to users who turned service emails off. */
+export const accountNoticeKinds: readonly NotificationKind[] = ['account_banned', 'account_restored'];
+/** A ban record is deleted this many years after the ban or its last renewal, which lifts the ban. */
+export const BAN_RETENTION_YEARS = 2;
+
 const trimmed = (min: number, max: number) => z.string().trim().min(min).max(max);
 const httpUrl = z
   .string()
@@ -45,6 +82,8 @@ const httpUrl = z
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/);
 
 export const reasonSchema = trimmed(LIMITS.reason.min, LIMITS.reason.max);
+/** The one error for a missing, short or long moderation reason, from the API and the admin dialogs alike. */
+export const REASON_REQUIRED_MESSAGE = `A reason of ${LIMITS.reason.min} to ${LIMITS.reason.max} characters is required.`;
 
 export const createMaterialSchema = z.object({
   type: z.enum(materialTypes),
@@ -69,8 +108,15 @@ export const castVoteSchema = z.object({
   materialId: z.number().int().positive(),
 });
 
+/**
+ * Links or web addresses in a group name: a scheme, `www.`, or a host with a common top-level domain, in any case
+ * (`Node.js` stays allowed; `ASP.NET` is blocked). Group names go into emails, so they must not carry links.
+ */
+const urlLikeName = /[a-z0-9-]\.(com|net|org|io|dev|app|br|co|me|info|xyz|ly|gg|link|site|online|shop|top|ru|cn)\b/i;
+export const groupNameUrlMessage = "Group names can't contain links or web addresses.";
+
 export const groupProfileSchema = z.object({
-  name: trimmed(LIMITS.groupName.min, LIMITS.groupName.max),
+  name: trimmed(LIMITS.groupName.min, LIMITS.groupName.max).refine((value) => !/https?:\/\/|www\./i.test(value) && !urlLikeName.test(value), groupNameUrlMessage),
   summary: trimmed(LIMITS.groupSummary.min, LIMITS.groupSummary.max),
   rules: z.array(trimmed(1, 300)).max(30),
   meetingDay: trimmed(1, 20),
@@ -91,12 +137,15 @@ export const joinGroupSchema = z.object({
   message: z.string().trim().max(LIMITS.joinMessage).optional(),
 });
 
+/** Re-acceptance covers only the documents whose version changed; the route checks that each of them is accepted. */
 export const acceptPoliciesSchema = z.object({
-  acceptTerms: z.literal(true),
-  acceptPrivacy: z.literal(true),
+  acceptTerms: z.literal(true).optional(),
+  acceptPrivacy: z.literal(true).optional(),
 });
 
-export const signupSchema = acceptPoliciesSchema.extend({
+export const signupSchema = z.object({
+  acceptTerms: z.literal(true),
+  acceptPrivacy: z.literal(true),
   confirmAge: z.literal(true),
 });
 
@@ -104,8 +153,16 @@ export const updateProfileSchema = z.object({
   displayName: trimmed(LIMITS.displayName.min, LIMITS.displayName.max),
 });
 
+export const emailPreferencesSchema = z.object({
+  emailEnabled: z.boolean(),
+});
+
 export const deleteAccountSchema = z.object({
   confirm: z.literal(true),
+});
+
+export const banSchema = z.object({
+  reason: reasonSchema,
 });
 
 export const deleteGroupSchema = z.object({
@@ -124,12 +181,19 @@ export type SignupInput = z.infer<typeof signupSchema>;
 export type AcceptPoliciesInput = z.infer<typeof acceptPoliciesSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type DeleteGroupInput = z.infer<typeof deleteGroupSchema>;
+export type EmailPreferencesInput = z.infer<typeof emailPreferencesSchema>;
+
+export interface EmailPreferencesResponse {
+  emailEnabled: boolean;
+}
 
 export interface CurrentUser {
   id: string;
   displayName: string;
   isPlatformAdmin: boolean;
   needsConsent: boolean;
+  /** The documents whose current version the user hasn't accepted yet. */
+  pendingConsents: PolicyDocument[];
 }
 
 export interface MeResponse {
@@ -151,11 +215,6 @@ export interface Material {
   status: MaterialStatus;
   createdAt: string;
   discussedAt: string | null;
-}
-
-export interface DeletedMaterial extends Material {
-  deletedAt: string;
-  deletedByAdmin: boolean;
 }
 
 export interface Round {
@@ -180,6 +239,8 @@ export interface GroupCard {
 }
 
 export interface GroupInfo extends GroupCard {
+  /** Short-lived signed URL of the group icon, or null. */
+  iconUrl: string | null;
   rules: string[];
   meetingDay: string;
   meetingStart: string;
@@ -227,6 +288,7 @@ export type Membership = 'none' | 'pending' | 'member' | 'owner';
 
 export interface MyGroup extends GroupCard {
   role: 'owner' | 'member';
+  iconUrl: string | null;
 }
 
 export interface PendingGroupRequest extends GroupCard {
@@ -256,13 +318,27 @@ export interface AdminGroupListResponse {
   nextCursor: string | null;
 }
 
+export interface AdminUser {
+  id: string;
+  displayName: string;
+  createdAt: string;
+  ownedGroups: number;
+  isPlatformAdmin: boolean;
+  ban: { reason: string; createdAt: string; expiresAt: string } | null;
+}
+
+export interface AdminUserListResponse {
+  users: AdminUser[];
+  nextCursor: string | null;
+}
+
 export interface ModerationLogResponse {
   actions: ModerationAction[];
   nextCursor: string | null;
 }
 
 export interface GroupPreviewResponse {
-  group: GroupCard;
+  group: GroupCard & { iconUrl: string | null };
   membership: Membership;
 }
 
@@ -299,10 +375,6 @@ export interface ListMaterialsResponse {
   materials: Material[];
 }
 
-export interface ListDeletedMaterialsResponse {
-  materials: DeletedMaterial[];
-}
-
 export interface MaterialResponse {
   material: Material;
 }
@@ -328,9 +400,11 @@ export interface AccountExport {
   exportedAt: string;
   profile: { id: string; email: string; displayName: string; createdAt: string };
   consents: { document: string; version: string; acceptedAt: string }[];
-  ownedGroups: GroupCard[];
+  ownedGroups: (GroupCard & { icon: { contentType: string; updatedAt: string; base64: string } | null })[];
   memberships: { groupId: string; groupName: string; joinedAt: string }[];
   joinRequests: { groupId: string; groupName: string; status: string; message: string | null; createdAt: string; decidedAt: string | null }[];
   suggestions: { groupId: string; title: string; type: string; url: string | null; notes: string | null; status: string; createdAt: string }[];
   votes: { groupId: string; roundId: number; materialId: number; createdAt: string }[];
+  emailPreferences: { emailEnabled: boolean };
+  emails: { kind: string; groupId: string | null; groupName: string | null; reason: string | null; status: string; createdAt: string; sentAt: string | null }[];
 }

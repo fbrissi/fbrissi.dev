@@ -49,12 +49,46 @@ function ProfileSection({ user }: { user: CurrentUser }) {
   );
 }
 
+function EmailSection() {
+  const { api } = useSession();
+  const [enabled, setEnabled] = useState<boolean | null>(null);
+  const [notice, setNotice] = useState<Notice>(null);
+
+  useEffect(() => {
+    api.getEmailPreferences().then(({ emailEnabled }) => setEnabled(emailEnabled), (error) => setNotice({ tone: 'error', text: errorMessage(error) }));
+  }, [api]);
+
+  const change = async (emailEnabled: boolean) => {
+    setNotice(null);
+    setEnabled(emailEnabled);
+    try {
+      setEnabled((await api.updateEmailPreferences({ emailEnabled })).emailEnabled);
+      setNotice({ tone: 'success', text: emailEnabled ? 'Emails turned on.' : 'Emails turned off.' });
+    } catch (error) {
+      setEnabled(!emailEnabled);
+      setNotice({ tone: 'error', text: errorMessage(error) });
+    }
+  };
+
+  return (
+    <section aria-labelledby="email-title" className={sectionClass}>
+      <h2 id="email-title" className={sectionTitleClass}>Emails</h2>
+      <p className="mb-5 text-sm text-text-secondary">We email you about join requests to your groups, decisions on your requests, and groups of yours that the platform admin deletes. No marketing, ever. You&apos;ll still see everything in the app if you turn them off.</p>
+      <label className="mb-4 flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+        <input type="checkbox" className="h-5 w-5 shrink-0 accent-accent" checked={enabled ?? false} disabled={enabled === null} onChange={(event) => void change(event.target.checked)} />
+        <span>Email me about my groups and requests</span>
+      </label>
+      {notice ? <Banner tone={notice.tone} title={notice.text} /> : null}
+    </section>
+  );
+}
+
 function DataSection() {
   const { api } = useSession();
   return (
     <section aria-labelledby="data-title" className={sectionClass}>
       <h2 id="data-title" className={sectionTitleClass}>Your data</h2>
-      <p className="mb-5 text-sm text-text-secondary">Download a JSON file with your profile, consent records, memberships, join requests, suggestions and votes.</p>
+      <p className="mb-5 text-sm text-text-secondary">Download a JSON file with your profile, consent records, memberships, join requests, suggestions, votes, email setting and the emails we sent you.</p>
       <a className={buttonClass.secondarySmall} href={api.exportUrl()} download="study-groups-data.json">Download my data</a>
     </section>
   );
@@ -86,10 +120,10 @@ function DeleteSection() {
   return (
     <section aria-labelledby="delete-account-title" className={`${sectionClass} border-red-500/40`}>
       <h2 id="delete-account-title" className={sectionTitleClass}>Delete my account</h2>
-      <p className="mb-3 text-sm text-text-secondary">Your sessions, memberships and join requests are deleted. Suggestions and votes you left in other groups stay, shown as “Former member”.</p>
+      <p className="mb-3 text-sm text-text-secondary">Your account is deleted permanently, with your sessions, memberships, join requests and email records. Suggestions and votes you left in other groups stay, shown as “Former member”. This can’t be undone.</p>
       {owned?.length ? (
         <div className="mb-4">
-          <Banner tone="error" title="These groups you own will be deleted too:">
+          <Banner tone="error" title="These groups you own will be deleted permanently too, with their members’ access, suggestions, votes, rounds and icons:">
             <ul className="m-0 list-disc pl-5">{owned.map((group) => <li key={group.id} className="wrap-anywhere">{group.name}</li>)}</ul>
           </Banner>
         </div>
@@ -100,7 +134,7 @@ function DeleteSection() {
           <span>I understand that this can&apos;t be undone.</span>
         </label>
         {error ? <Banner tone="error" title={error} /> : null}
-        <button type="submit" className={`${buttonClass.primary} self-start bg-red-600 hover:bg-red-500`} disabled={!confirmed || busy}>Delete my account</button>
+        <button type="submit" className={`${buttonClass.primary} self-start bg-red-600 hover:bg-red-500`} disabled={!confirmed || busy}>Delete my account permanently</button>
       </form>
     </section>
   );
@@ -117,6 +151,7 @@ export function AccountView() {
             <p className={`${hintClass} mt-2`}>Questions about your data? Use the <a className="text-accent" href="/contact">contact page</a>.</p>
           </div>
           <ProfileSection user={user} />
+          <EmailSection />
           <DataSection />
           <DeleteSection />
         </div>

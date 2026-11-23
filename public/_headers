@@ -62,3 +62,7 @@
 /study-groups/admin
   X-Robots-Tag: noindex, nofollow
   Referrer-Policy: no-referrer
+
+/study-groups/unsubscribe
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer

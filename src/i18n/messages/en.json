@@ -60,7 +60,7 @@
     "description": "Backend and cloud engineer since 2009: Java, Kotlin, Go, AWS and Kubernetes. Built Open Finance auth at PagBank; Keycloak contributor.",
     "subhead": "Filipe Bojikian Rissi. Java, Kotlin, Go and PHP since 2009, from ERP and NF-e integrations to Open Finance authentication at PagBank. Based in Bauru, Brazil (UTC-3).",
     "ctaPrimary": "See my experience",
-    "ctaSecondary": "Email me",
+    "ctaSecondary": "Contact me",
     "ctaResume": "Download resume (PDF)",
     "aboutLink": "Read more about me",
     "proofTitle": "Selected work",
@@ -72,6 +72,10 @@
       {
         "text": "Keycloak contributor: imported RSA encryption keys for RSA1_5, RSA-OAEP and RSA-OAEP-256 (PR #8553).",
         "path": "/open-source/keycloak"
+      },
+      {
+        "text": "Kool Dev contributor: added Java and Spring Boot presets with API-driven automation actions to the Kool CLI (PR #542).",
+        "path": "/open-source/kool-dev"
       },
       {
         "text": "Tech lead of Java microservices that processed millions of legal-automation messages at Finch.",
@@ -127,8 +131,10 @@
       "description": "Write to me about a role, a project or a talk. The form, email and WhatsApp all reach me directly.",
       "formTitle": "Send me a message",
       "alternativeTitle": "Other ways to reach me",
-      "privacyNotice": "I use your name and email only to reply to this message. See the",
-      "privacyLink": "Privacy Policy"
+      "privacyNotice": "I use your name and email only to reply to this message. They are processed by the providers listed in the",
+      "privacyLink": "Privacy Policy",
+      "emailTransferNotice": "Emails to this address are processed by the providers listed in the",
+      "transferNoticeEnd": ", some of them outside Brazil."
     }
   },
   "articles": {
@@ -174,6 +180,7 @@
     "openGroup": "Open group",
     "signInToJoin": "Sign in to join",
     "signInFailed": "Sign-in didn't work. Please try again.",
+    "signInBanned": "This Google account is banned from the study groups for breaking the content policy. If you think this is a mistake, use the contact page.",
     "faqTitle": "Frequently asked questions",
     "faq": [
       {
@@ -202,7 +209,7 @@
       },
       {
         "q": "What data do you keep?",
-        "a": "From Google, your account identifier, your email address, whether it is verified and your name; never your profile picture. Then what you add: your display name, the groups you create, your join requests, memberships, suggestions and votes, and your acceptance of the Terms and the Privacy Policy. To keep you signed in we store only a hash of your session token, and when the platform admin deletes something, a moderation log keeps a short label, the reason and the date, never the full content. Your email is never shown to other members or group owners. The Privacy Policy explains how long each item is kept and how to download your data or delete your account."
+        "a": "From Google, your account identifier, your email address, whether it is verified and your name; never your profile picture. Then what you add: your display name, the groups you create and their icons (stored privately, without photo metadata, and shown only to members), your join requests, memberships, suggestions and votes, and your acceptance of the Terms and the Privacy Policy. Deleting is permanent and immediate. To keep you signed in we store only a hash of your session token, and when the platform admin deletes something or bans an account, a moderation log keeps a short label, the reason and the date, never the full content; a ban also keeps the account's Google ID and email while it lasts. Your email address is used only to send you service emails about your groups and requests (no marketing, and you can turn them off), sent through Amazon SES, with a record of each email kept for 30 days. Your email is never shown to other members or group owners. The Privacy Policy explains how long each item is kept and how to download your data or delete your account."
       }
     ],
     "policiesTitle": "Rules and privacy",

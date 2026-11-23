@@ -57,7 +57,7 @@ describe('sitemap', () => {
   it('serves the app pages with noindex and no-referrer headers, and keeps the program pages indexable', () => {
     const headers = fs.readFileSync(path.join(rootDir, 'public/_headers'), 'utf8');
 
-    for (const route of ['/study-group/*', '/study-groups/g/*', '/study-groups/group', '/study-groups/group/*', '/study-groups/new', '/study-groups/my', '/study-groups/account', '/study-groups/welcome', '/study-groups/admin']) {
+    for (const route of ['/study-group/*', '/study-groups/g/*', '/study-groups/group', '/study-groups/group/*', '/study-groups/new', '/study-groups/my', '/study-groups/account', '/study-groups/welcome', '/study-groups/admin', '/study-groups/unsubscribe']) {
       expect(headers).toContain(`${route}\n  X-Robots-Tag: noindex, nofollow\n  Referrer-Policy: no-referrer\n`);
     }
     expect(headers).not.toMatch(/^\/study-groups\/?\*?$/m);

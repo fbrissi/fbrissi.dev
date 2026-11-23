@@ -67,7 +67,7 @@ describe('route x role matrix', () => {
       .replace(':groupId', () => w.groupId)
       .replace(':userId', () => w.memberId)
       .replace(/:(materialId|roundId|requestId)/, '999');
-    const response = await h.handler(request(route.method, path, { cookie: identities[role](), body: {} }));
+    const response = await h.handler(request(route.method, path, { cookie: identities[role](), body: {}, contentType: route.imageBody ? 'image/png' : undefined }));
     const body = response.status === 204 || response.status === 302 ? {} : await response.json();
     const required = effectiveRole(route.path, route.role);
     // The platform admin isn't a member of the world's group, so it can manage but not suggest or vote.
@@ -109,7 +109,7 @@ describe('request handling', () => {
   it.each([
     ['DELETE', '/groups'],
     ['PUT', '/me'],
-    ['POST', '/groups/devtalk/materials/deleted'],
+    ['PUT', '/groups/devtalk/requests'],
     ['OPTIONS', '/groups'],
   ])('returns 405 for %s %s', async (method, path) => {
     await expectJson(await h.handler(request(method, path)), 405, { error: 'Method not allowed' });

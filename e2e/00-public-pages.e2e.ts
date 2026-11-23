@@ -9,7 +9,7 @@ const programPages = [
   { path: '/study-groups', locale: 'en', heading: /English study groups/, en: '/study-groups', pt: '/pt-br/grupos-de-estudo-de-ingles' },
   { path: '/study-groups/terms', locale: 'en', heading: /Terms/i, en: '/study-groups/terms', pt: '/pt-br/study-groups/terms' },
   { path: '/privacy', locale: 'en', heading: /Privacy/i, en: '/privacy', pt: '/pt-br/privacy' },
-  { path: '/pt-br/grupos-de-estudo-de-ingles', locale: 'pt-BR', heading: /Grupos de estudo/, en: '/study-groups', pt: '/pt-br/grupos-de-estudo-de-ingles' },
+  { path: '/pt-br/grupos-de-estudo-de-ingles', locale: 'pt-BR', heading: /English study groups/, en: '/study-groups', pt: '/pt-br/grupos-de-estudo-de-ingles' },
   { path: '/pt-br/study-groups/terms', locale: 'pt-BR', heading: /Termos/i, en: '/study-groups/terms', pt: '/pt-br/study-groups/terms' },
   { path: '/pt-br/privacy', locale: 'pt-BR', heading: /Privacidade/i, en: '/privacy', pt: '/pt-br/privacy' }
 ];
@@ -20,6 +20,7 @@ const appPages = [
   '/study-groups/account',
   '/study-groups/welcome',
   '/study-groups/admin',
+  '/study-groups/unsubscribe',
   '/study-groups/g/devtalk',
   '/study-groups/g/devtalk/settings'
 ];
@@ -60,14 +61,22 @@ test.describe('program pages and the site-wide privacy policy (D1, Q1, Q2, D-7)'
     await expect(page.locator('a[href="/privacy"]').first()).toBeVisible();
   });
 
-  test('the pt-BR landing page is in Portuguese and links to the pt-BR policies', async ({ page }) => {
+  test('the pt-BR landing keeps a Portuguese title, description and notice, with the English page as its content', async ({ page }) => {
     await page.goto('/pt-br/grupos-de-estudo-de-ingles');
-    await expect(page.locator('html')).toHaveAttribute('lang', 'pt-BR');
-    await expect(page.getByRole('main').getByRole('link', { name: 'Entre em um grupo de estudo de inglês grátis' })).toBeVisible();
-    await expect(page.getByRole('main').getByText('Você entra com a sua conta Google', { exact: true })).toBeVisible();
     await expect(page).toHaveTitle('Grupos de Estudo de Inglês para Devs | Filipe Bojikian Rissi');
-    await expect(page.locator('a[href="/pt-br/study-groups/terms"]').first()).toBeVisible();
-    await expect(page.locator('a[href="/pt-br/privacy"]').first()).toBeVisible();
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Pratique inglês com outros desenvolvedores/);
+    const main = page.getByRole('main');
+    const note = main.getByRole('note');
+    await expect(note).toHaveAttribute('lang', 'pt-BR');
+    await expect(note).toContainText('Esta página está em inglês de propósito');
+    await expect(main.getByRole('heading', { level: 1 })).toHaveText('Free English study groups for developers');
+    await expect(main.getByRole('link', { name: 'Join a free English study group' })).toBeVisible();
+    await expect(main.getByText("You'll sign in with Google", { exact: true })).toBeVisible();
+    await expect(main.getByRole('heading', { level: 3, name: 'What data do you keep?' })).toBeVisible();
+    // The bilingual Terms, Privacy Policy and contact page open in Portuguese.
+    await expect(page.locator('main a[href="/pt-br/study-groups/terms"][hreflang="pt-BR"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/pt-br/privacy"][hreflang="pt-BR"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="/pt-br/contact"][hreflang="pt-BR"]').first()).toBeVisible();
   });
 
   test('the sitemap lists the program pages and no app pages (D1, D2)', async ({ request }) => {
@@ -112,7 +121,7 @@ test.describe('app pages stay out of search engines (D2)', () => {
 
   test('Cloudflare headers send noindex and no-referrer for every app shell', () => {
     const headers = readFileSync('public/_headers', 'utf8');
-    for (const path of ['/study-groups/g/*', '/study-groups/group', '/study-groups/group/*', '/study-groups/new', '/study-groups/my', '/study-groups/account', '/study-groups/welcome', '/study-groups/admin']) {
+    for (const path of ['/study-groups/g/*', '/study-groups/group', '/study-groups/group/*', '/study-groups/new', '/study-groups/my', '/study-groups/account', '/study-groups/welcome', '/study-groups/admin', '/study-groups/unsubscribe']) {
       const block = headers.split(/\n\s*\n/).find((item) => item.trim().split('\n')[0].trim() === path);
       expect(block, `missing _headers block for ${path}`).toBeDefined();
       expect(block).toMatch(/X-Robots-Tag: noindex, nofollow/);
@@ -144,9 +153,14 @@ test.describe('cookie notice (D9, Q17)', () => {
     await expect(page.locator('a[href="/privacy#cookies"]')).toHaveCount(0);
   });
 
-  test('is shown in Portuguese on the pt-BR pages and on the app pages', async ({ page }) => {
-    await page.goto('/pt-br/grupos-de-estudo-de-ingles');
+  test('is shown in Portuguese on the pt-BR policy pages, and in English on the pt-BR landing and the app pages', async ({ page }) => {
+    await page.goto('/pt-br/study-groups/terms');
     await expect(page.locator('a[href="/pt-br/privacy#cookies"]')).toBeVisible();
+
+    // The landing's notice is in English but links to the Portuguese policy.
+    await page.goto('/pt-br/grupos-de-estudo-de-ingles');
+    const notice = page.getByRole('complementary', { name: 'Privacy Policy' });
+    await expect(notice.locator('a[href="/pt-br/privacy#cookies"][hreflang="pt-BR"]')).toHaveText('Learn more in the Privacy Policy');
 
     await page.goto('/study-groups/my');
     await expect(page.locator('a[href="/privacy#cookies"]')).toBeVisible();

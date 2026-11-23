@@ -141,7 +141,7 @@ test.describe('group lifecycle', () => {
     await expect(card.getByText('Member', { exact: true })).toBeVisible();
     await expect(card.getByRole('link', { name: 'Settings' })).toHaveCount(0);
 
-    // A rejected user can ask again (Q10).
+    // A rejected user waits 7 days before asking the same group again.
     const outsider = await sessionFor(browser, users.outsider, `/study-groups/g/${groupId}`);
     expect((await api(outsider, 'POST', `/groups/${groupId}/join`, { code: accessCode })).status).toBe(201);
     const pending = await api<{ requests: { id: number }[] }>(owner, 'GET', `/groups/${groupId}/requests`);
@@ -150,7 +150,9 @@ test.describe('group lifecycle', () => {
     await expect(owner.getByText(`Rejected the request from ${users.outsider.givenName}.`)).toBeVisible();
     expect(pending.body.requests).toHaveLength(1);
     expect((await api(outsider, 'GET', `/groups/${groupId}`)).status).toBe(403);
-    expect((await api(outsider, 'POST', `/groups/${groupId}/join`, { code: accessCode })).status).toBe(201);
+    const again = await api<{ error: string }>(outsider, 'POST', `/groups/${groupId}/join`, { code: accessCode });
+    expect(again.status).toBe(409);
+    expect(again.body.error).toMatch(/^Your request to join this group was not approved\. You can ask again after [A-Z][a-z]+ \d{1,2}, \d{4} at \d{1,2}:\d{2} [AP]M \(Brasília time\)\.$/);
 
     await member.context().close();
     await outsider.context().close();
@@ -165,7 +167,7 @@ test.describe('group lifecycle', () => {
     const id = created.body.group.id;
 
     await owner.goto(`/study-groups/g/${id}/settings`);
-    const remove = owner.getByRole('button', { name: 'Delete group' });
+    const remove = owner.getByRole('button', { name: 'Delete group permanently' });
     await expect(remove).toBeDisabled();
     await owner.getByLabel(`Type “${doomed.name}” to confirm`).fill(doomed.name);
     await expect(owner.getByLabel(/^Reason/)).toHaveCount(0);

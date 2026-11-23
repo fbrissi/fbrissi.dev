@@ -77,28 +77,6 @@ export async function deleteMaterial(context: GroupContext): Promise<RouteResult
   return null;
 }
 
-export async function listDeletedMaterials(context: GroupContext): Promise<RouteResult> {
-  return { status: 200, body: { materials: await context.app.repository.listDeletedMaterials(context.group.id, context.user.id) } };
-}
-
-/** Only the platform admin can restore what the platform admin deleted (Q6). */
-export async function restoreMaterial(context: GroupContext): Promise<RouteResult> {
-  const id = requireId(context.params.materialId);
-  const { repository } = context.app;
-  const deleted = await repository.getDeletedMaterial(context.group.id, id, context.user.id);
-  if (!deleted) throw new HttpError(404, 'Deleted material not found');
-  if (deleted.deletedByAdmin && !context.isPlatformAdmin) throw new HttpError(403, 'Only the platform admin can restore this material');
-  const log = context.role === 'platform_admin'
-    ? { action: 'restore_material', targetType: 'material', targetId: String(id), groupId: context.group.id, actorId: context.user.id, label: deleted.title.slice(0, 120), reason: 'Restored by the platform admin' }
-    : undefined;
-  try {
-    const material = await repository.restoreMaterial(context.group.id, id, context.user.id, log, now(context));
-    return { status: 200, body: { material } };
-  } catch (error) {
-    rethrowDuplicate(error, 'This URL is already open in another suggestion');
-  }
-}
-
 async function roundResponse(context: GroupContext, round: Round): Promise<RoundResponse> {
   const { repository } = context.app;
   const [winner, tally, myVote] = await Promise.all([

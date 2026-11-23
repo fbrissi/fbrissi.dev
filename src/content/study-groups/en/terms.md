@@ -1,7 +1,7 @@
 ---
 title: Terms of Use
 description: Terms of Use and content policy of the English study groups program for developers.
-version: '2026-11-16'
+version: '2026-11-22'
 ---
 
 These Terms of Use govern the English study groups program available at `fbrissi.dev/study-groups` (the "program"). By creating an account you agree to them. Users in Brazil: the [Portuguese version](/pt-br/study-groups/terms) prevails.
@@ -20,14 +20,17 @@ The program helps software developers practice English in small study groups. Me
 ## 3. Your account
 
 - Your display name defaults to your Google first name, and you can change it at any time (1 to 40 characters). Your email is never shown to other users.
-- You can download your data and delete your account on the account page. Deleting the account also deletes the groups you own. Suggestions and votes you left in other groups stay, shown as "Former member".
+- We send you service emails about join requests to your groups, the decision on your own requests and the removal of your group or its icon by the platform admin, never marketing. You can turn them off on the account page or with the unsubscribe link in each email.
+- You can download your data and delete your account on the account page. Deleting the account permanently deletes it and the groups you own, at once; it can't be undone. Suggestions and votes you left in other groups stay, shown as "Former member".
 
 <span id="content-policy"></span>
 
 ## 4. Content policy
 
-Group names, summaries, rules, meeting links, suggestions, notes and join request messages must be appropriate for a professional, friendly study group. It is **not allowed** to post or share:
+Group names, summaries, rules, icons, meeting links, suggestions, notes and join request messages must be appropriate for a professional, friendly study group. It is **not allowed** to post or share:
 
+- offensive images or any offensive subject;
+- political content (campaigns, parties, candidates or political propaganda);
 - hate speech or discrimination of any kind;
 - harassment, threats or bullying;
 - sexual content;
@@ -38,7 +41,9 @@ Group names, summaries, rules, meeting links, suggestions, notes and join reques
 - other people's personal data, such as phone numbers, addresses or documents;
 - impersonation of another person or organization.
 
-Content and groups that break this policy or the law can be deleted.
+Content, icons and groups that break this policy or the law are deleted permanently, and the account that posted them may be banned (section 6).
+
+Group icons must be a PNG, JPEG or WebP image of at most 256 KB and 512 × 512 pixels; they are shown only to the group's members, never on the public page.
 
 ## 5. Group owners
 
@@ -54,7 +59,15 @@ An owner can own up to 3 groups, with up to 50 members each. The owner can't lea
 
 ## 6. Moderation by the platform admin
 
-The platform admin can open any group and delete any group, content or join request message that breaks these Terms or the law. Every deletion requires a written reason, which is recorded in a moderation log and shown to the group owner in the app. Deleted content and groups are purged after 30 days. Only the platform admin can restore content the platform admin deleted.
+The platform admin can open any group and delete any group, content, icon or join request message that breaks these Terms or the law. Every deletion requires a written reason, which is recorded in a moderation log and shown to the group owner in the app and by email. Every deletion, by an owner or by the platform admin, is permanent and immediate; deleted content and groups can't be restored.
+
+**Bans.** For serious or repeated breaches, the platform admin can ban an account, with a written reason recorded in the moderation log. The account owner is told by email, with the reason and how to contest it, even with service emails turned off. While an account is banned:
+
+- it can't sign in or do anything in the program, and the same Google account or email address can't sign up again;
+- the groups it owns are deleted permanently, and the owner is told by email, with the reason;
+- its suggestions, votes, memberships and join requests are hidden from other users.
+
+A ban lasts at most 2 years unless the platform admin renews it, again with a written reason; when it ends, the account can be used again. The platform admin can lift a ban at any time, also with a written reason, and the account owner is told by email that the account was restored. Groups deleted by the ban are not restored. If you think a ban is a mistake, use the [contact page](/contact).
 
 ## 7. Reporting abuse
 
@@ -66,7 +79,7 @@ The program is provided free of charge, "as is", without any guarantee of availa
 
 ## 9. Changes to these Terms
 
-Each version of these Terms has a date. When a new version is published, you are asked to accept it at your next visit; until you do, you can keep reading but you can't make changes.
+Each version of these Terms has a date. When a version changes the Terms materially (new obligations, rules or features that affect you), you are asked to accept it at your next visit; until you do, you can keep reading but you can't make changes. Other changes, such as clarifications, take effect when published, with a new date.
 
 ## 10. Governing law
 

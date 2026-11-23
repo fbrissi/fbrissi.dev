@@ -90,3 +90,48 @@ describe('0002 migration (D11, Q20)', () => {
     expect(group!.meeting_url).toBeNull();
   });
 });
+
+describe('0004 migration (no soft delete)', () => {
+  it('removes soft-deleted groups and materials with their dependents, and keeps owners on the log', async () => {
+    workDir = mkdtempSync(path.join(os.tmpdir(), 'study-group-migration-'));
+    const dir = path.join(workDir, 'migrations');
+    mkdirSync(dir);
+    const file = path.join(workDir, 'db.sqlite');
+    for (const name of ['0001_init.sql', '0002_groups_and_accounts.sql', '0003_notifications.sql']) copyFileSync(path.join(migrationsDir, name), path.join(dir, name));
+    const before = openD1Sqlite(file, dir);
+    const group = (id: string, deletedAt: string | null) => before.prepare(
+      "INSERT INTO groups (id, owner_id, name, summary, meeting_day, meeting_start, meeting_end, timezone, access_code, created_at, updated_at, deleted_at) VALUES (?, 'owner001', ?, 'A group summary text', 'Mon', '20:00', '21:00', 'UTC', 'c', 'x', 'x', ?)"
+    ).bind(id, id, deletedAt);
+    await before.batch([
+      before.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES ('owner001', 's', 'o@example.test', 'O', 'x', 'x')"),
+      group('kept', null),
+      group('gone', '2026-11-01T00:00:00.000Z'),
+      before.prepare("INSERT INTO group_members (group_id, user_id, joined_at) VALUES ('gone', 'owner001', 'x')"),
+      before.prepare("INSERT INTO join_requests (group_id, user_id, status, created_at) VALUES ('gone', 'owner001', 'pending', 'x')"),
+      before.prepare("INSERT INTO materials (id, group_id, suggested_by, type, title, created_at) VALUES (1, 'gone', 'A', 'other', 'In deleted group', 'x')"),
+      before.prepare("INSERT INTO materials (id, group_id, suggested_by, type, title, created_at) VALUES (2, 'kept', 'A', 'other', 'Kept', 'x')"),
+      before.prepare("INSERT INTO materials (id, group_id, suggested_by, type, title, created_at, deleted_at, deleted_by_admin) VALUES (3, 'kept', 'A', 'other', 'Soft-deleted', 'x', 'x', 1)"),
+      before.prepare("INSERT INTO rounds (id, group_id, mode, status, created_at, winner_material_id) VALUES (1, 'kept', 'vote', 'closed', 'x', 3)"),
+      before.prepare("INSERT INTO rounds (id, group_id, mode, status, created_at) VALUES (2, 'gone', 'vote', 'closed', 'x')"),
+      before.prepare("INSERT INTO votes (group_id, round_id, material_id, voter_name, created_at) VALUES ('kept', 1, 3, 'A', 'x')"),
+      before.prepare("INSERT INTO votes (group_id, round_id, material_id, voter_name, created_at) VALUES ('kept', 1, 2, 'B', 'x')"),
+      before.prepare("INSERT INTO votes (group_id, round_id, material_id, voter_name, created_at) VALUES ('gone', 2, 1, 'C', 'x')"),
+      before.prepare("INSERT INTO moderation_actions (action, target_type, target_id, group_id, label, reason, created_at) VALUES ('delete_material', 'material', '3', 'kept', 'Soft-deleted', 'Reason text', 'x')"),
+      before.prepare("INSERT INTO moderation_actions (action, target_type, target_id, group_id, label, reason, created_at) VALUES ('delete_group', 'group', 'gone', 'gone', 'gone', 'Reason text', 'x')"),
+    ]);
+    for (const name of ['0004_hard_delete.sql', '0005_icons_and_bans.sql']) copyFileSync(path.join(migrationsDir, name), path.join(dir, name));
+    const db = openD1Sqlite(file, dir);
+
+    const names = async (query: string) => (await db.prepare(query).all<{ name: unknown }>()).results.map((row) => row.name);
+    expect(await names('SELECT id AS name FROM groups ORDER BY id')).toEqual(['devtalk', 'kept']);
+    expect(await names('SELECT title AS name FROM materials')).toEqual(['Kept']);
+    expect(await names('SELECT id AS name FROM rounds')).toEqual([1]);
+    expect(await names('SELECT winner_material_id AS name FROM rounds')).toEqual([null]);
+    expect(await names('SELECT voter_name AS name FROM votes')).toEqual(['B']);
+    expect(await names('SELECT COUNT(*) AS name FROM group_members')).toEqual([0]);
+    expect(await names('SELECT COUNT(*) AS name FROM join_requests')).toEqual([0]);
+    // The log keeps both entries; the one for the deleted group had no surviving row to find its owner.
+    expect(await names('SELECT owner_id AS name FROM moderation_actions ORDER BY id')).toEqual(['owner001', 'owner001']);
+    expect(await names("SELECT name FROM sqlite_master WHERE name IN ('bans', 'icon_uploads') ORDER BY name")).toEqual(['bans', 'icon_uploads']);
+  });
+});

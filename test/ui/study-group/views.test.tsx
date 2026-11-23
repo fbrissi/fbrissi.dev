@@ -8,6 +8,7 @@ import { CreateGroupView } from '@/features/study-group/create-group';
 import { MyGroupsView } from '@/features/study-group/my-groups';
 import { GroupDirectory, ProgramActions } from '@/features/study-group/program-landing';
 import { SessionProvider } from '@/features/study-group/session';
+import { UnsubscribeView } from '@/features/study-group/unsubscribe';
 import { WelcomeView } from '@/features/study-group/welcome';
 import type { AdminGroup, ModerationAction, MyGroupsResponse } from '@/workers/study-group/contract';
 
@@ -75,7 +76,7 @@ describe('create a group (3.1)', () => {
 
 describe('my groups (3.4, Q5)', () => {
   const data: MyGroupsResponse = {
-    groups: [{ id: 'own1234567', name: 'Own', summary: 'Owned group', role: 'owner' }, { id: 'mem1234567', name: 'Joined', summary: 'Joined group', role: 'member' }],
+    groups: [{ id: 'own1234567', name: 'Own', summary: 'Owned group', role: 'owner', iconUrl: '/api/study-group/icons/own1234567/abcdefghjkmnpqrs.png?exp=1&sig=s' }, { id: 'mem1234567', name: 'Joined', summary: 'Joined group', role: 'member', iconUrl: null }],
     pending: [{ id: 'pen1234567', name: 'Waiting', summary: 'Pending group', requestedAt: '2026-11-03T00:00:00Z' }],
     notices: [
       { id: 1, action: 'delete_group', groupId: 'gone', label: 'Gone group', reason: 'Spam and promotion', createdAt: '2026-11-04T00:00:00Z' },
@@ -135,10 +136,10 @@ describe('account (2.3–2.5)', () => {
       'DELETE /me': () => (attempt++ === 0 ? apiError(500, 'Delete failed') : null)
     }, <AccountView />);
     const section = await screen.findByRole('region', { name: 'Delete my account' });
-    expect(await within(section).findByText('These groups you own will be deleted too:')).toBeInTheDocument();
+    expect(await within(section).findByText(/These groups you own will be deleted permanently too/)).toBeInTheDocument();
     expect(within(section).getByText('Own')).toBeInTheDocument();
     expect(within(section).queryByText('Joined')).not.toBeInTheDocument();
-    const button = within(section).getByRole('button', { name: 'Delete my account' });
+    const button = within(section).getByRole('button', { name: 'Delete my account permanently' });
     expect(button).toBeDisabled();
     fireEvent.click(within(section).getByRole('checkbox'));
     fireEvent.click(button);
@@ -147,10 +148,76 @@ describe('account (2.3–2.5)', () => {
     await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('/study-groups'));
   });
 
+  it('turns service emails off and on (one master switch)', async () => {
+    let attempt = 0;
+    const fetchMock = renderWith({
+      'GET /me': { user },
+      'GET /me/groups': { groups: [], pending: [], notices: [] },
+      'GET /me/notifications': { emailEnabled: true },
+      'PUT /me/notifications': (body: Record<string, unknown> | undefined) => (attempt++ === 1 ? apiError(500, 'Save failed') : { emailEnabled: body?.emailEnabled })
+    }, <AccountView />);
+    const section = await screen.findByRole('region', { name: 'Emails' });
+    const box = within(section).getByRole('checkbox', { name: 'Email me about my groups and requests' });
+    await waitFor(() => expect(box).toBeChecked());
+    expect(section).toHaveTextContent('No marketing, ever.');
+    fireEvent.click(box);
+    expect(await within(section).findByText('Emails turned off.')).toBeInTheDocument();
+    expect(box).not.toBeChecked();
+    expect(bodyOf(fetchMock, 'PUT /me/notifications')).toEqual({ emailEnabled: false });
+    fireEvent.click(box);
+    expect(await within(section).findByText('Save failed')).toBeInTheDocument();
+    expect(box).not.toBeChecked();
+    fireEvent.click(box);
+    expect(await within(section).findByText('Emails turned on.')).toBeInTheDocument();
+    expect(box).toBeChecked();
+  });
+
+  it('shows an error when the email setting can’t be loaded', async () => {
+    renderWith({ 'GET /me': { user }, 'GET /me/groups': { groups: [], pending: [], notices: [] }, 'GET /me/notifications': apiError(500, 'Load failed') }, <AccountView />);
+    const section = await screen.findByRole('region', { name: 'Emails' });
+    expect(await within(section).findByText('Load failed')).toBeInTheDocument();
+    expect(within(section).getByRole('checkbox')).toBeDisabled();
+  });
+
   it('works when the owned groups can’t be loaded', async () => {
     renderWith({ 'GET /me': { user }, 'GET /me/groups': apiError(500, 'x') }, <AccountView />);
     const section = await screen.findByRole('region', { name: 'Delete my account' });
-    await waitFor(() => expect(within(section).queryByText(/will be deleted too/)).not.toBeInTheDocument());
+    await waitFor(() => expect(within(section).queryByText(/will be deleted permanently too/)).not.toBeInTheDocument());
+  });
+});
+
+describe('unsubscribe page', () => {
+  it('unsubscribes only after the button is pressed', async () => {
+    window.history.pushState({}, '', '/study-groups/unsubscribe?t=abc.def');
+    let attempt = 0;
+    const fetchMock = renderWith({
+      'GET /me': { user: null },
+      'POST /unsubscribe': () => (attempt++ === 0 ? apiError(500, 'Server down') : { emailEnabled: false })
+    }, <UnsubscribeView />);
+    const button = await screen.findByRole('button', { name: 'Unsubscribe' });
+    await waitFor(() => expect(button).toBeEnabled());
+    expect(calls(fetchMock)).not.toContain('POST /unsubscribe?t=abc.def');
+    fireEvent.click(button);
+    expect(await screen.findByText('Server down')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Unsubscribe' }));
+    expect(await screen.findByText('You won\'t get study group emails anymore.')).toBeInTheDocument();
+    expect(calls(fetchMock)).toContain('POST /unsubscribe?t=abc.def');
+    expect(screen.getByRole('link', { name: 'account' })).toHaveAttribute('href', '/study-groups/account');
+  });
+
+  it('explains invalid, expired and missing links', async () => {
+    window.history.pushState({}, '', '/study-groups/unsubscribe?t=bad');
+    renderWith({ 'GET /me': { user: null }, 'POST /unsubscribe': apiError(400, 'invalid_link') }, <UnsubscribeView />);
+    const button = await screen.findByRole('button', { name: 'Unsubscribe' });
+    await waitFor(() => expect(button).toBeEnabled());
+    fireEvent.click(button);
+    expect(await screen.findByText(/This unsubscribe link is invalid or expired/)).toBeInTheDocument();
+    cleanup();
+
+    window.history.pushState({}, '', '/study-groups/unsubscribe');
+    renderWith({ 'GET /me': { user: null } }, <UnsubscribeView />);
+    expect(await screen.findByText(/This unsubscribe link is invalid or expired/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Unsubscribe' })).toBeDisabled();
   });
 });
 
@@ -197,7 +264,7 @@ describe('admin console (5.2, 5.5)', () => {
       'GET /me': { user: admin },
       'GET /admin/groups': { groups: [adminGroup('aaa'), adminGroup('bbb', { ownerName: null, listed: false })], nextCursor: 'c1' },
       'GET /admin/groups?cursor=c1': { groups: [adminGroup('ccc')], nextCursor: null },
-      'GET /admin/moderation-log': { actions: [action(2), action(1, { groupId: null, actorName: null })], nextCursor: '1' },
+      'GET /admin/moderation-log': { actions: [action(3, { action: 'unban_user', groupId: null, actorName: null, reason: 'Ban expired' }), action(2), action(1, { groupId: null, actorName: null })], nextCursor: '1' },
       'GET /admin/moderation-log?cursor=1': { actions: [action(0)], nextCursor: null }
     }, <AdminConsoleView />);
     const groups = await screen.findByRole('region', { name: 'All groups' });
@@ -211,6 +278,7 @@ describe('admin console (5.2, 5.5)', () => {
     const log = screen.getByRole('region', { name: 'Moderation log' });
     expect(await within(log).findByText(/delete_material · material 2 in g1 · “Item 2”/)).toBeInTheDocument();
     expect(within(log).getByText(/Former admin/)).toBeInTheDocument();
+    expect(within(log).getByText(/Automatic · .* · Reason: Ban expired/)).toBeInTheDocument();
     fireEvent.click(within(log).getByRole('button', { name: 'Load more' }));
     expect(await within(log).findByText(/“Item 0”/)).toBeInTheDocument();
   });

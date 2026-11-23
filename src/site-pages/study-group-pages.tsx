@@ -4,6 +4,7 @@ import { CreateGroupView } from '@/features/study-group/create-group';
 import { GroupBoardView } from '@/features/study-group/group-page';
 import { GroupSettingsView } from '@/features/study-group/group-settings';
 import { MyGroupsView } from '@/features/study-group/my-groups';
+import { UnsubscribeView } from '@/features/study-group/unsubscribe';
 import { WelcomeView } from '@/features/study-group/welcome';
 
 import { StudyGroupShell } from './study-group-shell';
@@ -32,6 +33,10 @@ export function AccountPage({ apiUrl }: PageProps) {
 
 export function WelcomePage({ apiUrl }: PageProps) {
   return <StudyGroupShell apiUrl={apiUrl}><WelcomeView /></StudyGroupShell>;
+}
+
+export function UnsubscribePage({ apiUrl }: PageProps) {
+  return <StudyGroupShell apiUrl={apiUrl}><UnsubscribeView /></StudyGroupShell>;
 }
 
 export function AdminPage({ apiUrl }: PageProps) {

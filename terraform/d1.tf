@@ -9,7 +9,9 @@ resource "cloudflare_d1_database" "study_group" {
   }
 }
 
+# Sandbox database (no prevent_destroy): it is deleted, with its data, when the sandbox is turned off.
 resource "cloudflare_d1_database" "study_group_sandbox" {
+  count      = local.sandbox_count
   account_id = local.cloudflare_account_id
   name       = "${local.project_name}-sandbox-study-group"
 }

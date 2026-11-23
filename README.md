@@ -129,20 +129,39 @@ Configured manually:
   emails of the platform admins
 - Secret `STUDY_GROUP_SESSION_SECRET` (long random string): signs the
   short-lived sign-in cookies
-- The deploy workflows push the last four to the study group Worker
+- Secret `STUDY_GROUP_UNSUBSCRIBE_SECRET` (long random string, different from
+  the session secret): signs the one-click unsubscribe links of the study group
+  emails. Rotating it breaks the links in emails already sent
+- Secret `STUDY_GROUP_EMAIL_ALLOWLIST` (only while the sandbox is enabled):
+  comma-separated emails of the sandbox testers; the sandbox mailer emails
+  nobody else
+- Variable `SANDBOX_ENABLED`: `true` only while the sandbox is enabled in
+  `terraform/locals.tf`; otherwise Deploy Sandbox only prints a notice
+- The deploy workflows push the Google, admin, session and unsubscribe secrets
+  to the study group API Worker, and the SES key and the unsubscribe secret
+  (plus the allowlist on the sandbox) to the study group mailer Worker
 
 Published by Terraform, do not set them manually:
 
 - Secrets `CLOUDFLARE_DEPLOY_API_TOKEN` (scoped deployment token used by the
   production and sandbox deploys) and `TURNSTILE_SECRET_KEY`
+- Secrets `STUDY_GROUP_SES_ACCESS_KEY_ID` and
+  `STUDY_GROUP_SES_SECRET_ACCESS_KEY`: the access key of the
+  `fbrissi-dev-study-group-mailer` IAM user, which can only call
+  `ses:SendEmail` from `notifications@fbrissi.dev`. While the sandbox is
+  enabled, `STUDY_GROUP_SANDBOX_SES_ACCESS_KEY_ID` and
+  `STUDY_GROUP_SANDBOX_SES_SECRET_ACCESS_KEY` hold the separate key of
+  `fbrissi-dev-sandbox-study-group-mailer`
 - Variables `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `VITE_TURNSTILE_SITE_KEY`
   (legacy releases)
 
 In `automatic` mode (January 1 and July 1, or on demand),
-`.github/workflows/rotate-credentials.yml` replaces the deployment token and the
-Turnstile widget, then redeploys the latest release tag. Run Deploy Sandbox
-afterwards when the sandbox is in use; the contact form may reject submissions
-for the few minutes between the apply and the redeploy.
+`.github/workflows/rotate-credentials.yml` replaces the deployment token, the
+Turnstile widget and the study group mailer's SES key (and the sandbox mailer's,
+while the sandbox is enabled), then redeploys the latest release tag. Run Deploy
+Sandbox afterwards when the sandbox is enabled; the contact form may reject
+submissions and study group emails wait in the queue for the few minutes
+between the apply and the redeploy.
 
 Optional environment variable:
 
@@ -162,7 +181,8 @@ Configured in `terraform/locals.tf`:
 ## AWS Access
 
 Terraform manages only the `fbrissi.dev` SES identity (Easy DKIM, MAIL FROM
-`mail.fbrissi.dev`) and its SMTP credential in the shared AWS account
+`mail.fbrissi.dev`), its SMTP credential and the study group mailer's sending
+key (both `fbrissi-dev-*` IAM users) in the shared AWS account
 `526983805816`, with the DNS records in the same apply. Terraform Cloud reaches AWS only through dynamic
 provider credentials (OIDC); no AWS key is stored. The role is created manually
 in the IAM console, once, before the first apply, and Terraform does not manage
@@ -276,21 +296,107 @@ The contact form uses **free** Cloudflare services to send emails without any mo
 
 ### 3. Study Groups
 
-The program stays on the Cloudflare Free plan: two Workers built from `workers/study-group-api/` (production
-`fbrissi-dev-study-group-api` on `fbrissi.dev` and `www.fbrissi.dev`, and sandbox
-`fbrissi-dev-study-group-api-sandbox` on `sandbox.fbrissi.dev`, from `[env.sandbox]`), each bound only to its own
-D1 database, with Rate Limiting bindings and one daily Cron Trigger each (2 of the account's 5). The cron purges
-deleted groups and content after 30 days, decided join requests after 30 days, the moderation log after 12 months,
-and expired sessions. The Deploy workflow only migrates and deploys production; Deploy Sandbox only migrates and
-deploys the sandbox. Both fail before deploying anything when a required secret is empty.
+The program stays on the Cloudflare Free plan: the production API Worker `fbrissi-dev-study-group-api`
+(`workers/study-group-api/`, on `fbrissi.dev` and `www.fbrissi.dev`), bound only to the production D1 database, with
+Rate Limiting bindings and one daily Cron Trigger. The cron purges decided join requests after 30 days, the
+moderation log after 12 months, expired sessions, the email outbox after 30 days and the icon upload counters after
+a day, re-drives the email outbox, and deletes orphaned icon objects. The Deploy workflow migrates and deploys
+production only, and fails before deploying anything when a required secret is empty.
+
+**No soft delete.** Every deletion (a suggestion, a group with its members, requests, suggestions, votes, rounds and
+icon, a join request message, an icon, an account) removes the rows and R2 objects at once, in the same request; there
+is no restore. Migration `0004_hard_delete.sql` removed the rows earlier versions only marked as deleted; the
+`deleted_at` and `deleted_by_admin` columns stay unused, because dropping them in SQLite means rebuilding indexes or
+tables. Every delete in the UI says it is permanent and names what goes with it.
+
+**Group icons** (app pages only: board, settings, My groups and the join screen; never the public list):
+
+- Owners upload a PNG, JPEG or WebP (`PUT /api/study-group/groups/<id>/icon`, the file as the body). The Worker checks
+  the magic bytes and the size in the image headers (at most 256 KB, refused before it is read in full, and
+  512 × 512 pixels), strips EXIF, XMP, IPTC, comment and text chunks without any library
+  (`workers/study-group/icon-image.ts`), and stores it in the private R2 bucket `fbrissi-dev-study-group-icons` under a
+  new key; replacing or removing deletes the old object. The platform admin can remove an icon with a reason (moderation
+  log, owner notice and an `icon_removed` email).
+- Icons are served by the API Worker at `/api/study-group/icons/<group>/<file>` with an HMAC signature derived from
+  `STUDY_GROUP_SESSION_SECRET` (no new secret, no S3 credentials), valid until the end of the next full hour. URLs are
+  identical within an hour, so browsers and the Cache API reuse them.
+- Guards: the `STUDY_GROUP_ICON_RATE_LIMITER` binding (3 per minute per user), 10 uploads per user and 5 per group per
+  day, one icon per group and 3 groups per owner, and the daily orphan cleanup (objects no group points at, older than
+  an hour).
+- Cost: R2 bills only beyond its free tier (10 GB-month storage, 1 million Class A and 10 million Class B operations
+  a month; deletes and egress are free). Storage is at most 256 KB per group (about 2.5 MB for 10 groups, 256 MB for
+  1,000). Class A operations are the capped uploads and one daily list; Class B reads happen only on edge cache misses,
+  about one per icon per data center per hour. Each icon request is still a Worker request (Free plan: 100,000 a day).
+- Locally, icons go to `tmp/study-group/icons` through the same interface (`workers/local/fs-bucket.ts`).
+
+**Bans.** The platform admin finds users on `/study-groups/admin` (by display name, exact email or ID; emails are never
+shown) and bans, renews or unbans them with a reason (asked in an in-page dialog), all logged. A ban ends the user's sessions, deletes the groups they own
+permanently (with an E4 email each), hides their suggestions, votes, memberships and join requests, and stops the same
+Google account or email from signing in or signing up (`/study-groups?signin=banned`). The user gets one `account_banned`
+email with the reason and how to contest it, even with service emails turned off. A ban row expires 2 years after the
+ban or its last renewal (`expires_at`; the daily cron deletes expired rows, which lifts the ban). Unbanning deletes the
+ban row and sends one `account_restored` email the same way; deleted groups stay deleted.
+
+**Sandbox (disabled).** `sandbox_enabled = false` in `terraform/locals.tf` turns off every sandbox resource: the
+`fbrissi-dev-sandbox` Pages project with `sandbox.fbrissi.dev` and its DNS record, the sandbox D1, the sandbox
+contact and notification queues with their dead-letter queues, the sandbox SES IAM user and its key, its GitHub
+secrets, and `sandbox.fbrissi.dev` in the Turnstile widget. The Workers' `[env.sandbox]` blocks and
+`.github/workflows/sandbox.yml` stay as the reference for how the sandbox is built: each sandbox Worker
+(`*-sandbox`) has its own routes, D1, queues and SES key, and never touches production. Deploy Sandbox only prints a
+notice until the repository variable `SANDBOX_ENABLED` is `true`. To turn the sandbox back on: set
+`sandbox_enabled = true` and apply, set `SANDBOX_ENABLED=true`, create `STUDY_GROUP_EMAIL_ALLOWLIST` (tester emails),
+add the sandbox redirect URI `https://sandbox.fbrissi.dev/api/study-group/auth/callback` to the Google OAuth client,
+and run Deploy Sandbox (the sandbox D1 starts empty).
+
+**Email notifications** (English only, from `notifications@fbrissi.dev` with Reply-To `contact@fbrissi.dev`):
+
+- Events: a digest to the group owner when join requests wait (with the pending count and no requester name or
+  message), the decision to the requester (approved or not, neutral wording, with the 7-day wait before asking the
+  same group again), and the admin deletion of a group to its owner, with the reason. The unclaimed DevTalk group
+  gets its digest when the platform admin claims it.
+- Digest cadence: at most one per group every 6 hours. The first request gets one right away; requests inside the
+  window schedule one trailing digest for its end, sent only if requests that arrived after the last digest are
+  still pending. Skipped or failed digests don't hold back the next one.
+- Flow: the API Worker writes an outbox row (`notifications`, migration `0003`) in the same D1 batch as the state
+  change, with a unique dedupe key, and sends only the row ID to the `fbrissi-dev-study-group-notify` queue (with a
+  delay for a trailing digest). The separate mailer Worker (`workers/study-group-mailer/`,
+  `fbrissi-dev-study-group-mailer`) is the only one with the SES key. It claims the row (`sending`, so a repeated
+  delivery sends nothing; a claim older than 10 minutes is taken over), reads the recipient's email at send time,
+  checks the preference, a cap of 20 emails per recipient and 500 in total per 24 hours, and calls SES v2
+  `SendEmail` signed with SigV4 over WebCrypto. Temporary errors retry with backoff; the 6th failed attempt marks
+  the row `failed`. The daily cron queues idle rows again, marks exhausted ones failed and logs the counts.
+- Users turn emails off or on in `/study-groups/account`, or with the one-click unsubscribe link
+  (`List-Unsubscribe` and `List-Unsubscribe-Post`, an HMAC token signed with `STUDY_GROUP_UNSUBSCRIBE_SECRET` for one
+  environment, valid for a year). `POST /api/study-group/unsubscribe` is the only route without the Origin and JSON
+  checks; a `GET` only opens the `/study-groups/unsubscribe` confirmation page.
+- Bounces and complaints rely on the SES account-level suppression list. Email addresses are never shown to other
+  users, put in the queue, or logged, and group names can't contain links or web addresses.
+
+**Before the first release with icons (Filipe):**
+
+1. Enable R2 on the Cloudflare account (R2 > Purchase R2; the checkout asks for a payment method even though usage stays
+   inside the free tier).
+2. Add **Account · Workers R2 Storage · Edit** (API group "Workers R2 Storage Write") to the Cloudflare Terraform token
+   (`CLOUDFLARE_API_TOKEN`), so the apply can create the bucket. The Terraform-managed deploy token gets
+   "Workers R2 Storage Read" in the same apply.
+3. No new secret: the icon links are signed with a key derived from `STUDY_GROUP_SESSION_SECRET`.
+
+**Before the first release with notifications (Filipe):**
+
+1. Confirm SES production access: `aws sesv2 get-account --region us-east-1` must show
+   `"ProductionAccessEnabled": true` and a `SendQuota`. If it doesn't, request it (`aws sesv2 put-account-details
+   --production-access-enabled --mail-type TRANSACTIONAL --website-url https://fbrissi.dev ...`) and wait for AWS.
+2. Create the GitHub secret `STUDY_GROUP_UNSUBSCRIBE_SECRET` (for example `openssl rand -base64 48`). The Terraform
+   apply publishes `STUDY_GROUP_SES_ACCESS_KEY_ID` and `STUDY_GROUP_SES_SECRET_ACCESS_KEY` and creates the two
+   production notification queues; the `fbrissi-dev-terraform` role, the Cloudflare Terraform token and the
+   `rissi-terraform` App need no new permission.
+3. Deploy fails before deploying anything while one of these secrets is empty.
 
 **Manual setup (no API or Terraform support):** follow the "Manual setup by Filipe" checklist in
 [issue #45](https://github.com/fbrissi/fbrissi.dev/issues/45): Google Cloud project, OAuth consent screen
-(name only, scopes `openid email profile`, In production), a Web application OAuth client with these redirect
-URIs, and the GitHub secrets above.
-
-- Production: `https://fbrissi.dev/api/study-group/auth/callback`
-- Sandbox: `https://sandbox.fbrissi.dev/api/study-group/auth/callback`
+(name only, scopes `openid email profile`, In production), a Web application OAuth client with the redirect URI
+`https://fbrissi.dev/api/study-group/auth/callback`, and the GitHub secrets above. The sandbox redirect URI is needed
+only while the sandbox is enabled.
 
 The Workers always use Google's fixed endpoints. The fake Google IdP below exists only in the local Docker stack.
 
@@ -298,6 +404,8 @@ The Workers always use Google's fixed endpoints. The fake Google IdP below exist
 
 1. `kool start` also runs the study group API (`node:sqlite` in `tmp/study-group/`) and a fake Google IdP at
    http://localhost:8790. `next dev` proxies `/api/study-group/*` to the API, so cookies stay same-origin.
+   Study group emails are sent in-process to Mailpit (http://localhost:8025) with a `[LOCAL]` subject prefix; a
+   trailing digest waits on a timer in the API process.
 2. Open http://localhost:3000/study-groups and sign in. The fake IdP lists test users: `admin@example.test`
    (platform admin), `owner@example.test`, `member@example.test`, `outsider@example.test`, and
    `unverified@example.test` (rejected, unverified email). It can also sign in any email and name.
@@ -305,53 +413,98 @@ The Workers always use Google's fixed endpoints. The fake Google IdP below exist
    `http://localhost`.
 4. `kool run e2e` runs the Playwright suite against the stack (it resets the local database).
 
-**v0.4.0 rehearsal on sandbox** (`0002_groups_and_accounts.sql` moves the DevTalk board into the `devtalk` group):
+**Before merging v0.4.0: retire the sandbox**, in this order. The merge's Terraform apply runs before the
+release deploy and deletes every sandbox resource, so nothing may still use the sandbox queues, D1 or Pages project
+by then (Cloudflare doesn't document what a delete does to a resource that is still bound):
 
-1. In the Cloudflare dashboard, remove the `sandbox.fbrissi.dev/api/study-group/*` route from the
-   `fbrissi-dev-study-group-api` Worker (v0.3 served both hosts), so the new sandbox Worker can take it.
-2. Copy the production DevTalk data into the sandbox database, which is still on `0001`. Export the four tables
-   only (a full export also carries `d1_migrations`), outside the repository:
+1. Delete the sandbox Worker left by the earlier rehearsal (it frees its route, its cron slot and its D1 binding):
+   `npx wrangler delete --name fbrissi-dev-study-group-api-sandbox`.
+2. Deploy the two contact Workers to production once from the release branch, so production drops the sandbox
+   contact route, the sandbox queue binding and the sandbox queue consumer before the queue is deleted (their code
+   is unchanged; the secrets stay):
 
    ```bash
-   npx wrangler d1 export fbrissi-dev-study-group --remote --no-schema \
-     --table group_info --table materials --table rounds --table votes --output /tmp/devtalk-data.sql
-   npx wrangler d1 execute fbrissi-dev-sandbox-study-group --remote --command "DELETE FROM votes; DELETE FROM rounds; DELETE FROM materials; DELETE FROM group_info;"
-   npx wrangler d1 execute fbrissi-dev-sandbox-study-group --remote --file /tmp/devtalk-data.sql
-   rm /tmp/devtalk-data.sql
+   git checkout release/v0.4.0
+   (cd workers/contact-api && npx wrangler deploy)
+   (cd workers/contact-email-consumer && npx wrangler deploy)
    ```
 
-3. Run Deploy Sandbox from `release/v0.4.0`. It migrates only the sandbox database and deploys only the sandbox
-   Worker; production is untouched.
-4. Sign in with an allowlisted admin (it claims DevTalk) and check the old materials, rounds and votes on
-   `https://sandbox.fbrissi.dev/study-groups/g/devtalk`. Check that `https://sandbox.fbrissi.dev/_redirects` returns
-   404 (Pages parses it and doesn't serve it).
+   Then check that `npx wrangler queues info fbrissi-dev-sandbox-contact-form` lists no producer or consumer. If a
+   consumer is still attached, remove it:
+   `npx wrangler queues consumer remove fbrissi-dev-sandbox-contact-form fbrissi-dev-contact-email-consumer`.
+3. Check how many deployments the sandbox Pages project has
+   (`npx wrangler pages deployment list --project-name fbrissi-dev-sandbox`). Cloudflare refuses to delete a Pages
+   project with many deployments; if the list is long, delete the old deployments in the dashboard (Workers & Pages,
+   `fbrissi-dev-sandbox`, Deployments) first.
+4. The sandbox D1 is deleted with its data (no `prevent_destroy`); export it first only if you want to keep it.
+5. Leave the repository variable `SANDBOX_ENABLED` unset. `STUDY_GROUP_EMAIL_ALLOWLIST` and the sandbox OAuth
+   redirect URI are no longer needed.
+
+Alternative to letting the merge delete the sandbox: after steps 1 to 3, run a targeted destroy of the sandbox
+resources in Terraform Cloud (the `*sandbox*` resources in `terraform/`) before merging, so the merge's apply has
+nothing sandbox-related left to delete and a failure can be fixed before the release.
+
+**v0.4.0 rehearsal (local)** (`0002_groups_and_accounts.sql` moves the DevTalk board into the `devtalk` group):
+
+1. Export production into the gitignored `tmp/`, with schema and the `d1_migrations` table, so the local API
+   applies only `0002` and `0003` on top:
+
+   ```bash
+   mkdir -p tmp/rehearsal
+   npx wrangler d1 export fbrissi-dev-study-group --remote --output tmp/rehearsal/devtalk-v0.3.sql
+   docker compose stop study-group-api
+   mv tmp/study-group/local.sqlite tmp/study-group/local.sqlite.before-rehearsal
+   kool docker kooldev/node:24 node -e "const { DatabaseSync } = require('node:sqlite'); new DatabaseSync('tmp/study-group/local.sqlite').exec(require('node:fs').readFileSync('tmp/rehearsal/devtalk-v0.3.sql', 'utf8'))"
+   docker compose start study-group-api
+   ```
+
+2. Sign in as `admin@example.test` (it claims DevTalk) and check the old materials, rounds and votes on
+   http://localhost:3000/study-groups/g/devtalk, then a join request, its digest in Mailpit, an approval and the
+   account export.
+3. Delete `tmp/rehearsal/` and the rehearsal database (they hold production data), and restore
+   `local.sqlite.before-rehearsal` or let `kool run e2e` recreate it.
 
 **v0.4.0 release runbook** (a short board outage is expected between the migration and the Worker deploy):
 
 1. Tell the DevTalk members, and close or cancel any open round (the migration cancels any round still open).
    Keep the board quiet from the bookmark below until the deploy finishes: the release can wait up to 360 minutes
    for the Terraform apply, and a restore drops any write made in that gap.
-2. Right before merging, record a D1 Time Travel bookmark and keep a data export:
+2. Right before merging, record a D1 Time Travel bookmark (restores go back up to 7 days on the Free plan) and keep a
+   data export outside the repository:
 
    ```bash
    npx wrangler d1 time-travel info fbrissi-dev-study-group
-   npx wrangler d1 export fbrissi-dev-study-group --remote --no-schema \
-     --table group_info --table materials --table rounds --table votes --output /tmp/devtalk-v0.3.sql
+   npx wrangler d1 export fbrissi-dev-study-group --remote --output /tmp/devtalk-v0.3.sql
    ```
 
-3. Merge the release pull request. The Deploy workflow checks the required secrets first, then deploys Pages,
-   migrates the production database and deploys the production Worker.
-4. Rollback, if needed. Don't redeploy the `v0.3.2` tag: its `wrangler.toml` still claims the
-   `sandbox.fbrissi.dev/api/study-group/*` route, which the sandbox Worker now owns, so that deploy fails.
+3. Merge the release pull request. The Terraform apply deletes the sandbox resources and creates the notification
+   queues and the mailer key; the Deploy workflow then checks the required secrets, deploys Pages and the contact
+   Workers, migrates the production database, and deploys the mailer and the API Worker.
+4. Right after the deploy, check in production:
+   - CSP: the contact page loads Turnstile and the Google sign-in completes, with no CSP violation in the console.
+   - Redirects: `/open-source` answers 301 to `/projects#open-source` (and the browser keeps the fragment),
+     `/study-groups/privacy` to `/privacy`, `/pt-br/study-groups` to `/pt-br/grupos-de-estudo-de-ingles`, and the
+     old `/study-group/<slug>` to the DevTalk group.
+   - Email: a join request to a test group sends the owner digest. Check that it arrives from "English Study Groups
+     <notifications@fbrissi.dev>" (the IAM `ses:FromAddress` condition accepts the display name), with
+     `List-Unsubscribe` and `List-Unsubscribe-Post` headers and DKIM, SPF and DMARC passing, and that the mailer
+     Worker logs no `AccessDenied`. The one-click unsubscribe turns the email setting off.
+   - Indexing: the app pages, `/study-groups/unsubscribe` and `/api/study-group/*` send `X-Robots-Tag: noindex,
+     nofollow`; the landing, terms and privacy pages don't.
+5. Rollback, if needed:
    1. Restore the database: `npx wrangler d1 time-travel restore fbrissi-dev-study-group --bookmark=<bookmark>`.
-   2. Roll the production Worker back to its v0.3.2 version, from `workers/study-group-api/`:
+   2. Roll the production API Worker back to its v0.3.2 version, from `workers/study-group-api/`:
       `npx wrangler deployments list` to find it, then `npx wrangler rollback <version-id>`. Cron Triggers
       belong to the Worker, not the version, so the daily trigger keeps firing against v0.3.2, which has no
-      `scheduled()` handler; remove it in the dashboard (Settings > Triggers) while rolled back.
+      `scheduled()` handler; remove it in the dashboard (Settings > Triggers) while rolled back. Don't redeploy
+      the `v0.3.2` tag or roll the contact Workers back: their v0.3 configuration binds the deleted sandbox queue.
+     Migration `0004` deleted the soft-deleted rows for good, so a v0.3.2 rollback starts without them; the D1 restore
+     brings them back.
    3. Roll the Pages project back to the v0.3.2 deployment in the Cloudflare dashboard
-      (Workers & Pages > `fbrissi-dev` > Deployments > Rollback).
-5. Existing members sign in and ask to join DevTalk with the current access code.
-6. After the release, delete the obsolete `STUDY_GROUP_ADMIN_EMAIL` and `STUDY_GROUP_ADMIN_PASSWORD_HASH`
+      (Workers & Pages > `fbrissi-dev` > Deployments > Rollback). The mailer Worker can stay: v0.3.2 writes no
+      outbox rows.
+6. Existing members sign in and ask to join DevTalk with the current access code.
+7. After the release, delete the obsolete `STUDY_GROUP_ADMIN_EMAIL` and `STUDY_GROUP_ADMIN_PASSWORD_HASH`
    secrets, and the local exports.
 
 ## Validation

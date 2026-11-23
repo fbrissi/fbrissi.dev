@@ -53,3 +53,10 @@ To add a permission:
 
 The token also needs Account API Tokens Read (granted by Account API Tokens
 Write) so the live check can read its own policies.
+
+Current Cloudflare resource types and what they need are listed in the manifest.
+The R2 bucket for group icons (`r2.tf`, `cloudflare_r2_bucket`) needs **Workers
+R2 Storage Write** on the account scope of the Terraform token, and R2 must be
+enabled on the account first. The deployment token Terraform creates
+(`credentials.tf`) also gets Workers R2 Storage Read, for deploying the study
+group API Worker with its R2 binding.

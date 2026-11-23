@@ -18,15 +18,16 @@ function messagesFor(locale: Locale) {
 export function ProgramActions({ locale }: { locale: Locale }) {
   const { user } = useSession();
   const messages = messagesFor(locale);
-  const [signInFailed, setSignInFailed] = useState(false);
+  const [signIn, setSignIn] = useState<string | null>(null);
 
   useEffect(() => {
-    setSignInFailed(new URLSearchParams(window.location.search).get('signin') === 'failed');
+    setSignIn(new URLSearchParams(window.location.search).get('signin'));
   }, []);
 
   return (
     <div className="flex flex-col gap-4">
-      {signInFailed ? <Banner tone="error" title={messages.signInFailed} /> : null}
+      {signIn === 'failed' ? <Banner tone="error" title={messages.signInFailed} /> : null}
+      {signIn === 'banned' ? <Banner tone="error" title={messages.signInBanned} /> : null}
       <div className="flex flex-wrap gap-3">
         {user ? (
           <>

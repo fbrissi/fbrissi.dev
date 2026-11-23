@@ -59,7 +59,7 @@ export function HomePage({ locale }: { locale: Locale }) {
         <p className="mb-8 text-lg leading-relaxed text-text-secondary">{messages.home.subhead}</p>
         <div className="mb-6 flex flex-wrap items-center gap-3">
           <Link className={primaryButtonClass} href={localizedPath(locale, '/works')}>{messages.home.ctaPrimary}</Link>
-          <a className={secondaryButtonClass} href={`mailto:${profile.contact.email}`}>{messages.home.ctaSecondary}</a>
+          <Link className={secondaryButtonClass} href={localizedPath(locale, '/contact')}>{messages.home.ctaSecondary}</Link>
           <a className={secondaryButtonClass} href={resumeFiles[locale]} download>{messages.home.ctaResume}</a>
         </div>
         <p className="text-text-secondary">
@@ -79,7 +79,7 @@ export function HomePage({ locale }: { locale: Locale }) {
 
       <section className="mb-16" aria-labelledby="proof-title">
         <h2 id="proof-title" className="mb-6 text-2xl font-normal tracking-tight">{messages.home.proofTitle}</h2>
-        <ul className="grid gap-4 sm:grid-cols-3">
+        <ul className="grid gap-4 sm:grid-cols-2">
           {messages.home.proofPoints.map((point) => (
             <li key={point.path}>
               <Link className="flex h-full rounded-xl border border-line bg-bg-soft p-5 leading-relaxed text-text-secondary shadow-lg transition-all duration-250 hover:border-line-bright hover:text-text" href={localizedPath(locale, point.path)}>

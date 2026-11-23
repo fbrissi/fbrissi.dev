@@ -8,10 +8,12 @@ import {
   type CurrentUser,
   type MeResponse,
   type MyGroupsResponse,
+  type AccountExport,
 } from './contract';
 import { randomBytes, randomId, sha256Hex, signValue, timingSafeEqual, toBase64Url, verifySignedValue } from './crypto';
 import {
   clearCookie,
+  enqueueNotifications,
   FLOW_TTL_MS,
   HttpError,
   NOTICE_WINDOW_MS,
@@ -20,10 +22,12 @@ import {
   parseBody,
   parseCookies,
   redirect,
+  removeIcons,
   SESSION_COOKIE,
   SESSION_TTL_MS,
   setCookie,
   SIGNUP_COOKIE,
+  iconUrl,
   type AppConfig,
   type RequestContext,
   type RouteResult,
@@ -56,8 +60,14 @@ export function safeReturnTo(value: string | null): string {
   return value && returnToPattern.test(value) ? value : defaultReturnTo;
 }
 
-function failure(app: AppConfig, extraCookies: string[] = []): Response {
-  return redirect(`${app.appOrigin}/study-groups?signin=failed`, [clearCookie(OAUTH_COOKIE), ...extraCookies]);
+function failure(app: AppConfig, extraCookies: string[] = [], reason: 'failed' | 'banned' = 'failed'): Response {
+  return redirect(`${app.appOrigin}/study-groups?signin=${reason}`, [clearCookie(OAUTH_COOKIE), ...extraCookies]);
+}
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
 }
 
 function defaultDisplayName(name: string): string {
@@ -69,7 +79,9 @@ async function startSession(context: RequestContext, userId: string, email: stri
   const token = toBase64Url(randomBytes(32));
   const issuedAt = app.clock();
   await app.repository.createSession(await sha256Hex(token), userId, issuedAt.toISOString(), new Date(issuedAt.getTime() + SESSION_TTL_MS).toISOString());
-  if (isPlatformAdminEmail(email, app.platformAdminEmails)) await app.repository.claimUnownedGroups(userId, issuedAt.toISOString());
+  if (isPlatformAdminEmail(email, app.platformAdminEmails)) {
+    await enqueueNotifications(context, await app.repository.claimUnownedGroups(userId, issuedAt.toISOString()));
+  }
   return setCookie(SESSION_COOKIE, token, SESSION_TTL_MS / 1000);
 }
 
@@ -113,6 +125,8 @@ export async function callback(context: RequestContext): Promise<RouteResult> {
     return failure(app);
   }
 
+  // A banned Google account, or another account with the banned email, can't sign in or sign up.
+  if (await app.repository.isBanned(identity.sub, identity.email)) return failure(app, [], 'banned');
   const userId = await app.repository.findUserIdBySub(identity.sub);
   if (userId) {
     await app.repository.updateUserEmail(userId, identity.email, now(context));
@@ -141,6 +155,7 @@ export async function completeSignup(context: RequestContext): Promise<RouteResu
   const signup = await pendingSignup(context);
   await parseBody(context.request, signupSchema);
   const { repository } = context.app;
+  if (await repository.isBanned(signup.sub, signup.email)) throw new HttpError(403, 'account_banned');
 
   let userId = await repository.findUserIdBySub(signup.sub);
   if (!userId) {
@@ -165,7 +180,7 @@ export async function logout(context: RequestContext): Promise<RouteResult> {
 
 export function currentUser(context: RequestContext): CurrentUser | null {
   const { user } = context;
-  return user ? { id: user.id, displayName: user.displayName, isPlatformAdmin: context.isPlatformAdmin, needsConsent: !user.consented } : null;
+  return user ? { id: user.id, displayName: user.displayName, isPlatformAdmin: context.isPlatformAdmin, needsConsent: !user.consented, pendingConsents: user.pendingConsents } : null;
 }
 
 export async function getMe(context: RequestContext): Promise<RouteResult> {
@@ -179,9 +194,13 @@ export async function updateMe(context: UserContext): Promise<RouteResult> {
 }
 
 export async function acceptPolicies(context: UserContext): Promise<RouteResult> {
-  await parseBody(context.request, acceptPoliciesSchema);
-  await context.app.repository.recordConsents(context.user.id, now(context));
-  return { status: 200, body: { user: { ...currentUser(context)!, needsConsent: false } } satisfies MeResponse };
+  const input = await parseBody(context.request, acceptPoliciesSchema);
+  const accepted = { terms: input.acceptTerms, privacy: input.acceptPrivacy };
+  const { pendingConsents } = context.user;
+  // Only the documents whose version changed are asked for, and each of them must be accepted.
+  if (pendingConsents.some((document) => !accepted[document])) throw new HttpError(400, 'Accept the updated documents to continue');
+  if (pendingConsents.length) await context.app.repository.recordConsents(context.user.id, now(context), pendingConsents);
+  return { status: 200, body: { user: { ...currentUser(context)!, needsConsent: false, pendingConsents: [] } } satisfies MeResponse };
 }
 
 export async function myGroups(context: UserContext): Promise<RouteResult> {
@@ -192,11 +211,21 @@ export async function myGroups(context: UserContext): Promise<RouteResult> {
     repository.listMyPendingRequests(context.user.id),
     repository.listOwnerNotices(context.user.id, since),
   ]);
-  return { status: 200, body: { groups, pending, notices } satisfies MyGroupsResponse };
+  const withIcons = await Promise.all(groups.map(async ({ icon, ...group }) => ({ ...group, iconUrl: await iconUrl(context, icon) })));
+  return { status: 200, body: { groups: withIcons, pending, notices } satisfies MyGroupsResponse };
 }
 
+/** Owned groups include their icon itself (base64), so the export holds everything the user uploaded. */
 export async function exportAccount(context: UserContext): Promise<RouteResult> {
-  const data = await context.app.repository.exportAccount(context.user.id, now(context));
+  const { ownedGroups, ...rest } = await context.app.repository.exportAccount(context.user.id, now(context));
+  const { icons } = context.app;
+  const data: AccountExport = {
+    ...rest,
+    ownedGroups: await Promise.all(ownedGroups.map(async ({ icon, ...group }) => {
+      const object = icon && icons ? await icons.get(icon.key) : null;
+      return { ...group, icon: object ? { contentType: icon!.contentType, updatedAt: icon!.updatedAt, base64: toBase64(new Uint8Array(await object.arrayBuffer())) } : null };
+    })),
+  };
   return new Response(JSON.stringify(data, null, 2), {
     status: 200,
     headers: {
@@ -209,7 +238,7 @@ export async function exportAccount(context: UserContext): Promise<RouteResult> 
 
 export async function deleteAccount(context: UserContext): Promise<RouteResult> {
   await parseBody(context.request, deleteAccountSchema);
-  await context.app.repository.deleteAccount(context.user.id, now(context));
+  await removeIcons(context, await context.app.repository.deleteAccount(context.user.id));
   await purgePublicGroups(context);
   return new Response(null, { status: 204, headers: { 'Set-Cookie': clearCookie(SESSION_COOKIE), 'Cache-Control': 'no-store' } });
 }

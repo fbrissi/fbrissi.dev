@@ -99,7 +99,7 @@ describe('Google sign-in', () => {
     expect(consents).toEqual([{ document: 'privacy', version: POLICY_VERSIONS.privacy }, { document: 'terms', version: POLICY_VERSIONS.terms }]);
 
     const me = await expectJson(await h.handler(request('GET', '/me', { cookie: `__Host-sg_session=${session}` })), 200);
-    expect(me.user).toEqual({ id: expect.any(String), displayName: 'Olivia', isPlatformAdmin: false, needsConsent: false });
+    expect(me.user).toEqual({ id: expect.any(String), displayName: 'Olivia', isPlatformAdmin: false, needsConsent: false, pendingConsents: [] });
 
     // A second submit of the same pending sign-up reuses the account.
     await expectJson(await h.handler(request('POST', '/auth/signup', { cookie, body: { acceptTerms: true, acceptPrivacy: true, confirmAge: true } })), 201);
@@ -224,7 +224,7 @@ describe('account', () => {
 
   it('asks for re-acceptance after a policy change and blocks writes until then (Q18)', async () => {
     const cookie = await signIn(h, { sub: 'fake-owner' });
-    await h.db.prepare("UPDATE consents SET version = 'old'").run();
+    await h.db.prepare("UPDATE consents SET version = '2000-01-01'").run();
 
     const { user } = await expectJson(await h.handler(request('GET', '/me', { cookie })), 200);
     expect(user.needsConsent).toBe(true);
@@ -233,8 +233,22 @@ describe('account', () => {
 
     await expectJson(await h.handler(request('POST', '/me/consents', { cookie, body: { acceptTerms: true } })), 400);
     const accepted = await expectJson(await h.handler(request('POST', '/me/consents', { cookie, body: { acceptTerms: true, acceptPrivacy: true } })), 200);
-    expect(accepted.user.needsConsent).toBe(false);
+    expect(accepted.user).toMatchObject({ needsConsent: false, pendingConsents: [] });
     await expectJson(await h.handler(request('PATCH', '/me', { cookie, body: { displayName: 'Liv' } })), 200);
+  });
+
+  it('asks again only for the document whose version changed, and records only that one', async () => {
+    const cookie = await signIn(h, { sub: 'fake-owner' });
+    await h.db.prepare("UPDATE consents SET version = '2000-01-01' WHERE document = 'terms'").run();
+    const { user } = await expectJson(await h.handler(request('GET', '/me', { cookie })), 200);
+    expect(user).toMatchObject({ needsConsent: true, pendingConsents: ['terms'] });
+    await expectJson(await h.handler(request('POST', '/me/consents', { cookie, body: { acceptPrivacy: true } })), 400, { error: 'Accept the updated documents to continue' });
+    await expectJson(await h.handler(request('POST', '/me/consents', { cookie, body: { acceptTerms: true } })), 200);
+    const { results } = await h.db.prepare('SELECT document, version FROM consents ORDER BY id').all();
+    expect(results).toEqual([{ document: 'terms', version: '2000-01-01' }, { document: 'privacy', version: POLICY_VERSIONS.privacy }, { document: 'terms', version: POLICY_VERSIONS.terms }]);
+    // Accepting with nothing pending records nothing.
+    await expectJson(await h.handler(request('POST', '/me/consents', { cookie, body: {} })), 200, { user: expect.objectContaining({ pendingConsents: [] }) });
+    expect((await h.db.prepare('SELECT COUNT(*) AS count FROM consents').first())).toEqual({ count: 3 });
   });
 
   it('exports the account data as a JSON download', async () => {
@@ -257,7 +271,7 @@ describe('account', () => {
     expect(data.votes).toEqual([expect.objectContaining({ roundId: round.id, materialId: materials[0].id })]);
 
     const owner = await expectJson(await h.handler(request('GET', '/me/export', { cookie: world.owner })), 200);
-    expect(owner.ownedGroups).toEqual([{ id: world.groupId, name: 'Go Talk', summary: groupSummary }]);
+    expect(owner.ownedGroups).toEqual([{ id: world.groupId, name: 'Go Talk', summary: groupSummary, icon: null }]);
   });
 
   it('deletes the account, its owned groups, and anonymizes contributions elsewhere (Q7, Q8)', async () => {

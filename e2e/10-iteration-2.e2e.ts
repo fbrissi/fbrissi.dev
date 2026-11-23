@@ -188,22 +188,18 @@ test.describe('admin participation and management', () => {
     await expect(admin.getByRole('button', { name: 'Add suggestion' })).toBeVisible();
   });
 
-  test('restoring an admin deletion is audited as restore_material; an owner restore is not', async () => {
-    const victim = await suggest(member, groupId, 'Restorable item', 'https://example.test/restorable');
+  test('an admin deletion is audited and permanent; an owner deletion is not audited', async () => {
+    const victim = await suggest(member, groupId, 'Spammy item', 'https://example.test/spammy');
     // The admin is a member now but not the owner, so admin rules still apply.
     expect((await api(admin, 'DELETE', `/groups/${groupId}/materials/${victim.id}`, { reason: 'Looked like spam at first' })).status).toBe(204);
-    expect((await api(admin, 'POST', `/groups/${groupId}/materials/${victim.id}/restore`)).status).toBe(200);
-
-    const ownerItem = await suggest(member, groupId, 'Owner restorable', 'https://example.test/owner-restorable');
+    const ownerItem = await suggest(member, groupId, 'Owner removed', 'https://example.test/owner-removed');
     expect((await api(owner, 'DELETE', `/groups/${groupId}/materials/${ownerItem.id}`, {})).status).toBe(204);
-    expect((await api(owner, 'POST', `/groups/${groupId}/materials/${ownerItem.id}/restore`)).status).toBe(200);
+    // The same links can be suggested again right away: nothing is kept.
+    await suggest(member, groupId, 'Spammy again', 'https://example.test/spammy');
 
     const log = (await api<LogResponse>(admin, 'GET', '/admin/moderation-log')).body.actions.filter((action) => action.groupId === groupId);
-    expect(log.map((action) => action.action)).toEqual(['restore_material', 'delete_material']);
-    expect(log[0]).toMatchObject({ targetType: 'material', targetId: String(victim.id), label: 'Restorable item' });
-
-    await admin.goto('/study-groups/admin');
-    await expect(admin.locator('section[aria-labelledby="log-title"] li').first()).toContainText('restore_material');
+    expect(log.map((action) => action.action)).toEqual(['delete_material']);
+    expect(log[0]).toMatchObject({ targetType: 'material', targetId: String(victim.id), label: 'Spammy item' });
   });
 });
 

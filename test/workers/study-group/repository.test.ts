@@ -10,7 +10,7 @@ const now = new Date('2026-11-16T12:00:00.000Z');
 const daysAgo = (days: number) => new Date(now.getTime() - days * 86_400_000).toISOString();
 
 describe('study group repository', () => {
-  it('purges deleted groups and content after 30 days, the log after 12 months and expired sessions', async () => {
+  it('purges decided requests after 30 days, the log after 12 months, expired sessions, the outbox and upload counters', async () => {
     const db = openD1Sqlite(':memory:', migrationsDir);
     const repository = createRepository(db);
     await repository.createUser({ id: 'user0001', sub: 's', email: 'u@example.test', displayName: 'U' }, daysAgo(400));
@@ -26,16 +26,23 @@ describe('study group repository', () => {
       db.prepare("INSERT INTO moderation_actions (action, target_type, target_id, label, reason, created_at) VALUES ('delete_group', 'group', 'g', 'Recent', 'Reason text', ?)").bind(daysAgo(364)),
       db.prepare("INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES ('expired', 'user0001', 'x', ?)").bind(daysAgo(1)),
       db.prepare("INSERT INTO sessions (token_hash, user_id, created_at, expires_at) VALUES ('valid', 'user0001', 'x', ?)").bind(new Date(now.getTime() + 1000).toISOString()),
+      db.prepare("INSERT INTO notifications (user_id, kind, dedupe_key, status, created_at, send_after) VALUES ('user0001', 'join_approved', 'old', 'sent', ?, ?)").bind(daysAgo(31), daysAgo(31)),
+      db.prepare("INSERT INTO notifications (user_id, kind, dedupe_key, created_at, send_after) VALUES ('user0001', 'join_approved', 'recent', ?, ?)").bind(daysAgo(29), daysAgo(29)),
+      db.prepare("INSERT INTO icon_uploads (user_id, group_id, created_at) VALUES ('user0001', 'devtalk', ?)").bind(daysAgo(2)),
+      db.prepare("INSERT INTO icon_uploads (user_id, group_id, created_at) VALUES ('user0001', 'devtalk', ?)").bind(new Date(now.getTime() - 3_600_000).toISOString()),
     ]);
 
     await repository.purgeExpired(now);
 
     const names = async (query: string) => (await db.prepare(query).all<{ name: string }>()).results.map((row) => row.name);
-    expect(await names('SELECT id AS name FROM groups ORDER BY id')).toEqual(['devtalk', 'recent']);
-    expect(await names('SELECT title AS name FROM materials ORDER BY id')).toEqual(['Recent']);
+    // Nothing is soft-deleted any more, so the cron leaves groups and materials alone.
+    expect(await names('SELECT id AS name FROM groups ORDER BY id')).toEqual(['devtalk', 'old', 'recent']);
+    expect(await names('SELECT title AS name FROM materials ORDER BY id')).toEqual(['Old', 'Recent', 'In old group']);
     expect(await names('SELECT status AS name FROM join_requests')).toEqual(['pending']);
     expect(await names('SELECT label AS name FROM moderation_actions')).toEqual(['Recent']);
     expect(await names('SELECT token_hash AS name FROM sessions')).toEqual(['valid']);
+    expect(await names('SELECT dedupe_key AS name FROM notifications')).toEqual(['recent']);
+    expect((await db.prepare('SELECT COUNT(*) AS count FROM icon_uploads').first())).toEqual({ count: 1 });
   });
 
   it('parses stored rules defensively', async () => {
@@ -45,11 +52,6 @@ describe('study group repository', () => {
       await db.prepare("UPDATE groups SET rules = ? WHERE id = 'devtalk'").bind(rules).run();
       expect((await repository.getGroup('devtalk'))!.rules).toEqual(expected);
     }
-  });
-
-  it('restores nothing when the material is not deleted', async () => {
-    const repository = createRepository(openD1Sqlite(':memory:', migrationsDir));
-    expect(await repository.restoreMaterial('devtalk', 1, 'user')).toBeNull();
   });
 
   it('decodes only well-formed cursors and recognizes unique violations', () => {

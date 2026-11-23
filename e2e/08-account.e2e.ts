@@ -87,9 +87,9 @@ test.describe('account', () => {
 
   test('deleting the account warns about owned groups and needs an explicit confirmation (Q8)', async () => {
     await leaving.goto('/study-groups/account');
-    await expect(leaving.getByText('These groups you own will be deleted too:')).toBeVisible();
+    await expect(leaving.getByText(/These groups you own will be deleted permanently too/)).toBeVisible();
     await expect(leaving.getByRole('listitem').filter({ hasText: ownedInput.name })).toBeVisible();
-    const remove = leaving.getByRole('button', { name: 'Delete my account' });
+    const remove = leaving.getByRole('button', { name: 'Delete my account permanently' });
     await expect(remove).toBeDisabled();
     expect((await api(leaving, 'DELETE', '/me', {})).status).toBe(400);
 

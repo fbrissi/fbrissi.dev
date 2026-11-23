@@ -9,6 +9,13 @@ locals {
   sandbox_branch    = "sandbox"
   custom_domain     = "fbrissi.dev"
   sandbox_domain    = "sandbox.fbrissi.dev"
+
+  # The sandbox environment (sandbox.fbrissi.dev) is off. Every sandbox resource below uses
+  # `count = local.sandbox_enabled ? 1 : 0`, so turning it off destroys them on the next apply, and turning it on
+  # creates them again (with an empty sandbox D1). The Worker `[env.sandbox]` blocks and .github/workflows/sandbox.yml
+  # (gated by the SANDBOX_ENABLED repository variable) stay as the reference for how the sandbox is built.
+  sandbox_enabled   = false
+  sandbox_count     = local.sandbox_enabled ? 1 : 0
   github_owner      = "fbrissi"
   github_repository = "fbrissi.dev"
 
@@ -18,6 +25,9 @@ locals {
   public_contact_email = "contact@fbrissi.dev"
   # Alias kept so Portuguese-style typos still reach the inbox
   public_contact_email_aliases = ["contato@fbrissi.dev"]
+
+  # Study group notifications are sent by SES from this address (workers/study-group/ses.ts).
+  notifications_email_from = "notifications@fbrissi.dev"
 
   # AWS account shared with the Oliblish projects; Terraform only reaches the fbrissi.dev SES identity.
   aws_account_id = "526983805816"

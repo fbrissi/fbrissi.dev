@@ -32,7 +32,7 @@ export function SiteShell({ locale, activePage, pathname, alternatePathname, chi
         {messages.nav.skipToContent}
       </a>
       {deploymentEnvironment !== 'production' ? (
-        <div className="fixed left-3 top-3 z-60 rounded-full border border-orange-300/60 bg-orange-500 px-3 py-1 text-xs font-bold tracking-widest text-white shadow-lg" role="status">
+        <div className="pointer-events-none fixed left-1/2 top-1 z-60 -translate-x-1/2 rounded-full border border-orange-300/60 bg-orange-500 px-2 py-0.5 text-[10px] font-bold tracking-widest text-white shadow-lg sm:left-3 sm:top-3 sm:translate-x-0 sm:px-3 sm:py-1 sm:text-xs" role="status">
           {deploymentEnvironment.toUpperCase()}
         </div>
       ) : null}

@@ -3,11 +3,12 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import studyGroupApi, { environmentOrigins, type Env } from '@/workers/study-group-api';
+import studyGroupApi, { delaySeconds, environmentOrigins, type Env } from '@/workers/study-group-api';
 import { openD1Sqlite } from '@/workers/local/d1-sqlite';
 import type { D1Like } from '@/workers/study-group/repository';
+import { createUnsubscribeToken } from '@/workers/study-group/unsubscribe';
 
-import { migrationsDir } from './study-group/harness';
+import { memoryBucket, migrationsDir } from './study-group/harness';
 
 const workersDir = path.resolve(__dirname, '../../workers');
 
@@ -26,10 +27,14 @@ function createEnv(db: D1Like, environment?: string): Env & Record<string, unkno
     STUDY_GROUP_WRITE_RATE_LIMITER: limiter(),
     STUDY_GROUP_LOGIN_RATE_LIMITER: limiter(),
     STUDY_GROUP_JOIN_RATE_LIMITER: limiter(),
+    STUDY_GROUP_ICON_RATE_LIMITER: limiter(),
+    STUDY_GROUP_ICONS: memoryBucket(),
     STUDY_GROUP_SESSION_SECRET: 'secret',
     GOOGLE_OAUTH_CLIENT_ID: 'google-client',
     GOOGLE_OAUTH_CLIENT_SECRET: 'google-secret',
     STUDY_GROUP_PLATFORM_ADMIN_EMAILS: 'admin@example.test',
+    STUDY_GROUP_UNSUBSCRIBE_SECRET: 'unsubscribe-secret',
+    STUDY_GROUP_NOTIFY_QUEUE: { sendBatch: vi.fn(async () => undefined) },
     // Settings the local stack uses; the production Worker must ignore all of them.
     FAKE_IDP_PUBLIC_URL: 'http://localhost:8790',
     FAKE_IDP_INTERNAL_URL: 'http://fake-idp:8790',
@@ -155,5 +160,79 @@ describe('production study group Worker', () => {
     await production.prepare("INSERT INTO moderation_actions (action, target_type, target_id, label, reason, created_at) VALUES ('delete_group', 'group', 'g', 'G', 'Reason text here', '2020-01-01T00:00:00.000Z')").run();
     await studyGroupApi.scheduled({}, env);
     expect(await production.prepare('SELECT COUNT(*) AS count FROM moderation_actions').first()).toEqual({ count: 0 });
+  });
+
+  it('re-drives idle outbox rows on the daily cron, fails exhausted ones and logs only counts', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const ago = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
+    const insert = (key: string, status: string, sendAfter: string, attempts = 0, claimedAt: string | null = null) => production.prepare(
+      "INSERT INTO notifications (user_id, kind, group_id, dedupe_key, status, created_at, send_after, attempts, claimed_at) VALUES ('user0001', 'join_approved', 'devtalk', ?, ?, ?, ?, ?, ?)"
+    ).bind(key, status, sendAfter, sendAfter, attempts, claimedAt);
+    await production.batch([
+      production.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES ('user0001', 's', 'owner@example.test', 'O', 'x', 'x')"),
+      insert('lost', 'pending', ago(60)),
+      insert('recent', 'pending', ago(5)),
+      insert('stale-claim', 'sending', ago(120), 2, ago(45)),
+      insert('fresh-claim', 'sending', ago(120), 2, ago(5)),
+      insert('exhausted', 'pending', ago(120), 6, ago(60)),
+      insert('done', 'sent', ago(120), 1, ago(119)),
+    ]);
+    await studyGroupApi.scheduled({}, env);
+    expect(env.STUDY_GROUP_NOTIFY_QUEUE.sendBatch).toHaveBeenCalledWith([{ body: { id: 1 }, delaySeconds: 0 }, { body: { id: 3 }, delaySeconds: 0 }]);
+    expect(await production.prepare("SELECT dedupe_key AS key FROM notifications WHERE status = 'failed'").first()).toEqual({ key: 'exhausted' });
+    expect(warn).toHaveBeenCalledWith('Study group notifications needing attention:', { requeued: 2, failedLastDay: 1 });
+
+    const empty = createEnv(openD1Sqlite(':memory:', migrationsDir), 'production');
+    await studyGroupApi.scheduled({}, empty);
+    expect(empty.STUDY_GROUP_NOTIFY_QUEUE.sendBatch).not.toHaveBeenCalled();
+    expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('deletes orphaned icon objects on the daily cron', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const bucket = memoryBucket();
+    const old = new Date(Date.now() - 2 * 3_600_000);
+    bucket.objects.set('groups/devtalk/abcdefghjkmnpqrs.png', { data: new Uint8Array(1), uploaded: old });
+    bucket.objects.set('groups/devtalk/orphanorphan0001.png', { data: new Uint8Array(1), uploaded: old });
+    await production.prepare("UPDATE groups SET icon_key = 'groups/devtalk/abcdefghjkmnpqrs.png', icon_content_type = 'image/png', icon_updated_at = 'x' WHERE id = 'devtalk'").run();
+    await studyGroupApi.scheduled({}, { ...env, STUDY_GROUP_ICONS: bucket });
+    expect([...bucket.objects.keys()]).toEqual(['groups/devtalk/abcdefghjkmnpqrs.png']);
+    expect(warn).toHaveBeenCalledWith('Deleted orphaned study group icons:', 1);
+  });
+
+  it('delays queued notifications until their send time, within the queue limit', () => {
+    expect(delaySeconds('2026-11-22T12:00:00.000Z', Date.parse('2026-11-22T12:00:00.000Z'))).toBe(0);
+    expect(delaySeconds('2026-11-22T11:00:00.000Z', Date.parse('2026-11-22T12:00:00.000Z'))).toBe(0);
+    expect(delaySeconds('2026-11-22T18:00:00.500Z', Date.parse('2026-11-22T12:00:00.000Z'))).toBe(21_601);
+    expect(delaySeconds('2026-11-24T12:00:00.000Z', Date.parse('2026-11-22T12:00:00.000Z'))).toBe(86_400);
+  });
+
+  it('accepts only unsubscribe links signed for its own environment, without an Origin', async () => {
+    await production.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES ('user0001', 's', 'u@example.test', 'U', 'x', 'x')").run();
+    const sandboxDb = openD1Sqlite(':memory:', migrationsDir);
+    await sandboxDb.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES ('user0001', 's', 'u@example.test', 'U', 'x', 'x')").run();
+    const sandbox = createEnv(sandboxDb, 'sandbox');
+    const token = await createUnsubscribeToken('user0001', 'production', 'unsubscribe-secret', new Date());
+    const post = (origin: string, target: Env) => studyGroupApi.fetch(new Request(`${origin}/api/study-group/unsubscribe?t=${token}`, {
+      method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: 'List-Unsubscribe=One-Click',
+    }), target);
+
+    expect((await post('https://sandbox.fbrissi.dev', sandbox)).status).toBe(400);
+    const unconfigured = { ...env };
+    delete unconfigured.STUDY_GROUP_UNSUBSCRIBE_SECRET;
+    expect((await post('https://fbrissi.dev', unconfigured)).status).toBe(400);
+    expect((await post('https://fbrissi.dev', env)).status).toBe(200);
+    expect(await production.prepare('SELECT email_enabled FROM notification_preferences').first()).toEqual({ email_enabled: 0 });
+    expect(await sandboxDb.prepare('SELECT COUNT(*) AS count FROM notification_preferences').first()).toEqual({ count: 0 });
+  });
+
+  it('binds each environment to its own notifications queue and never to the SES key', () => {
+    const config = readFileSync(path.join(workersDir, 'study-group-api/wrangler.toml'), 'utf8');
+    const [productionConfig, sandboxConfig] = config.split('\n[env.sandbox]\n');
+    expect(productionConfig).toContain('binding = "STUDY_GROUP_NOTIFY_QUEUE"\nqueue = "fbrissi-dev-study-group-notify"');
+    expect(sandboxConfig).toContain('binding = "STUDY_GROUP_NOTIFY_QUEUE"\nqueue = "fbrissi-dev-sandbox-study-group-notify"');
+    expect(config).not.toMatch(/STUDY_GROUP_SES_/);
+    const files = [...importGraph(path.join(workersDir, 'study-group-api.ts'))].map((file) => path.relative(workersDir, file));
+    expect(files).not.toContain('study-group/ses.ts');
   });
 });

@@ -1,10 +1,13 @@
+import * as admin from './admin-routes';
 import * as auth from './auth-routes';
 import { authorize, isPlatformAdminEmail, resolveGroupRole, resolveRole, type Role } from './authorization';
 import * as board from './board-routes';
 import { STUDY_GROUP_API_PREFIX } from './contract';
 import { cryptoRandomInt, sha256Hex } from './crypto';
 import * as groups from './group-routes';
+import * as icons from './icon-routes';
 import { canParticipate } from './group-routes';
+import * as notifications from './notification-routes';
 import {
   errorBody,
   HttpError,
@@ -16,8 +19,9 @@ import {
   type RequestContext,
   type RouteResult,
 } from './http';
+import type { BucketLike } from './icons';
 import { createJwksProvider, type CacheLike, type OidcClient } from './oidc';
-import { createRepository, type D1Like } from './repository';
+import { createRepository, type D1Like, type QueuedNotification } from './repository';
 
 export type { RateLimitKind } from './http';
 
@@ -38,6 +42,14 @@ export interface StudyGroupHandlerDeps {
   now?: () => Date;
   /** Returns an integer in [0, max). */
   randomInt?: (max: number) => number;
+  /** `production`, `sandbox` or `local`; signed into unsubscribe links. Defaults to production. */
+  environment?: string;
+  /** Verifies one-click unsubscribe links (STUDY_GROUP_UNSUBSCRIBE_SECRET). */
+  unsubscribeSecret?: string;
+  /** Hands new outbox rows to the mailer. Without it, rows wait for the daily cron. */
+  notify?: (notifications: QueuedNotification[]) => Promise<void>;
+  /** The private group icon bucket (R2 in the Workers, a folder locally). */
+  icons?: BucketLike;
 }
 
 type Handler = (context: never) => Promise<RouteResult>;
@@ -48,12 +60,19 @@ interface Route {
   /** Minimum role; group routes resolve the role inside the group. */
   role: Role;
   rateLimit?: RateLimitKind;
-  /** Skips the session lookup on the public, cacheable groups list. */
+  /** Skips the session lookup: the public, cacheable groups list and the token-authenticated unsubscribe. */
   anonymous?: boolean;
   /** Allowed while the user still has to accept a new policy version (Q18). */
   consentExempt?: boolean;
   /** Suggesting and voting need membership (or ownership); a platform admin outside the group can only manage it. */
   participate?: boolean;
+  /**
+   * Skips the Origin and JSON checks. Only the one-click unsubscribe POST (RFC 8058): mail providers send it with a
+   * form body and no Origin, and its signed token, not a cookie, is the credential.
+   */
+  csrfExempt?: boolean;
+  /** The body is a raw image (icon upload): the Origin check stays, and only image content types are accepted. */
+  imageBody?: boolean;
   run: Handler;
 }
 
@@ -63,6 +82,8 @@ const paramPatterns: Record<string, RegExp> = {
   materialId: /^[1-9]\d{0,15}$/,
   roundId: /^[1-9]\d{0,15}$/,
   requestId: /^[1-9]\d{0,15}$/,
+  iconGroup: /^[a-z0-9]{3,32}$/,
+  iconFile: /^[a-z0-9]{16}\.(png|jpg|webp)$/,
 };
 
 /** Every API route with the minimum role it needs (D10). Tests walk this table for the route x role matrix. */
@@ -80,6 +101,10 @@ export const routes: readonly Route[] = [
   { method: 'POST', path: '/me/consents', role: 'user', consentExempt: true, run: auth.acceptPolicies },
   { method: 'GET', path: '/me/groups', role: 'user', run: auth.myGroups },
   { method: 'GET', path: '/me/export', role: 'user', run: auth.exportAccount },
+  { method: 'GET', path: '/me/notifications', role: 'user', run: notifications.getPreferences },
+  { method: 'PUT', path: '/me/notifications', role: 'user', consentExempt: true, run: notifications.updatePreferences },
+  { method: 'GET', path: '/unsubscribe', role: 'visitor', anonymous: true, run: notifications.unsubscribePage },
+  { method: 'POST', path: '/unsubscribe', role: 'visitor', anonymous: true, csrfExempt: true, run: notifications.unsubscribe },
 
   { method: 'GET', path: '/groups', role: 'visitor', anonymous: true, run: groups.listPublicGroups },
   { method: 'POST', path: '/groups', role: 'user', run: groups.createGroup },
@@ -97,14 +122,15 @@ export const routes: readonly Route[] = [
   { method: 'POST', path: '/groups/:groupId/requests/:requestId/approve', role: 'owner', run: groups.approveRequest },
   { method: 'POST', path: '/groups/:groupId/requests/:requestId/reject', role: 'owner', run: groups.rejectRequest },
   { method: 'DELETE', path: '/groups/:groupId/requests/:requestId/message', role: 'owner', run: groups.deleteRequestMessage },
+  { method: 'PUT', path: '/groups/:groupId/icon', role: 'owner', rateLimit: 'icon', imageBody: true, run: icons.uploadIcon },
+  { method: 'DELETE', path: '/groups/:groupId/icon', role: 'owner', run: icons.deleteIcon },
+  { method: 'GET', path: '/icons/:iconGroup/:iconFile', role: 'visitor', anonymous: true, run: icons.serveIcon },
 
   { method: 'GET', path: '/groups/:groupId/materials', role: 'member', run: board.listMaterials },
   { method: 'POST', path: '/groups/:groupId/materials', role: 'member', participate: true, run: board.createMaterial },
-  { method: 'GET', path: '/groups/:groupId/materials/deleted', role: 'owner', run: board.listDeletedMaterials },
   { method: 'PATCH', path: '/groups/:groupId/materials/:materialId', role: 'owner', run: board.updateMaterial },
   { method: 'DELETE', path: '/groups/:groupId/materials/:materialId', role: 'owner', run: board.deleteMaterial },
   { method: 'POST', path: '/groups/:groupId/materials/:materialId/approve', role: 'owner', run: board.approveMaterial },
-  { method: 'POST', path: '/groups/:groupId/materials/:materialId/restore', role: 'owner', run: board.restoreMaterial },
   { method: 'GET', path: '/groups/:groupId/rounds/current', role: 'member', run: board.getCurrentRound },
   { method: 'POST', path: '/groups/:groupId/rounds', role: 'owner', run: board.createRound },
   { method: 'POST', path: '/groups/:groupId/rounds/:roundId/votes', role: 'member', participate: true, run: board.castVote },
@@ -113,6 +139,10 @@ export const routes: readonly Route[] = [
 
   { method: 'GET', path: '/admin/groups', role: 'platform_admin', run: groups.listAllGroups },
   { method: 'GET', path: '/admin/moderation-log', role: 'platform_admin', run: groups.moderationLog },
+  { method: 'GET', path: '/admin/users', role: 'platform_admin', run: admin.listUsers },
+  { method: 'POST', path: '/admin/users/:userId/ban', role: 'platform_admin', run: admin.banUser },
+  { method: 'POST', path: '/admin/users/:userId/ban/renew', role: 'platform_admin', run: admin.renewBan },
+  { method: 'DELETE', path: '/admin/users/:userId/ban', role: 'platform_admin', run: admin.unbanUser },
 ];
 
 function matchRoute(method: string, segments: string[]): { route: Route; params: Record<string, string> } {
@@ -154,11 +184,16 @@ function withBaseHeaders(response: Response): Response {
 }
 
 /** Same-origin API: every state-changing request needs an allowed Origin and a JSON body (CSRF, on top of SameSite=Lax). */
-function checkCsrf(request: Request, allowedOrigins: readonly string[]): void {
+function checkCsrf(request: Request, allowedOrigins: readonly string[], imageBody = false): void {
   if (request.method === 'GET') return;
   const origin = request.headers.get('Origin');
   if (!origin || !allowedOrigins.includes(origin)) throw new HttpError(403, 'Forbidden');
-  if (!/^application\/json\b/i.test(request.headers.get('Content-Type') ?? '')) throw new HttpError(415, 'Use a JSON body');
+  const type = request.headers.get('Content-Type') ?? '';
+  if (imageBody) {
+    if (!/^image\/(png|jpeg|webp)$/i.test(type)) throw new HttpError(415, 'Use a PNG, JPEG or WebP image');
+  } else if (!/^application\/json\b/i.test(type)) {
+    throw new HttpError(415, 'Use a JSON body');
+  }
 }
 
 function globalFetch(input: Request | string, init?: RequestInit): Promise<Response> {
@@ -179,6 +214,10 @@ export function createHandler(deps: StudyGroupHandlerDeps) {
     cache: deps.cache,
     clock: () => deps.now?.() ?? new Date(),
     pick: <T>(items: T[]): T => items[randomInt(items.length)],
+    environment: deps.environment ?? 'production',
+    unsubscribeSecret: deps.unsubscribeSecret ?? '',
+    notify: deps.notify,
+    icons: deps.icons,
   };
 
   return async function handle(request: Request): Promise<Response> {
@@ -186,7 +225,7 @@ export function createHandler(deps: StudyGroupHandlerDeps) {
       const url = new URL(request.url);
       if (url.pathname !== STUDY_GROUP_API_PREFIX && !url.pathname.startsWith(`${STUDY_GROUP_API_PREFIX}/`)) throw new HttpError(404, 'Not found');
       const { route, params } = matchRoute(request.method, url.pathname.slice(STUDY_GROUP_API_PREFIX.length).split('/').filter(Boolean));
-      checkCsrf(request, deps.allowedOrigins);
+      if (!route.csrfExempt) checkCsrf(request, deps.allowedOrigins, route.imageBody);
 
       const token = route.anonymous ? undefined : parseCookies(request).get(SESSION_COOKIE);
       const sessionHash = token ? await sha256Hex(token) : null;

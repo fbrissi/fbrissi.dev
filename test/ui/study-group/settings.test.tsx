@@ -4,9 +4,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GroupSettingsView } from '@/features/study-group/group-settings';
 import { SessionProvider } from '@/features/study-group/session';
-import type { DeletedMaterial, GroupRole, GroupSettings, JoinRequest, Member, ModerationNotice } from '@/workers/study-group/contract';
+import type { GroupRole, GroupSettings, JoinRequest, Member, ModerationNotice } from '@/workers/study-group/contract';
 
-import { admin, apiError, bodyOf, calls, group, material, stubApi, user, type Routes } from './fake-api';
+import { admin, answerReason, apiError, bodyOf, calls, group, stubApi, user, type Routes } from './fake-api';
 
 vi.stubGlobal('React', React);
 
@@ -27,18 +27,12 @@ const requests: JoinRequest[] = [
   { id: 2, displayName: 'Uma', message: null, createdAt: '2026-11-04T00:00:00Z' }
 ];
 const notices: ModerationNotice[] = [{ id: 1, action: 'delete_material', groupId: group.id, label: 'Spam', reason: 'Unrelated promotion', createdAt: '2026-11-05T00:00:00Z' }];
-const deleted: DeletedMaterial[] = [
-  { ...material(5, { title: 'Owner deleted' }), deletedAt: '2026-11-06T00:00:00Z', deletedByAdmin: false },
-  { ...material(6, { title: 'Admin deleted' }), deletedAt: '2026-11-06T00:00:00Z', deletedByAdmin: true }
-];
-
 function setup({ role = 'owner' as GroupRole, me = user, routes = {} as Routes } = {}) {
   const fetchMock = stubApi({
     'GET /me': { user: me },
     [`GET ${base}/settings`]: { settings, notices, role },
     [`GET ${base}/requests`]: { requests },
     [`GET ${base}/members`]: { members },
-    [`GET ${base}/materials/deleted`]: { materials: deleted },
     ...routes
   });
   render(<SessionProvider><GroupSettingsView /></SessionProvider>);
@@ -88,6 +82,9 @@ describe('group settings', () => {
     expect(within(form).getByText('Please fix the highlighted fields.')).toBeInTheDocument();
     expect(within(form).getByText('Use 3 to 60 characters.')).toBeInTheDocument();
     expect(name).toHaveAttribute('aria-invalid', 'true');
+    fireEvent.change(name, { target: { value: 'Join www.example.test' } });
+    fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
+    expect(within(form).getByText("Group names can't contain links or web addresses.")).toBeInTheDocument();
 
     fireEvent.change(name, { target: { value: 'Go Talk 2' } });
     fireEvent.change(within(form).getByLabelText('Meeting link (optional)'), { target: { value: '' } });
@@ -98,7 +95,7 @@ describe('group settings', () => {
     expect(await within(form).findByText('Accept the updated Terms and Privacy Policy to make changes.')).toBeInTheDocument();
     fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
     expect(await within(form).findByText('Settings saved.')).toBeInTheDocument();
-    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toEqual({ ...group, id: undefined, name: 'Go Talk 2', rules: ['One', 'Two'], meetingUrl: null, moderationMode: 'review', listed: false });
+    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toEqual({ ...group, id: undefined, iconUrl: undefined, name: 'Go Talk 2', rules: ['One', 'Two'], meetingUrl: null, moderationMode: 'review', listed: false });
     expect(screen.getByText('Go Talk 2', { selector: 'p' })).toBeInTheDocument();
   });
 
@@ -166,12 +163,13 @@ describe('group settings', () => {
     const fetchMock = setup({ role: 'platform_admin', me: admin, routes: { [`DELETE ${base}/requests/1/message`]: null } });
     expect(await screen.findByText(/You are moderating this group as the platform admin/)).toBeInTheDocument();
     const section = screen.getByRole('region', { name: 'Join requests' });
-    const prompt = vi.spyOn(window, 'prompt').mockReturnValue(null);
     fireEvent.click(within(section).getByRole('button', { name: 'Delete the message from Oscar' }));
+    expect(await answerReason(null)).toHaveTextContent('Delete the message from Oscar permanently?');
     expect(calls(fetchMock)).not.toContain(`DELETE ${base}/requests/1/message`);
-    prompt.mockReturnValue('Personal data in the message');
     fireEvent.click(within(section).getByRole('button', { name: 'Delete the message from Oscar' }));
+    await answerReason('Personal data in the message');
     expect(await within(section).findByText('Message deleted.')).toBeInTheDocument();
+    expect(within(section).getByRole('heading', { name: 'Join requests' })).toHaveFocus();
     expect(within(section).queryByText('Hi, I am Oscar')).not.toBeInTheDocument();
     expect(bodyOf(fetchMock, `DELETE ${base}/requests/1/message`)).toEqual({ reason: 'Personal data in the message' });
   });
@@ -191,31 +189,35 @@ describe('group settings', () => {
     await waitFor(() => expect(within(section).queryByText(/Max/)).not.toBeInTheDocument());
   });
 
-  it('restores deleted materials, except admin deletions for owners (Q6)', async () => {
-    let fail = true;
-    setup({ routes: { [`POST ${base}/materials/5/restore`]: () => (fail ? apiError(409, 'This URL is already open in another suggestion') : { material: material(5) }) } });
-    const section = await screen.findByRole('region', { name: 'Deleted materials' });
-    expect(within(section).getByRole('button', { name: 'Restore “Admin deleted”' })).toBeDisabled();
-    expect(within(section).getByText(/by the platform admin/)).toBeInTheDocument();
-    fireEvent.click(within(section).getByRole('button', { name: 'Restore “Owner deleted”' }));
-    expect(await within(section).findByText('This URL is already open in another suggestion')).toBeInTheDocument();
-    fail = false;
-    fireEvent.click(within(section).getByRole('button', { name: 'Restore “Owner deleted”' }));
-    expect(await within(section).findByText('Restored “Owner deleted”.')).toBeInTheDocument();
+  it('shows the group icon and updates it after a removal', async () => {
+    stubApi({
+      'GET /me': { user },
+      [`GET ${base}/settings`]: { settings: { ...settings, iconUrl: '/api/study-group/icons/gotalk1234/abcdefghjkmnpqrs.png?exp=1&sig=s' }, notices: [], role: 'owner' },
+      [`GET ${base}/requests`]: { requests: [] },
+      [`GET ${base}/members`]: { members },
+      [`DELETE ${base}/icon`]: null
+    });
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<SessionProvider><GroupSettingsView /></SessionProvider>);
+    const section = await screen.findByRole('region', { name: 'Group icon' });
+    expect(section.querySelector('img')).not.toBeNull();
+    fireEvent.click(within(section).getByRole('button', { name: 'Remove icon' }));
+    expect(await within(section).findByText('No icon yet.')).toBeInTheDocument();
   });
 
-  it('shows an empty deleted list and no notices', async () => {
-    stubApi({ 'GET /me': { user }, [`GET ${base}/settings`]: { settings: { ...settings, meetingUrl: null }, notices: [], role: 'owner' }, [`GET ${base}/requests`]: { requests: [] }, [`GET ${base}/members`]: { members }, [`GET ${base}/materials/deleted`]: { materials: [] } });
+  it('shows no notices when there are none', async () => {
+    stubApi({ 'GET /me': { user }, [`GET ${base}/settings`]: { settings: { ...settings, meetingUrl: null }, notices: [], role: 'owner' }, [`GET ${base}/requests`]: { requests: [] }, [`GET ${base}/members`]: { members } });
     render(<SessionProvider><GroupSettingsView /></SessionProvider>);
-    expect(await screen.findByText('No deleted materials.')).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: 'Group settings' })).toBeInTheDocument();
     expect(screen.queryByRole('region', { name: 'Moderation notices' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Deleted materials' })).not.toBeInTheDocument();
   });
 
   it('deletes the group after typing its name (4.5)', async () => {
     let fail = true;
     const fetchMock = setup({ routes: { [`DELETE ${base}`]: () => (fail ? apiError(400, 'Type the group name to confirm') : null) } });
     const section = await screen.findByRole('region', { name: 'Delete the group' });
-    const button = within(section).getByRole('button', { name: 'Delete group' });
+    const button = within(section).getByRole('button', { name: 'Delete group permanently' });
     expect(button).toBeDisabled();
     fireEvent.change(within(section).getByLabelText('Type “Go Talk” to confirm'), { target: { value: ' go talk ' } });
     expect(button).toBeEnabled();
@@ -232,8 +234,15 @@ describe('group settings', () => {
     const fetchMock = setup({ role: 'platform_admin', me: admin, routes: { [`DELETE ${base}`]: null } });
     const section = await screen.findByRole('region', { name: 'Delete the group' });
     fireEvent.change(within(section).getByLabelText('Type “Go Talk” to confirm'), { target: { value: 'Go Talk' } });
-    fireEvent.change(within(section).getByLabelText(/Reason/), { target: { value: 'Breaks the content policy' } });
-    fireEvent.click(within(section).getByRole('button', { name: 'Delete group' }));
+    fireEvent.change(within(section).getByLabelText(/Reason/), { target: { value: ' Too short ' } });
+    fireEvent.click(within(section).getByRole('button', { name: 'Delete group permanently' }));
+    expect(await within(section).findByText('A reason of 10 to 500 characters is required.')).toBeInTheDocument();
+    expect(calls(fetchMock)).not.toContain(`DELETE ${base}`);
+    fireEvent.change(within(section).getByLabelText(/Reason/), { target: { value: 'x'.repeat(501) } });
+    fireEvent.click(within(section).getByRole('button', { name: 'Delete group permanently' }));
+    expect(calls(fetchMock)).not.toContain(`DELETE ${base}`);
+    fireEvent.change(within(section).getByLabelText(/Reason/), { target: { value: ' Breaks the content policy ' } });
+    fireEvent.click(within(section).getByRole('button', { name: 'Delete group permanently' }));
     await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('/study-groups/admin'));
     expect(bodyOf(fetchMock, `DELETE ${base}`)).toEqual({ confirmName: 'Go Talk', reason: 'Breaks the content policy' });
   });

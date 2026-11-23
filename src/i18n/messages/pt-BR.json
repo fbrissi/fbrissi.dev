@@ -60,7 +60,7 @@
     "description": "Engenheiro backend e cloud desde 2009: Java, Kotlin, Go, AWS e Kubernetes. Autenticação de Open Finance no PagBank; contribuidor do Keycloak.",
     "subhead": "Filipe Bojikian Rissi. Java, Kotlin, Go e PHP desde 2009, de ERPs e integrações de NF-e à autenticação de Open Finance no PagBank. Moro em Bauru (SP, UTC-3).",
     "ctaPrimary": "Ver minha experiência",
-    "ctaSecondary": "Enviar e-mail",
+    "ctaSecondary": "Fale comigo",
     "ctaResume": "Baixar currículo (PDF)",
     "aboutLink": "Mais sobre mim",
     "proofTitle": "Trabalhos em destaque",
@@ -72,6 +72,10 @@
       {
         "text": "Contribuidor do Keycloak: chaves de criptografia RSA importadas para RSA1_5, RSA-OAEP e RSA-OAEP-256 (PR #8553).",
         "path": "/open-source/keycloak"
+      },
+      {
+        "text": "Contribuidor do Kool Dev: presets de Java e Spring Boot com ações de automação via API no CLI do Kool (PR #542).",
+        "path": "/open-source/kool-dev"
       },
       {
         "text": "Tech lead de microsserviços Java que processavam milhões de mensagens de automação jurídica na Finch.",
@@ -127,8 +131,10 @@
       "description": "Fale comigo sobre uma vaga, um projeto ou uma palestra. O formulário, o e-mail e o WhatsApp chegam direto a mim.",
       "formTitle": "Envie uma mensagem",
       "alternativeTitle": "Outras formas de falar comigo",
-      "privacyNotice": "Uso seu nome e e-mail só para responder a esta mensagem. Veja a",
-      "privacyLink": "Política de Privacidade"
+      "privacyNotice": "Uso seu nome e e-mail só para responder a esta mensagem. Eles são tratados pelos fornecedores listados na",
+      "privacyLink": "Política de Privacidade",
+      "emailTransferNotice": "Os e-mails para este endereço são tratados pelos fornecedores listados na",
+      "transferNoticeEnd": ", alguns deles fora do Brasil."
     }
   },
   "articles": {
@@ -140,7 +146,7 @@
     "seoTitle": "Grupos de Estudo de Inglês para Devs",
     "seoDescription": "Pratique inglês com outros desenvolvedores em grupos pequenos e gratuitos. Entre ou crie um grupo, escolha o tema técnico da semana e converse em inglês.",
     "intro": "A maior parte da documentação, das discussões de open source, das palestras e das vagas remotas em software acontece em inglês. Ler já é um começo; falar com confiança exige prática. Este programa gratuito ajuda desenvolvedores a praticar juntos, em grupos de conversação pequenos e acolhedores.",
-    "appLanguageNote": "Esta página está em português só para você encontrar o programa. A partir daqui, tudo funciona em inglês: o cadastro, os quadros dos grupos e os encontros, porque a prática começa já na leitura.",
+    "appLanguageNote": "Esta página está em inglês de propósito. O objetivo do programa é incentivar você a praticar inglês, e a prática começa pela leitura: o cadastro, os quadros dos grupos e os encontros também são todos em inglês.",
     "signIn": "Entrar com o Google",
     "createGroup": "Criar um grupo",
     "myGroups": "Meus grupos",
@@ -174,6 +180,7 @@
     "openGroup": "Abrir grupo",
     "signInToJoin": "Entre para participar",
     "signInFailed": "Não foi possível entrar. Tente novamente.",
+    "signInBanned": "Esta conta Google está banida dos grupos de estudo por violar a política de conteúdo. Se você acha que é um engano, use a página de contato.",
     "faqTitle": "Perguntas frequentes",
     "faq": [
       {
@@ -202,7 +209,7 @@
       },
       {
         "q": "Quais dados são guardados?",
-        "a": "Do Google, o identificador da sua conta, o seu e-mail, se ele é verificado e o seu nome; nunca a sua foto de perfil. Depois, o que você adiciona: o seu nome de exibição, os grupos que você cria, os seus pedidos de entrada, participações, sugestões e votos, e o seu aceite dos Termos e da Política de Privacidade. Para manter você conectado, guardamos apenas um hash do token da sua sessão, e quando o administrador da plataforma exclui algo, um log de moderação guarda um rótulo curto, o motivo e a data, nunca o conteúdo completo. O seu e-mail nunca é mostrado a outros membros nem aos donos dos grupos. A Política de Privacidade explica por quanto tempo cada dado é guardado e como baixar os seus dados ou excluir a sua conta."
+        "a": "Do Google, o identificador da sua conta, o seu e-mail, se ele é verificado e o seu nome; nunca a sua foto de perfil. Depois, o que você adiciona: o seu nome de exibição, os grupos que você cria e os ícones deles (guardados de forma privada, sem metadados de foto, e mostrados apenas aos membros), os seus pedidos de entrada, participações, sugestões e votos, e o seu aceite dos Termos e da Política de Privacidade. Excluir é definitivo e imediato. Para manter você conectado, guardamos apenas um hash do token da sua sessão, e quando o administrador da plataforma exclui algo ou bane uma conta, um log de moderação guarda um rótulo curto, o motivo e a data, nunca o conteúdo completo; um banimento também guarda o ID Google e o e-mail da conta enquanto durar. O seu e-mail é usado apenas para enviar e-mails de serviço sobre os seus grupos e pedidos (nunca marketing, e você pode desligá-los), enviados pelo Amazon SES, com um registro de cada e-mail guardado por 30 dias. O seu e-mail nunca é mostrado a outros membros nem aos donos dos grupos. A Política de Privacidade explica por quanto tempo cada dado é guardado e como baixar os seus dados ou excluir a sua conta."
       }
     ],
     "policiesTitle": "Regras e privacidade",

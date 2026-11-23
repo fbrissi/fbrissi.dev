@@ -19,6 +19,11 @@ output "contact_form_queue_name" {
   value       = cloudflare_queue.contact_form.queue_name
 }
 
+output "study_group_notify_queue_name" {
+  description = "Study group notifications queue name"
+  value       = cloudflare_queue.study_group_notify.queue_name
+}
+
 output "turnstile_site_key" {
   description = "Turnstile site key (public)"
   value       = cloudflare_turnstile_widget.contact_form.sitekey
@@ -54,5 +59,5 @@ output "study_group_database_id" {
 
 output "study_group_sandbox_database_id" {
   description = "Sandbox study group D1 database ID"
-  value       = cloudflare_d1_database.study_group_sandbox.id
+  value       = one(cloudflare_d1_database.study_group_sandbox[*].id)
 }

@@ -4,10 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { GroupBoardView } from '@/features/study-group/group-page';
 import { SessionProvider } from '@/features/study-group/session';
-import { askReason, highlightMs, pollIntervalMs } from '@/features/study-group/study-group-board';
+import { highlightMs, pollIntervalMs } from '@/features/study-group/study-group-board';
 import type { CurrentRoundResponse, GroupRole, Material, Member, Round, TallyEntry } from '@/workers/study-group/contract';
 
-import { admin, apiError, bodyOf, calls, closedRound, group, material, pending, stubApi, user, votingRound, type Routes } from './fake-api';
+import { admin, answerReason, apiError, bodyOf, calls, closedRound, group, material, pending, stubApi, user, votingRound, type Routes } from './fake-api';
 
 vi.stubGlobal('React', React);
 
@@ -89,7 +89,11 @@ describe('join screen (D5)', () => {
     let attempt = 0;
     const fetchMock = join({
       [`GET ${base}/preview`]: { group: { id: group.id, name: group.name, summary: group.summary }, membership: 'none' },
-      [`POST ${base}/join`]: () => [apiError(403, 'invalid_code'), apiError(409, 'You can have at most 10 pending requests'), { status: 'pending' }][attempt++]
+      [`POST ${base}/join`]: () => [
+        apiError(403, 'invalid_code'),
+        apiError(409, 'Your request to join this group was not approved. You can ask again after November 29, 2026 at 9:00 AM (Brasília time).'),
+        { status: 'pending' }
+      ][attempt++]
     });
     render(<SessionProvider><GroupBoardView /></SessionProvider>);
     expect(await screen.findByRole('heading', { name: 'Go Talk' })).toBeInTheDocument();
@@ -103,7 +107,10 @@ describe('join screen (D5)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent("That code didn't work.");
     expect(screen.getByLabelText('Group code')).toHaveAttribute('aria-invalid', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
-    expect(await screen.findByText('You can have at most 10 pending requests')).toBeInTheDocument();
+    // The 7-day wait is about the request, not the code: a form-level error, and the code field stays valid.
+    expect(await screen.findByText('Your request to join this group was not approved. You can ask again after November 29, 2026 at 9:00 AM (Brasília time).')).toBeInTheDocument();
+    expect(screen.getByLabelText('Group code')).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.queryByText("That code didn't work.", { exact: false })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/Message to the owner/), { target: { value: ' Hi! ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
@@ -351,7 +358,7 @@ describe('board for owners', () => {
     failDelete = false;
     fireEvent.click(screen.getByRole('button', { name: 'Delete “Material 2”' }));
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Material 2' })).not.toBeInTheDocument());
-    expect(confirm).toHaveBeenCalledWith('Delete “Material 2”? It will be removed from the board.');
+    expect(confirm).toHaveBeenCalledWith('Delete “Material 2” permanently? The suggestion and its votes are deleted. This can’t be undone.');
     expect(bodyOf(fetchMock, `DELETE ${base}/materials/2`)).toEqual({});
   });
 
@@ -409,14 +416,18 @@ describe('board for the platform admin', () => {
     const { fetchMock } = setup({ role: 'platform_admin', me: admin, tally: [{ materialId: 1, votes: 1, voters: ['Bo'] }], routes: { [`DELETE ${base}/materials/1`]: null } });
     expect(await screen.findByRole('button', { name: 'Delete “Material 1”' })).toBeInTheDocument();
     expect(screen.getByText('Platform admin')).toBeInTheDocument();
-    const prompt = vi.spyOn(window, 'prompt').mockReturnValue(null);
-    fireEvent.click(screen.getByRole('button', { name: 'Delete “Material 1”' }));
-    expect(calls(fetchMock)).not.toContain(`DELETE ${base}/materials/1`);
-    prompt.mockReturnValue('  Spam and self-promotion  ');
     const confirm = vi.spyOn(window, 'confirm');
     fireEvent.click(screen.getByRole('button', { name: 'Delete “Material 1”' }));
+    const dialog = await answerReason(null);
+    expect(dialog).toHaveTextContent('Delete “Material 1” permanently?');
+    expect(dialog).toHaveTextContent('This can’t be undone. The reason is recorded in the moderation log and shown to the owner.');
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+    expect(calls(fetchMock)).not.toContain(`DELETE ${base}/materials/1`);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete “Material 1”' }));
+    await answerReason('  Spam and self-promotion  ');
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Material 1' })).not.toBeInTheDocument());
     expect(bodyOf(fetchMock, `DELETE ${base}/materials/1`)).toEqual({ reason: 'Spam and self-promotion' });
+    expect(screen.getByRole('heading', { name: 'Open materials' })).toHaveFocus();
     expect(confirm).not.toHaveBeenCalled();
   });
 
@@ -428,11 +439,5 @@ describe('board for the platform admin', () => {
     expect(screen.getByText('Bo', { selector: 'b' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Vote for/ })).not.toBeInTheDocument();
     expect(screen.queryByText('Joins the next round')).not.toBeInTheDocument();
-  });
-
-  it('builds the reason prompt', () => {
-    vi.spyOn(window, 'prompt').mockReturnValue(null);
-    expect(askReason('“x”')).toBeNull();
-    expect(window.prompt).toHaveBeenCalledWith(expect.stringContaining('Reason for deleting “x” (10 to 500 characters)'));
   });
 });

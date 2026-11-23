@@ -1,16 +1,17 @@
 'use client';
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 
-import type { DeletedMaterial, GroupRole, GroupSettings, JoinRequest, Member, ModerationNotice } from '@/workers/study-group/contract';
+import { LIMITS, type GroupRole, type GroupSettings, type JoinRequest, type Member, type ModerationNotice } from '@/workers/study-group/contract';
 
 import { errorMessage, groupPath, hasStatus, type StudyGroupApi } from './api';
 import { navigate } from './navigation';
 import { Field, GroupProfileFields, parseProfile, toProfileValues, type ProfileErrors, type ProfileValues } from './group-form';
 import { NotFoundGroup } from './group-page';
-import { formatDate, groupIdFromPath, typeLabel } from './helpers';
+import { IconSettings } from './group-icon';
+import { formatDate, groupIdFromPath } from './helpers';
 import { RequireUser, useSession } from './session';
-import { askReason } from './study-group-board';
+import { reasonRequired, useReasonDialog } from './reason-dialog';
 import { Banner, buttonClass, cardClass, eyebrowClass, hintClass, inputClass } from './ui';
 
 type Notice = { tone: 'success' | 'error'; text: string } | null;
@@ -22,7 +23,6 @@ interface SettingsData {
   role: GroupRole;
   requests: JoinRequest[];
   members: Member[];
-  deleted: DeletedMaterial[];
 }
 
 const sectionClass = `${cardClass} p-6 sm:p-8`;
@@ -49,13 +49,8 @@ function SettingsLoader({ api, groupId, isPlatformAdmin }: { api: StudyGroupApi;
 
   const load = useCallback(async () => {
     try {
-      const [settings, requests, members, deleted] = await Promise.all([
-        api.getSettings(groupId),
-        api.listRequests(groupId),
-        api.listMembers(groupId),
-        api.listDeletedMaterials(groupId)
-      ]);
-      setData({ ...settings, requests: requests.requests, members: members.members, deleted: deleted.materials });
+      const [settings, requests, members] = await Promise.all([api.getSettings(groupId), api.listRequests(groupId), api.listMembers(groupId)]);
+      setData({ ...settings, requests: requests.requests, members: members.members });
       setPhase('ready');
     } catch (error) {
       setPhase(hasStatus(error, 403) ? 'forbidden' : hasStatus(error, 404) ? 'missing' : 'error');
@@ -93,10 +88,10 @@ function SettingsLoader({ api, groupId, isPlatformAdmin }: { api: StudyGroupApi;
       {isAdminActor ? <Banner tone="error" title="You are moderating this group as the platform admin. Deletions need a reason and are logged." /> : null}
       <Notices notices={ready.notices} />
       <ProfileForm api={api} settings={ready.settings} onSaved={(settings) => update({ settings })} />
+      <IconSettings api={api} groupId={groupId} iconUrl={ready.settings.iconUrl} isOwner={ready.role === 'owner'} onChange={(iconUrl) => update({ settings: { ...ready.settings, iconUrl } })} />
       <AccessCode api={api} settings={ready.settings} onRotated={(settings) => update({ settings })} />
       <Requests api={api} groupId={groupId} requests={ready.requests} canDeleteMessages={isPlatformAdmin} onChange={(requests, members) => update(members ? { requests, members } : { requests })} />
       <Members api={api} groupId={groupId} members={ready.members} onRemoved={(userId) => update({ members: ready.members.filter((member) => member.userId !== userId) })} />
-      <DeletedMaterials api={api} groupId={groupId} materials={ready.deleted} isPlatformAdmin={isPlatformAdmin} onRestored={(id) => update({ deleted: ready.deleted.filter((item) => item.id !== id) })} />
       <DeleteGroup api={api} settings={ready.settings} needsReason={isAdminActor} />
     </div>
   );
@@ -203,11 +198,18 @@ function AccessCode({ api, settings, onRotated }: { api: StudyGroupApi; settings
 function Requests({ api, groupId, requests, canDeleteMessages, onChange }: { api: StudyGroupApi; groupId: string; requests: JoinRequest[]; canDeleteMessages: boolean; onChange: (requests: JoinRequest[], members?: Member[]) => void }) {
   const [busyId, setBusyId] = useState<number | null>(null);
   const [notice, setNotice] = useState<Notice>(null);
+  const { dialog, ask } = useReasonDialog();
+  const title = useRef<HTMLHeadingElement>(null);
 
   const act = async (request: JoinRequest, action: 'approve' | 'reject' | 'message') => {
     let reason = '';
     if (action === 'message') {
-      const answer = askReason(`the message from ${request.displayName}`);
+      const answer = await ask({
+        title: `Delete the message from ${request.displayName} permanently?`,
+        text: 'The request stays; only its message is deleted. This can’t be undone. The reason is recorded in the moderation log and shown to the owner.',
+        confirmLabel: 'Delete permanently',
+        destructive: true,
+      });
       if (answer === null) return;
       reason = answer;
     }
@@ -226,6 +228,8 @@ function Requests({ api, groupId, requests, canDeleteMessages, onChange }: { api
         await api.deleteRequestMessage(groupId, request.id, reason);
         onChange(requests.map((item) => (item.id === request.id ? { ...item, message: null } : item)));
         setNotice({ tone: 'success', text: 'Message deleted.' });
+        // The Delete message button goes away with the message: move the focus to the section heading.
+        title.current?.focus();
       }
     } catch (error) {
       setNotice({ tone: 'error', text: errorMessage(error) });
@@ -236,7 +240,8 @@ function Requests({ api, groupId, requests, canDeleteMessages, onChange }: { api
 
   return (
     <section aria-labelledby="requests-title" className={sectionClass}>
-      <h2 id="requests-title" className={sectionTitleClass}>Join requests</h2>
+      {dialog}
+      <h2 id="requests-title" ref={title} tabIndex={-1} className={`${sectionTitleClass} focus:outline-none`}>Join requests</h2>
       <p className="mb-4 text-sm text-text-secondary">People who entered the access code. Approve the ones you know.</p>
       {notice ? <div className="mb-4"><Banner tone={notice.tone} title={notice.text} /></div> : null}
       {requests.length ? (
@@ -287,46 +292,6 @@ function Members({ api, groupId, members, onRemoved }: { api: StudyGroupApi; gro
   );
 }
 
-function DeletedMaterials({ api, groupId, materials, isPlatformAdmin, onRestored }: { api: StudyGroupApi; groupId: string; materials: DeletedMaterial[]; isPlatformAdmin: boolean; onRestored: (id: number) => void }) {
-  const [busyId, setBusyId] = useState<number | null>(null);
-  const [notice, setNotice] = useState<Notice>(null);
-
-  const restore = async (material: DeletedMaterial) => {
-    setBusyId(material.id);
-    setNotice(null);
-    try {
-      await api.restoreMaterial(groupId, material.id);
-      onRestored(material.id);
-      setNotice({ tone: 'success', text: `Restored “${material.title}”.` });
-    } catch (error) {
-      setNotice({ tone: 'error', text: errorMessage(error) });
-    } finally {
-      setBusyId(null);
-    }
-  };
-
-  return (
-    <section aria-labelledby="deleted-title" className={sectionClass}>
-      <h2 id="deleted-title" className={sectionTitleClass}>Deleted materials</h2>
-      <p className="mb-5 text-sm text-text-secondary">Deleted items are hidden from the board and purged after 30 days. Only the platform admin can restore what the admin deleted.</p>
-      {notice ? <div className="mb-4"><Banner tone={notice.tone} title={notice.text} /></div> : null}
-      {materials.length ? (
-        <ul className="m-0 list-none p-0">
-          {materials.map((material) => (
-            <li key={material.id} className={rowClass}>
-              <span className="text-[15px] text-text-secondary wrap-anywhere">{material.title}</span>
-              <span className="col-start-1 text-xs text-text-muted">{typeLabel(material.type)} · by {material.suggestedBy} · deleted {formatDate(material.deletedAt)}{material.deletedByAdmin ? ' by the platform admin' : ''}</span>
-              <span className="col-start-2 row-span-2 row-start-1">
-                <button type="button" className={buttonClass.secondarySmall} disabled={busyId !== null || (material.deletedByAdmin && !isPlatformAdmin)} aria-label={`Restore “${material.title}”`} onClick={() => void restore(material)}>Restore</button>
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : <p className={hintClass}>No deleted materials.</p>}
-    </section>
-  );
-}
-
 function DeleteGroup({ api, settings, needsReason }: { api: StudyGroupApi; settings: GroupSettings; needsReason: boolean }) {
   const [confirmName, setConfirmName] = useState('');
   const [reason, setReason] = useState('');
@@ -335,10 +300,15 @@ function DeleteGroup({ api, settings, needsReason }: { api: StudyGroupApi; setti
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
+    const trimmed = reason.trim();
+    if (needsReason && (trimmed.length < LIMITS.reason.min || trimmed.length > LIMITS.reason.max)) {
+      setError(reasonRequired);
+      return;
+    }
     setBusy(true);
     setError('');
     try {
-      await api.deleteGroup(settings.id, { confirmName, reason: needsReason ? reason : undefined });
+      await api.deleteGroup(settings.id, { confirmName, reason: needsReason ? trimmed : undefined });
       navigate(needsReason ? '/study-groups/admin' : '/study-groups/my');
     } catch (deleteError) {
       setError(errorMessage(deleteError));
@@ -349,7 +319,9 @@ function DeleteGroup({ api, settings, needsReason }: { api: StudyGroupApi; setti
   return (
     <section aria-labelledby="delete-title" className={`${sectionClass} border-red-500/40`}>
       <h2 id="delete-title" className={sectionTitleClass}>Delete the group</h2>
-      <p className="mb-5 text-sm text-text-secondary">The group disappears from the public page and every member loses access. Its data is purged after 30 days.</p>
+      <p className="mb-5 text-sm text-text-secondary">
+        This permanently deletes “{settings.name}” with all its members’ access, join requests, suggestions, votes, rounds and the icon. This can’t be undone.
+      </p>
       <form noValidate onSubmit={submit} className="flex flex-col gap-4">
         <Field id="delete-confirm" label={`Type “${settings.name}” to confirm`}>
           <input id="delete-confirm" className={inputClass} value={confirmName} autoComplete="off" onChange={(event) => setConfirmName(event.target.value)} />
@@ -360,7 +332,7 @@ function DeleteGroup({ api, settings, needsReason }: { api: StudyGroupApi; setti
           </Field>
         ) : null}
         {error ? <Banner tone="error" title={error} /> : null}
-        <button type="submit" className={`${buttonClass.primary} self-start bg-red-600 hover:bg-red-500`} disabled={busy || confirmName.trim().toLowerCase() !== settings.name.trim().toLowerCase()}>Delete group</button>
+        <button type="submit" className={`${buttonClass.primary} self-start bg-red-600 hover:bg-red-500`} disabled={busy || confirmName.trim().toLowerCase() !== settings.name.trim().toLowerCase()}>Delete group permanently</button>
       </form>
     </section>
   );

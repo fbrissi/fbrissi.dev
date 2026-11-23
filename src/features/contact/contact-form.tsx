@@ -68,9 +68,10 @@ const messages = {
       successMessage: 'Thank you for reaching out. Your message was received, and I\'ll get back to you as soon as possible.',
       successOk: 'OK',
       errorTitle: 'Something went wrong',
-      errorMessage: 'Failed to send your message. Please try again or contact me directly via email.',
+      errorMessage: 'Failed to send your message. Please try again in a moment.',
       errorRetry: 'Try again',
-      errorEmail: 'Email me directly',
+      errorEmail: 'Reload the contact form',
+      contactHref: '/contact',
       required: 'This field is required',
       invalidEmail: 'Please enter a valid email address',
       captchaRequired: 'Please complete the captcha verification',
@@ -92,9 +93,10 @@ const messages = {
       successMessage: 'Obrigado por entrar em contato. Sua mensagem foi recebida, e responderei assim que possível.',
       successOk: 'OK',
       errorTitle: 'Algo deu errado',
-      errorMessage: 'Falha ao enviar sua mensagem. Tente novamente ou entre em contato diretamente por e-mail.',
+      errorMessage: 'Falha ao enviar sua mensagem. Tente novamente em instantes.',
       errorRetry: 'Tentar novamente',
-      errorEmail: 'Me envie um e-mail',
+      errorEmail: 'Recarregar o formulário de contato',
+      contactHref: '/pt-br/contact',
       required: 'Este campo é obrigatório',
       invalidEmail: 'Por favor, insira um endereço de e-mail válido',
       captchaRequired: 'Por favor, conclua a verificação do captcha',
@@ -283,7 +285,7 @@ export function ContactForm({ locale, turnstileSiteKey, contactApiUrl = process.
               {t.errorRetry}
             </button>
             <a
-              href="mailto:contact@fbrissi.dev"
+              href={t.contactHref}
               className="rounded-lg bg-accent px-6 py-3 font-light tracking-wide text-bg transition-all duration-250 hover:bg-accent-hover hover:shadow-lg hover:shadow-accent-glow"
             >
               {t.errorEmail}

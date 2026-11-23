@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import type { MyGroupsResponse } from '@/workers/study-group/contract';
 
 import { groupPath } from './api';
+import { GroupIcon } from './group-icon';
 import { formatDate } from './helpers';
 import { RequireUser, useSession } from './session';
 import { Banner, buttonClass, cardClass, eyebrowClass, hintClass } from './ui';
@@ -12,7 +13,8 @@ import { Banner, buttonClass, cardClass, eyebrowClass, hintClass } from './ui';
 const actionLabels: Record<string, string> = {
   delete_group: 'Group deleted',
   delete_material: 'Material deleted',
-  delete_join_message: 'Join request message deleted'
+  delete_join_message: 'Join request message deleted',
+  delete_icon: 'Group icon removed'
 };
 
 function MyGroupsList() {
@@ -50,7 +52,10 @@ function MyGroupsList() {
             {data.groups.map((group) => (
               <li key={group.id} className={`${cardClass} flex flex-col gap-2 p-5`}>
                 <span className={hintClass}>{group.role === 'owner' ? 'Owner' : 'Member'}</span>
-                <a className="text-xl font-normal tracking-tight text-text hover:text-accent wrap-anywhere" href={groupPath(group.id)}>{group.name}</a>
+                <span className="flex items-center gap-3">
+                  <GroupIcon url={group.iconUrl} size={40} />
+                  <a className="text-xl font-normal tracking-tight text-text hover:text-accent wrap-anywhere" href={groupPath(group.id)}>{group.name}</a>
+                </span>
                 <p className="text-sm text-text-secondary wrap-anywhere">{group.summary}</p>
                 {group.role === 'owner' ? <a className={`${buttonClass.ghost} self-start px-0!`} href={groupPath(group.id, '/settings')}>Settings</a> : null}
               </li>

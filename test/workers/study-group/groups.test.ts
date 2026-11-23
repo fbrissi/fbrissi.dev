@@ -20,6 +20,17 @@ afterEach(() => {
 const call = (method: string, path: string, cookie?: string, body?: unknown) => h.handler(request(method, path, { cookie, body }));
 
 describe('groups', () => {
+  it('rejects group names that look like links or web addresses, on create and update', async () => {
+    for (const name of ['Visit https://evil.test', 'www.example', 'Join fbrissi.dev now', 'go-talk.com.br', 'HTTP://SHOUT', 'EVIL.COM', 'Join Evil.Dev', 'ASP.NET Core']) {
+      await expectJson(await call('POST', '/groups', w.owner, { ...groupInput, name, acceptContentPolicy: true }), 400);
+      const response = await expectJson(await call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...groupInput, name }), 400);
+      expect(JSON.stringify(response.issues)).toContain("Group names can't contain links or web addresses.");
+    }
+    for (const name of ['Node.js Talk', 'NODE.JS Talk', 'Vue.js and Nuxt']) {
+      await expectJson(await call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...groupInput, name }), 200);
+    }
+  });
+
   it('lists only listed, non-deleted groups with name and summary, paginated and cacheable (D3)', async () => {
     const response = await call('GET', '/groups');
     expect(response.headers.get('Cache-Control')).toBe('public, max-age=60');
@@ -109,7 +120,7 @@ describe('groups', () => {
 
   it('shows the join screen data and handles join requests (D5, Q10)', async () => {
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.outsider), 200, {
-      group: { id: w.groupId, name: 'Go Talk', summary: groupInput.summary },
+      group: { id: w.groupId, name: 'Go Talk', summary: groupInput.summary, iconUrl: null },
       membership: 'none',
     });
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.member), 200, expect.objectContaining({ membership: 'member' }));
@@ -132,7 +143,11 @@ describe('groups', () => {
     expect((await call('POST', `/groups/${w.groupId}/requests/${requests[0].id}/reject`, w.owner)).status).toBe(204);
     await expectJson(await call('POST', `/groups/${w.groupId}/requests/${requests[0].id}/reject`, w.owner), 404);
     await expectJson(await call('POST', `/groups/${w.groupId}/requests/${requests[0].id}/approve`, w.owner), 404);
-    // A rejected user can ask again.
+    // A rejected user can ask again only after a 7-day cooldown, and the wait counts no code attempt.
+    await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: 'wrong' }), 409, {
+      error: 'Your request to join this group was not approved. You can ask again after November 23, 2026 at 9:00 AM (Brasília time).',
+    });
+    h.clock.now += 7 * 86_400_000;
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: w.accessCode }), 201);
   });
 
@@ -238,7 +253,7 @@ describe('groups', () => {
 
 describe('platform admin moderation (D7, 5.x)', () => {
   it('requires a 10 to 500 character reason, logs the deletion and notifies the owner (Q5, Q6)', async () => {
-    await expectJson(await call('DELETE', `/groups/${w.groupId}`, w.admin, { confirmName: 'Go Talk' }), 400, { error: 'A reason of 10 to 500 characters is required' });
+    await expectJson(await call('DELETE', `/groups/${w.groupId}`, w.admin, { confirmName: 'Go Talk' }), 400, { error: 'A reason of 10 to 500 characters is required.' });
     await expectJson(await call('DELETE', `/groups/${w.groupId}`, w.admin, { confirmName: 'Go Talk', reason: 'too short' }), 400);
     await expectJson(await call('DELETE', `/groups/${w.groupId}`, w.admin, { confirmName: 'Go Talk', reason: 'x'.repeat(501) }), 400);
     expect((await call('DELETE', `/groups/${w.groupId}`, w.admin, { confirmName: 'Go Talk', reason: 'Spam and unrelated promotion' })).status).toBe(204);

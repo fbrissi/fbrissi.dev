@@ -4,6 +4,8 @@ import {
   groupProfileSchema,
   joinGroupSchema,
   LIMITS,
+  NOTIFICATION_LIMITS,
+  REASON_REQUIRED_MESSAGE,
   reasonSchema,
   STUDY_GROUP_API_PREFIX,
   type AdminGroupListResponse,
@@ -21,25 +23,27 @@ import {
   type ModerationLogResponse,
 } from './contract';
 import { randomId, timingSafeEqual } from './crypto';
-import { HttpError, NOTICE_WINDOW_MS, now, parseBody, type GroupContext, type RequestContext, type RouteResult, type UserContext } from './http';
-import { decodeCursor, isUniqueConstraintError, type GroupRecord, type NewModerationAction } from './repository';
+import { enqueueNotifications, HttpError, iconUrl, NOTICE_WINDOW_MS, now, parseBody, removeIcons, type GroupContext, type RequestContext, type RouteResult, type UserContext } from './http';
+import { decodeCursor, isUniqueConstraintError, type GroupRecord, type NewModerationAction, type OutboxNotice, type QueuedNotification } from './repository';
 import { z } from 'zod';
 
 const PAGE_SIZE = 24;
 const LOG_PAGE_SIZE = 50;
 const publicCacheSeconds = 60;
 const logCursorSchema = z.string().regex(/^[1-9]\d{0,15}$/);
+const HOUR_MS = 60 * 60 * 1000;
+const DAY_MS = 24 * HOUR_MS;
 
 export function requireId(value: string): number {
   return Number(value);
 }
 
-type LogEntry = Omit<NewModerationAction, 'actorId' | 'reason' | 'groupId'>;
+type LogEntry = Omit<NewModerationAction, 'actorId' | 'reason' | 'groupId' | 'ownerId'>;
 
-function moderationEntry(context: GroupContext, reason: string | undefined, entry: LogEntry): NewModerationAction {
+export function moderationEntry(context: GroupContext, reason: string | undefined, entry: LogEntry): NewModerationAction {
   const parsed = reasonSchema.safeParse(reason);
-  if (!parsed.success) throw new HttpError(400, 'A reason of 10 to 500 characters is required');
-  return { ...entry, actorId: context.user.id, groupId: context.group.id, label: entry.label.slice(0, 120), reason: parsed.data };
+  if (!parsed.success) throw new HttpError(400, REASON_REQUIRED_MESSAGE);
+  return { ...entry, actorId: context.user.id, ownerId: context.group.ownerId, groupId: context.group.id, label: entry.label.slice(0, 120), reason: parsed.data };
 }
 
 /** Deletions by a platform admin who doesn't own the group need a 10–500 character reason and are audited (D7). */
@@ -47,10 +51,11 @@ export function adminLog(context: GroupContext, reason: string | undefined, entr
   return context.role === 'platform_admin' ? moderationEntry(context, reason, entry) : undefined;
 }
 
-/** Member-visible group fields; the access code and owner ID never leave the settings and the server. */
-function groupProfile(group: GroupRecord): GroupInfo {
+/** Member-visible group fields; the access code, owner ID and icon key never leave the settings and the server. */
+async function groupProfile(context: GroupContext, group: GroupRecord): Promise<GroupInfo> {
   return {
     id: group.id,
+    iconUrl: await iconUrl(context, group.icon),
     name: group.name,
     summary: group.summary,
     rules: group.rules,
@@ -108,7 +113,7 @@ export async function previewGroup(context: GroupContext): Promise<RouteResult> 
   if (group.ownerId === user.id) membership = 'owner';
   else if (isMember) membership = 'member';
   else if (await app.repository.hasPendingRequest(group.id, user.id)) membership = 'pending';
-  return { status: 200, body: { group: { id: group.id, name: group.name, summary: group.summary }, membership } satisfies GroupPreviewResponse };
+  return { status: 200, body: { group: { id: group.id, name: group.name, summary: group.summary, iconUrl: await iconUrl(context, group.icon) }, membership } satisfies GroupPreviewResponse };
 }
 
 /** A wrong code fails with the same generic error every time; every attempt counts against the join rate limit. */
@@ -117,21 +122,37 @@ export async function joinGroup(context: GroupContext): Promise<RouteResult> {
   const { group, user, isMember, app } = context;
   if (isMember || group.ownerId === user.id) throw new HttpError(409, 'You are already a member of this group');
   if (await app.repository.hasPendingRequest(group.id, user.id)) throw new HttpError(409, 'You already asked to join this group');
+  const clock = app.clock().getTime();
+  const cooldown = NOTIFICATION_LIMITS.rejoinCooldownDays * DAY_MS;
+  const rejectedAt = await app.repository.latestRejection(group.id, user.id, new Date(clock - cooldown).toISOString());
+  if (rejectedAt) {
+    // Brasília time, the program's reference time zone; the exact moment, so the day shown is never early.
+    const again = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', dateStyle: 'long', timeStyle: 'short' })
+      .format(new Date(Date.parse(rejectedAt) + cooldown)).replace(/\s/g, ' ');
+    throw new HttpError(409, `Your request to join this group was not approved. You can ask again after ${again} (Brasília time).`);
+  }
   if (!timingSafeEqual(input.code, group.accessCode)) throw new HttpError(403, 'invalid_code');
   if ((await app.repository.countPendingRequestsByUser(user.id)) >= LIMITS.pendingRequestsPerUser) {
     throw new HttpError(409, `You can have at most ${LIMITS.pendingRequestsPerUser} pending requests`);
   }
+  // E1: one digest to the owner per group every 6 hours, with no requester name or message. The unclaimed DevTalk
+  // group has no owner and gets none until it is claimed.
+  const digest = group.ownerId
+    ? { ownerId: group.ownerId, windowStart: new Date(clock - NOTIFICATION_LIMITS.joinDigestWindowHours * HOUR_MS).toISOString() }
+    : undefined;
+  let queued: QueuedNotification[];
   try {
-    await app.repository.createJoinRequest(group.id, user.id, input.message || null, now(context));
+    queued = await app.repository.createJoinRequest(group.id, user.id, input.message || null, now(context), digest);
   } catch (error) {
     if (isUniqueConstraintError(error)) throw new HttpError(409, 'You already asked to join this group');
     throw error;
   }
+  await enqueueNotifications(context, queued);
   return { status: 201, body: { status: 'pending' } };
 }
 
 export async function getGroup(context: GroupContext): Promise<RouteResult> {
-  return { status: 200, body: { group: groupProfile(context.group), role: context.role as GroupRole, canParticipate: canParticipate(context) } satisfies GroupResponse };
+  return { status: 200, body: { group: await groupProfile(context, context.group), role: context.role as GroupRole, canParticipate: canParticipate(context) } satisfies GroupResponse };
 }
 
 export async function listMembers(context: GroupContext): Promise<RouteResult> {
@@ -153,11 +174,12 @@ export async function leaveGroup(context: GroupContext): Promise<RouteResult> {
 async function settingsResponse(context: GroupContext, settings: GroupSettings): Promise<RouteResult> {
   const since = new Date(context.app.clock().getTime() - NOTICE_WINDOW_MS).toISOString();
   const notices = await context.app.repository.listGroupNotices(context.group.id, since);
-  return { status: 200, body: { settings, notices, role: context.role as GroupRole } satisfies GroupSettingsResponse };
+  const body = { settings: { ...settings, iconUrl: await iconUrl(context, context.group.icon) }, notices, role: context.role as GroupRole };
+  return { status: 200, body: body satisfies GroupSettingsResponse };
 }
 
 export async function getSettings(context: GroupContext): Promise<RouteResult> {
-  return settingsResponse(context, { ...groupProfile(context.group), accessCode: context.group.accessCode });
+  return settingsResponse(context, { ...(await groupProfile(context, context.group)), accessCode: context.group.accessCode });
 }
 
 export async function updateSettings(context: GroupContext): Promise<RouteResult> {
@@ -175,14 +197,26 @@ export async function rotateAccessCode(context: GroupContext): Promise<RouteResu
 export async function deleteGroup(context: GroupContext): Promise<RouteResult> {
   const input = await parseBody(context.request, deleteGroupSchema);
   if (input.confirmName.toLowerCase() !== context.group.name.trim().toLowerCase()) throw new HttpError(400, 'Type the group name to confirm');
-  const log = adminLog(context, input.reason, { action: 'delete_group', targetType: 'group', targetId: context.group.id, label: context.group.name });
-  await context.app.repository.deleteGroup(context.group.id, now(context), log);
+  const { group } = context;
+  const log = adminLog(context, input.reason, { action: 'delete_group', targetType: 'group', targetId: group.id, label: group.name });
+  // E4: the owner learns about an admin deletion and its reason while there is still time to contest it.
+  const notice: OutboxNotice | undefined = log && group.ownerId
+    ? { userId: group.ownerId, kind: 'group_deleted', groupId: group.id, dedupeKey: `group_deleted:${group.id}`, payload: { groupName: group.name, reason: log.reason } }
+    : undefined;
+  const { queued, iconKeys } = await context.app.repository.deleteGroup(group.id, now(context), log, notice);
+  await removeIcons(context, iconKeys);
   await purgePublicGroups(context);
+  await enqueueNotifications(context, queued);
   return null;
 }
 
 export async function listRequests(context: GroupContext): Promise<RouteResult> {
   return { status: 200, body: { requests: await context.app.repository.listPendingRequests(context.group.id) } satisfies JoinRequestsResponse };
+}
+
+/** E2 and E3 share one dedupe key, so a request gets at most one decision email. */
+function decisionNotice(context: GroupContext, request: { id: number; userId: string }, kind: 'join_approved' | 'join_rejected'): OutboxNotice {
+  return { userId: request.userId, kind, groupId: context.group.id, dedupeKey: `join_decision:${request.id}`, payload: { groupName: context.group.name } };
 }
 
 export async function approveRequest(context: GroupContext): Promise<RouteResult> {
@@ -192,7 +226,8 @@ export async function approveRequest(context: GroupContext): Promise<RouteResult
   if ((await repository.countMembers(context.group.id)) >= LIMITS.membersPerGroup) {
     throw new HttpError(409, `A group can have at most ${LIMITS.membersPerGroup} members`);
   }
-  await repository.approveRequest(context.group.id, request, now(context));
+  const ids = await repository.approveRequest(context.group.id, request, now(context), decisionNotice(context, request, 'join_approved'));
+  await enqueueNotifications(context, ids);
   return null;
 }
 
@@ -200,7 +235,8 @@ export async function rejectRequest(context: GroupContext): Promise<RouteResult>
   const { repository } = context.app;
   const request = await repository.getPendingRequest(context.group.id, requireId(context.params.requestId));
   if (!request) throw new HttpError(404, 'Join request not found');
-  await repository.rejectRequest(request.id, now(context));
+  const ids = await repository.rejectRequest(request.id, now(context), decisionNotice(context, request, 'join_rejected'));
+  await enqueueNotifications(context, ids);
   return null;
 }
 

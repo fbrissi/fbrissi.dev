@@ -46,8 +46,9 @@ describe('api client', () => {
       api.getGroup(id), api.deleteGroup(id, { confirmName: 'x' }), api.listMembers(id), api.removeMember(id, 'u 1'), api.leaveGroup(id), api.getSettings(id),
       api.updateSettings(id, group), api.rotateAccessCode(id), api.listRequests(id), api.approveRequest(id, 1), api.rejectRequest(id, 1), api.deleteRequestMessage(id, 1, 'reason text'),
       api.listMaterials(id), api.createMaterial(id, { type: 'video', title: 't' }), api.updateMaterial(id, 2, { status: 'open' }), api.approveMaterial(id, 2),
-      api.deleteMaterial(id, 2), api.deleteMaterial(id, 2, 'because reasons'), api.listDeletedMaterials(id), api.restoreMaterial(id, 2), api.getCurrentRound(id),
-      api.createRound(id, { mode: 'vote' }), api.castVote(id, 3, { materialId: 2 }), api.closeRound(id, 3), api.cancelRound(id, 3), api.adminGroups(), api.adminGroups('c'), api.moderationLog(), api.moderationLog('9')
+      api.deleteMaterial(id, 2), api.deleteMaterial(id, 2, 'because reasons'), api.deleteIcon(id), api.deleteIcon(id, 'off-topic image'), api.getCurrentRound(id),
+      api.createRound(id, { mode: 'vote' }), api.castVote(id, 3, { materialId: 2 }), api.closeRound(id, 3), api.cancelRound(id, 3), api.adminGroups(), api.adminGroups('c'), api.moderationLog(), api.moderationLog('9'),
+      api.adminUsers(''), api.adminUsers('ana', 'c'), api.banUser('u 1', 'ban reason'), api.unbanUser('u 1', 'unban reason')
     ]);
     expect(api.exportUrl()).toBe('/api/study-group/me/export');
     expect(calls(fetchMock as never)).toEqual([
@@ -57,8 +58,9 @@ describe('api client', () => {
       'GET /groups/g1', 'DELETE /groups/g1', 'GET /groups/g1/members', 'DELETE /groups/g1/members/u%201', 'POST /groups/g1/leave', 'GET /groups/g1/settings',
       'PUT /groups/g1/settings', 'POST /groups/g1/access-code', 'GET /groups/g1/requests', 'POST /groups/g1/requests/1/approve', 'POST /groups/g1/requests/1/reject', 'DELETE /groups/g1/requests/1/message',
       'GET /groups/g1/materials?status=all', 'POST /groups/g1/materials', 'PATCH /groups/g1/materials/2', 'POST /groups/g1/materials/2/approve',
-      'DELETE /groups/g1/materials/2', 'DELETE /groups/g1/materials/2', 'GET /groups/g1/materials/deleted', 'POST /groups/g1/materials/2/restore', 'GET /groups/g1/rounds/current',
-      'POST /groups/g1/rounds', 'POST /groups/g1/rounds/3/votes', 'POST /groups/g1/rounds/3/close', 'POST /groups/g1/rounds/3/cancel', 'GET /admin/groups', 'GET /admin/groups?cursor=c', 'GET /admin/moderation-log', 'GET /admin/moderation-log?cursor=9'
+      'DELETE /groups/g1/materials/2', 'DELETE /groups/g1/materials/2', 'DELETE /groups/g1/icon', 'DELETE /groups/g1/icon', 'GET /groups/g1/rounds/current',
+      'POST /groups/g1/rounds', 'POST /groups/g1/rounds/3/votes', 'POST /groups/g1/rounds/3/close', 'POST /groups/g1/rounds/3/cancel', 'GET /admin/groups', 'GET /admin/groups?cursor=c', 'GET /admin/moderation-log', 'GET /admin/moderation-log?cursor=9',
+      'GET /admin/users', 'GET /admin/users?q=ana&cursor=c', 'POST /admin/users/u%201/ban', 'DELETE /admin/users/u%201/ban'
     ]);
     const [, get] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
     expect(get).toEqual({ method: 'GET', cache: 'no-store', credentials: 'same-origin', headers: { Accept: 'application/json' }, body: undefined });
@@ -66,6 +68,7 @@ describe('api client', () => {
     expect(post).toMatchObject({ method: 'POST', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: '{}' });
     expect(bodyOf(fetchMock as never, 'DELETE /me')).toEqual({ confirm: true });
     expect(bodyOf(fetchMock as never, 'DELETE /groups/g1/requests/1/message')).toEqual({ reason: 'reason text' });
+    expect(bodyOf(fetchMock as never, 'POST /admin/users/u%201/ban')).toEqual({ reason: 'ban reason' });
     expect(createStudyGroupApi()).toBeTruthy();
   });
 
@@ -243,15 +246,15 @@ describe('account navigation and consent', () => {
   it('asks for re-acceptance until both boxes are checked', async () => {
     let attempts = 0;
     const fetchMock = stubApi({
-      'GET /me': { user: { ...user, needsConsent: true } },
+      'GET /me': { user: { ...user, needsConsent: true, pendingConsents: ['terms', 'privacy'] } },
       'POST /me/consents': () => (attempts++ === 0 ? apiError(500, 'Try later') : { user })
     });
     render(<SessionProvider><ConsentBanner /></SessionProvider>);
     expect(await screen.findByRole('heading', { name: 'We updated our Terms and Privacy Policy' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Terms of Use' })).toHaveAttribute('href', '/study-groups/terms');
     expect(screen.getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
-    expect(screen.getByText(new RegExp(`version ${POLICY_VERSIONS.terms}`))).toBeInTheDocument();
-    expect(screen.getByText(new RegExp(`version ${POLICY_VERSIONS.privacy}`))).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: new RegExp(`Terms of Use \\(version ${POLICY_VERSIONS.terms}\\)`) })).toBeInTheDocument();
+    expect(screen.getByRole('checkbox', { name: new RegExp(`Privacy Policy \\(version ${POLICY_VERSIONS.privacy}\\)`) })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Accept and continue' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Check both boxes to continue.');
@@ -264,6 +267,27 @@ describe('account navigation and consent', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Accept and continue' }));
     await waitFor(() => expect(screen.queryByRole('heading', { name: /We updated/ })).not.toBeInTheDocument());
     expect(bodyOf(fetchMock, 'POST /me/consents')).toEqual({ acceptTerms: true, acceptPrivacy: true });
+  });
+
+  it.each([
+    ['terms', 'We updated our Terms of Use', 'Terms of Use', { acceptTerms: true }],
+    ['privacy', 'We updated our Privacy Policy', 'Privacy Policy', { acceptPrivacy: true }]
+  ] as const)('asks only for the changed document (%s)', async (document, heading, link, body) => {
+    const fetchMock = stubApi({
+      'GET /me': { user: { ...user, needsConsent: true, pendingConsents: [document] } },
+      'POST /me/consents': { user }
+    });
+    render(<SessionProvider><ConsentBanner /></SessionProvider>);
+    expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument();
+    expect(screen.getAllByRole('checkbox')).toHaveLength(1);
+    expect(screen.getByRole('link', { name: link })).toBeInTheDocument();
+    expect(screen.getByText(/accept the new version before/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Accept and continue' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Check the box to continue.');
+    fireEvent.click(screen.getByRole('checkbox'));
+    fireEvent.click(screen.getByRole('button', { name: 'Accept and continue' }));
+    await waitFor(() => expect(screen.queryByRole('heading', { name: /We updated/ })).not.toBeInTheDocument());
+    expect(bodyOf(fetchMock, 'POST /me/consents')).toEqual(body);
   });
 
   it('renders nothing when consent is current', async () => {
@@ -290,6 +314,12 @@ describe('cookie notice', () => {
     cleanup();
     render(<CookieNotice locale="en" />);
     expect(screen.getByRole('link', { name: 'Learn more in the Privacy Policy' })).toHaveAttribute('href', '/privacy#cookies');
+    expect(screen.getByRole('link', { name: 'Learn more in the Privacy Policy' })).not.toHaveAttribute('hreflang');
+    cleanup();
+    // The pt-BR landing shows the English notice but links to the Portuguese policy.
+    render(<CookieNotice locale="en" policyLocale="pt-BR" />);
+    expect(screen.getByRole('link', { name: 'Learn more in the Privacy Policy' })).toHaveAttribute('href', '/pt-br/privacy#cookies');
+    expect(screen.getByRole('link', { name: 'Learn more in the Privacy Policy' })).toHaveAttribute('hreflang', 'pt-BR');
   });
 });
 

@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { acceptNextDialog, api, createGroupViaApi, freshUser, groupInput, sessionFor, suggest, users, type GroupInput } from './support';
+import { answerReasonDialog, api, createGroupViaApi, freshUser, groupInput, sessionFor, suggest, users, type GroupInput } from './support';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -66,7 +66,8 @@ test.describe('platform admin', () => {
   test('deleting a material needs a 10–500 character reason (API)', async () => {
     const path = `/groups/${keptId}/materials/${materialId}`;
     expect((await api(admin, 'DELETE', path, {})).status).toBe(400);
-    expect((await api(admin, 'DELETE', path, { reason: 'too short' })).status).toBe(400);
+    const short = await api<{ error: string }>(admin, 'DELETE', path, { reason: 'too short' });
+    expect(short).toMatchObject({ status: 400, body: { error: 'A reason of 10 to 500 characters is required.' } });
     expect((await api(admin, 'DELETE', path, { reason: 'x'.repeat(501) })).status).toBe(400);
     expect((await api(admin, 'DELETE', `/groups/${keptId}/requests/1/message`, {})).status).toBe(400);
     expect((await api(admin, 'DELETE', `/groups/${doomedId}`, { confirmName: doomed.name })).status).toBe(400);
@@ -75,21 +76,26 @@ test.describe('platform admin', () => {
 
   test('the admin deletes a material with a reason from the board', async () => {
     await admin.goto(`/study-groups/g/${keptId}`);
-    // Cancelling the reason prompt deletes nothing.
-    admin.once('dialog', (dialog) => void dialog.dismiss());
+    // Cancelling the reason dialog deletes nothing; a short reason is refused inline.
     await admin.getByRole('button', { name: 'Delete “Buy cheap followers”' }).click();
+    const dialog = admin.getByRole('dialog', { name: 'Delete “Buy cheap followers” permanently?' });
+    await expect(dialog).toContainText('This can’t be undone.');
+    await dialog.getByLabel(/^Reason/).fill('too short');
+    await dialog.getByRole('button', { name: 'Delete permanently' }).click();
+    await expect(dialog.getByRole('alert')).toHaveText('A reason of 10 to 500 characters is required.');
+    await answerReasonDialog(admin, null);
     await expect(admin.getByRole('heading', { name: 'Buy cheap followers' })).toBeVisible();
 
-    acceptNextDialog(admin, materialReason);
     await admin.getByRole('button', { name: 'Delete “Buy cheap followers”' }).click();
+    await answerReasonDialog(admin, materialReason);
     await expect(admin.getByRole('heading', { name: 'Buy cheap followers' })).toHaveCount(0);
   });
 
   test('the admin deletes a join request message with a reason', async () => {
     await admin.goto(`/study-groups/g/${keptId}/settings`);
     const name = (await api<{ user: { displayName: string } }>(applicant, 'GET', '/me')).body.user.displayName;
-    acceptNextDialog(admin, messageReason);
     await admin.getByRole('button', { name: `Delete the message from ${name}` }).click();
+    await answerReasonDialog(admin, messageReason);
     await expect(admin.getByText('Message deleted.')).toBeVisible();
     await expect(admin.getByText('Call me at +55 11 99999-9999')).toHaveCount(0);
 
@@ -102,7 +108,7 @@ test.describe('platform admin', () => {
     await admin.goto(`/study-groups/g/${doomedId}/settings`);
     await admin.getByLabel(`Type “${doomed.name}” to confirm`).fill(doomed.name);
     await admin.getByLabel(/^Reason/).fill(groupReason);
-    await admin.getByRole('button', { name: 'Delete group' }).click();
+    await admin.getByRole('button', { name: 'Delete group permanently' }).click();
     await admin.waitForURL(/\/study-groups\/admin$/);
     await expect(admin.getByRole('listitem').filter({ hasText: doomed.name })).toHaveCount(0);
 
@@ -148,14 +154,13 @@ test.describe('platform admin', () => {
     await expect(owner.locator('section[aria-labelledby="notices-title"]')).toContainText(`Reason: ${materialReason}`);
   });
 
-  test('only the admin can restore what the admin deleted (Q6)', async () => {
+  test('deletions are permanent: there is nothing to restore (no soft delete)', async () => {
     await owner.goto(`/study-groups/g/${keptId}/settings`);
-    const restore = owner.getByRole('button', { name: 'Restore “Buy cheap followers”' });
-    await expect(restore).toBeDisabled();
-    expect((await api(owner, 'POST', `/groups/${keptId}/materials/${materialId}/restore`)).status).toBe(403);
-
-    expect((await api(admin, 'POST', `/groups/${keptId}/materials/${materialId}/restore`)).status).toBe(200);
-    expect((await api<{ materials: { id: number }[] }>(owner, 'GET', `/groups/${keptId}/materials`)).body.materials.map((item) => item.id)).toContain(materialId);
+    await expect(owner.getByRole('heading', { name: 'Deleted materials' })).toHaveCount(0);
+    expect((await api(admin, 'POST', `/groups/${keptId}/materials/${materialId}/restore`)).status).toBe(404);
+    expect((await api(owner, 'GET', `/groups/${keptId}/materials/deleted`)).status).toBe(404);
+    expect((await api<{ materials: { id: number }[] }>(owner, 'GET', `/groups/${keptId}/materials`)).body.materials.map((item) => item.id)).not.toContain(materialId);
+    expect((await api(admin, 'GET', `/groups/${doomedId}/settings`)).status).toBe(404);
   });
 
   test("the admin's own group needs no reason (owner role wins)", async () => {

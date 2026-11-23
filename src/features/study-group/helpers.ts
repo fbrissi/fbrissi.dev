@@ -1,6 +1,7 @@
 import type { GroupInfo, Material, MaterialType, Round, TallyEntry } from '@/workers/study-group/contract';
 
 const dateFormat = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' });
+const yearDateFormat = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
 
 type StorageArea = 'localStorage' | 'sessionStorage';
 
@@ -24,6 +25,11 @@ export function writeStorage(area: StorageArea, key: string, value: string | nul
 
 export function formatDate(iso: string | null): string {
   return iso ? dateFormat.format(new Date(iso)) : '';
+}
+
+/** A date with its year, for dates that can be years away (a ban's expiry). */
+export function formatYearDate(iso: string): string {
+  return yearDateFormat.format(new Date(iso));
 }
 
 export function linkDomain(url: string): string {
