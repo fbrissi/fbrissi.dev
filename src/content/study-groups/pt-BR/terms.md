@@ -1,14 +1,14 @@
 ---
 title: Termos de Uso
-description: Termos de Uso e política de conteúdo do programa de grupos de estudo de inglês para desenvolvedores.
-version: '2026-11-23'
+description: Termos de Uso e política de conteúdo do programa gratuito de grupos de estudo de inglês.
+version: '2026-11-24'
 ---
 
 Estes Termos de Uso regem o programa de grupos de estudo de inglês disponível em `fbrissi.dev/study-groups` (o "programa"). Ao criar uma conta, você concorda com eles. Para usuários no Brasil, esta versão em português prevalece sobre a [versão em inglês](/study-groups/terms).
 
 ## 1. Sobre o programa
 
-O programa ajuda desenvolvedores de software a praticar inglês em pequenos grupos de estudo. Os membros sugerem materiais, o grupo escolhe o tema da semana e se reúne na própria chamada. Ele é mantido por Filipe Bojikian Rissi, pessoa física residente no Brasil (o "administrador da plataforma"). É gratuito e não tem anúncios.
+O programa ajuda qualquer pessoa a praticar inglês em pequenos grupos de estudo. Os membros sugerem materiais, o grupo escolhe o tema da semana e se reúne na própria chamada. Ele é mantido por Filipe Bojikian Rissi, pessoa física residente no Brasil (o "administrador da plataforma"). É gratuito e não tem anúncios.
 
 ## 2. Quem pode usar
 
@@ -43,7 +43,7 @@ Nomes, resumos, regras, ícones e links de reunião dos grupos, sugestões, nota
 
 Conteúdos, ícones e grupos que violem esta política ou a lei são excluídos definitivamente, e a conta que os publicou pode ser banida (seção 6).
 
-Os ícones dos grupos devem ser uma imagem PNG, JPEG ou WebP de até 256 KB e 512 × 512 pixels; eles são mostrados apenas aos membros do grupo, nunca na página pública.
+Os ícones dos grupos devem ser uma imagem PNG, JPEG ou WebP de até 256 KB e 512 × 512 pixels; eles são mostrados no aplicativo e, para um grupo listado, na página pública do programa.
 
 ## 5. Donos de grupos
 

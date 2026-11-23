@@ -21,6 +21,6 @@ Antes disso, no **PagBank (PagSeguro)**, uma das maiores empresas de pagamentos 
 
 ## Liderança e aprendizado contínuo
 
-Possuo **MBA em Engenharia de Software**, com foco em metodologias ágeis. Também tenho experiência com mentoria de equipes, treinamentos técnicos e contribuições para projetos open source, e mantenho um [programa gratuito de grupos de estudo de inglês para desenvolvedores](/pt-br/grupos-de-estudo-de-ingles).
+Possuo **MBA em Engenharia de Software**, com foco em metodologias ágeis. Também tenho experiência com mentoria de equipes, treinamentos técnicos e contribuições para projetos open source, e mantenho um [programa gratuito de grupos de estudo de inglês](/pt-br/grupos-de-estudo-de-ingles) aberto a qualquer pessoa.
 
 O trabalho de que mais gosto é aquele de que outros times dependem: fluxos de autenticação, migrações de plataformas legadas e pipelines de entrega usados por mais de 20 times.

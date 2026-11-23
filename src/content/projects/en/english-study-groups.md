@@ -1,6 +1,6 @@
 ---
 title: "English Study Groups"
-description: "A free program hosted on this site that helps developers start their own English study groups: suggest material, pick a weekly topic and practice speaking together."
+description: "A free program hosted on this site where anyone can start or join an English study group: suggest material, pick a weekly topic and practice speaking together."
 url: "/study-groups"
 stack:
   - Next.js
@@ -13,13 +13,13 @@ stack:
 order: 2
 ---
 
-English Study Groups is a personal initiative to encourage developers to create their own English study groups. Most documentation, open-source discussion and remote work in software happens in English, and reading it is easier than speaking it. A small group that meets every week to talk about real technical topics is a practical way to close that gap.
+English Study Groups is a personal initiative to help people create their own English study groups. Reading English is usually easier than speaking it, and a small group that meets every week to talk about a topic everyone prepared is a practical way to close that gap. Anyone can create or join a group; tech-focused groups are welcome too.
 
 [Join or start an English study group](/study-groups).
 
 ## From DevTalk to an open program
 
-The program started as the board of DevTalk, a single study group where members suggested videos, articles and books and picked the weekly topic. That board was unlisted and unlocked by a shared access code. The program turns it into something any developer can use: sign in, create a group and invite people, and DevTalk became one group among others.
+The program started as the board of DevTalk, a single study group where members suggested videos, articles and books and picked the weekly topic. That board was unlisted and unlocked by a shared access code. The program turns it into something anyone can use: sign in, create a group and invite people, and DevTalk became one group among others.
 
 ## How a group works
 
@@ -29,7 +29,7 @@ The program started as the board of DevTalk, a single study group where members 
 4. Members suggest materials; the owner picks the weekly topic by random draw or by vote.
 5. The group meets on its own call and talks about the topic in English.
 
-Owners can review suggestions before they appear, rotate the access code, remove members and delete or restore content. Each person can create up to three groups.
+Owners can review suggestions before they appear, rotate the access code, remove members and permanently delete content. Each person can create up to three groups.
 
 ## Architecture
 

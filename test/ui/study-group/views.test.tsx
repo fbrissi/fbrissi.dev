@@ -335,8 +335,8 @@ describe('program landing (1.1, 1.2)', () => {
     window.history.pushState({}, '', '/study-groups?signin=failed');
     renderWith({
       'GET /me': { user: null },
-      'GET /groups': { groups: [{ id: 'aaa1234567', name: 'Go Talk', summary: 'About Go' }], nextCursor: 'next' },
-      'GET /groups?cursor=next': { groups: [{ id: 'bbb1234567', name: 'Rust Talk', summary: 'About Rust' }], nextCursor: null }
+      'GET /groups': { groups: [{ id: 'aaa1234567', name: 'Go Talk', summary: 'About Go', iconUrl: '/api/study-group/icons/aaa1234567/abcdefghjkmnpqrs.png?exp=1&sig=s' }], nextCursor: 'next' },
+      'GET /groups?cursor=next': { groups: [{ id: 'bbb1234567', name: 'Rust Talk', summary: 'About Rust', iconUrl: null }], nextCursor: null }
     }, <><ProgramActions locale="en" /><GroupDirectory locale="en" /></>);
     expect(await screen.findByText("Sign-in didn't work. Please try again.")).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Join a free English study group' })).toHaveAttribute('href', '/api/study-group/auth/login?returnTo=%2Fstudy-groups%2Fmy');
@@ -346,10 +346,15 @@ describe('program landing (1.1, 1.2)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Load more groups' }));
     expect(await screen.findByText('Rust Talk')).toBeInTheDocument();
     expect(screen.getByText('Go Talk')).toBeInTheDocument();
+    // A listed group's icon shows on its card; a group without one shows its first letter.
+    const [goCard, rustCard] = screen.getAllByRole('listitem');
+    expect(goCard.querySelector('img')).toHaveAttribute('src', '/api/study-group/icons/aaa1234567/abcdefghjkmnpqrs.png?exp=1&sig=s');
+    expect(rustCard.querySelector('img')).toBeNull();
+    expect(rustCard.querySelector('[data-placeholder]')).toHaveTextContent('R');
   });
 
   it('links signed-in users straight to their groups, in Portuguese too', async () => {
-    renderWith({ 'GET /me': { user }, 'GET /groups': { groups: [{ id: 'aaa1234567', name: 'Go Talk', summary: 'About Go' }], nextCursor: null } }, <><ProgramActions locale="pt-BR" /><GroupDirectory locale="pt-BR" /></>);
+    renderWith({ 'GET /me': { user }, 'GET /groups': { groups: [{ id: 'aaa1234567', name: 'Go Talk', summary: 'About Go', iconUrl: null }], nextCursor: null } }, <><ProgramActions locale="pt-BR" /><GroupDirectory locale="pt-BR" /></>);
     expect(await screen.findByRole('link', { name: 'Meus grupos' })).toHaveAttribute('href', '/study-groups/my');
     expect(screen.getByRole('link', { name: 'Criar um grupo' })).toHaveAttribute('href', '/study-groups/new');
     expect(await screen.findByRole('link', { name: 'Abrir grupo: Go Talk' })).toHaveAttribute('href', '/study-groups/g/aaa1234567');

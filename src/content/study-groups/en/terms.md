@@ -1,14 +1,14 @@
 ---
 title: Terms of Use
-description: Terms of Use and content policy of the English study groups program for developers.
-version: '2026-11-23'
+description: Terms of Use and content policy of the free English study groups program.
+version: '2026-11-24'
 ---
 
 These Terms of Use govern the English study groups program available at `fbrissi.dev/study-groups` (the "program"). By creating an account you agree to them. Users in Brazil: the [Portuguese version](/pt-br/study-groups/terms) prevails.
 
 ## 1. About the program
 
-The program helps software developers practice English in small study groups. Members suggest materials, the group picks a weekly topic, and the group meets on its own call. It is run by Filipe Bojikian Rissi, an individual based in Brazil (the "platform admin"). It is free and has no ads.
+The program helps anyone practice English in small study groups. Members suggest materials, the group picks a weekly topic, and the group meets on its own call. It is run by Filipe Bojikian Rissi, an individual based in Brazil (the "platform admin"). It is free and has no ads.
 
 ## 2. Who can use it
 
@@ -43,7 +43,7 @@ Group names, summaries, rules, icons, meeting links, suggestions, notes and join
 
 Content, icons and groups that break this policy or the law are deleted permanently, and the account that posted them may be banned (section 6).
 
-Group icons must be a PNG, JPEG or WebP image of at most 256 KB and 512 × 512 pixels; they are shown only to the group's members, never on the public page.
+Group icons must be a PNG, JPEG or WebP image of at most 256 KB and 512 × 512 pixels; they are shown in the app and, for a listed group, on the public program page.
 
 ## 5. Group owners
 

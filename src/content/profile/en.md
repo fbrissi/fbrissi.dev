@@ -21,6 +21,6 @@ Before that, at **PagBank (PagSeguro)**, one of Brazil's largest payment compani
 
 ## Leadership and continuous learning
 
-I hold an **MBA in Software Engineering**, with a focus on Agile methodologies. I also have experience mentoring teams, delivering technical training, and contributing to open-source projects, and I run a [free English study group program for developers](/study-groups).
+I hold an **MBA in Software Engineering**, with a focus on Agile methodologies. I also have experience mentoring teams, delivering technical training, and contributing to open-source projects, and I run a [free English study group program](/study-groups) that anyone can join.
 
 The work I like most is the kind other teams depend on: authentication flows, migrations off legacy platforms, and delivery pipelines used by more than 20 teams.

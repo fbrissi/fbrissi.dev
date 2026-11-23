@@ -56,11 +56,11 @@ describe('composed site pages', () => {
 
   it('links the study groups program from a home card in each locale (D-3)', () => {
     render(<HomePage locale="pt-BR" />);
-    expect(screen.getByRole('heading', { level: 2, name: 'Grupos de estudo de inglês para desenvolvedores' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Grupos de estudo de inglês gratuitos' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: /entre em um grupo de estudo de inglês grátis/i })).toHaveAttribute('href', '/pt-br/grupos-de-estudo-de-ingles');
     // The card sits right after the Nota Profile card.
     const headings = screen.getAllByRole('heading', { level: 2 }).map((heading) => heading.textContent);
-    expect(headings.indexOf('Grupos de estudo de inglês para desenvolvedores')).toBe(headings.indexOf('Nota Profile') + 1);
+    expect(headings.indexOf('Grupos de estudo de inglês gratuitos')).toBe(headings.indexOf('Nota Profile') + 1);
     expect(screen.getByRole('link', { name: 'Baixar currículo (PDF)' })).toHaveAttribute('href', '/resume/filipe-bojikian-rissi-curriculo-pt-br.pdf');
   });
 
@@ -193,7 +193,7 @@ describe('composed site pages', () => {
     expect(screen.getByRole('heading', { level: 2, name: 'Certificações e palestras' })).toBeInTheDocument();
     expect(screen.getByText(/Inglês — proficiência profissional/)).toBeInTheDocument();
     expect(screen.getByText(/Atualmente, na/)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'programa gratuito de grupos de estudo de inglês para desenvolvedores' })).toHaveAttribute('href', '/pt-br/grupos-de-estudo-de-ingles');
+    expect(screen.getByRole('link', { name: 'programa gratuito de grupos de estudo de inglês' })).toHaveAttribute('href', '/pt-br/grupos-de-estudo-de-ingles');
     expect(screen.queryByText(/Também mantenho/)).not.toBeInTheDocument();
     expect(JSON.parse(container.querySelector('script[type="application/ld+json"]')!.textContent!)).toMatchObject({ '@type': 'ProfilePage', url: 'https://fbrissi.dev/pt-br/about', mainEntity: { '@type': 'Person', '@id': 'https://fbrissi.dev/#person', name: 'Filipe Bojikian Rissi', url: 'https://fbrissi.dev/', jobTitle: 'Engenheiro Backend e Cloud', sameAs: ['https://github.com/fbrissi', 'https://www.linkedin.com/in/fbrissi/', 'https://gitlab.com/fbrissi'] } });
     expect(screen.getByText('MBA em Engenharia de Software (IGTI, 2017–2018)')).toBeInTheDocument();

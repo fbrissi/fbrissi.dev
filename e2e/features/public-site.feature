@@ -51,6 +51,17 @@ Feature: Public bilingual site
     When I open the study groups landing page
     Then I see the sign-in call to action and links to the Terms and the Privacy Policy
 
+  Scenario Outline: the <path> landing invites anyone who wants to practice English, not only developers
+    Given I am a visitor
+    When I open "<path>"
+    Then its title, description and main heading speak to anyone who wants to practice English
+    And developers appear only once, as where the program started
+
+    Examples:
+      | path                              |
+      | /study-groups                     |
+      | /pt-br/grupos-de-estudo-de-ingles |
+
   @smoke
   Scenario: the pt-BR landing keeps a Portuguese title, description and notice, with the English page as its content
     Given I am a visitor

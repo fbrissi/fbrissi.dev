@@ -26,7 +26,7 @@ describe('program pages', () => {
     stubApi({ 'GET /me': { user: null }, 'GET /groups': { groups: [], nextCursor: null } });
     const { container } = render(<StudyGroupsLandingPage locale={locale} />);
     // Both pages show the same English content; only the Portuguese page adds one Portuguese notice.
-    expect(screen.getByRole('heading', { level: 1, name: 'Free English study groups for developers' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 1, name: 'Free English study groups' })).toBeInTheDocument();
     expect(container.querySelector('[data-page="studyGroups"]')).toHaveAttribute('data-path', '/study-groups');
     expect(container.querySelector('[lang="en"]')).not.toBeNull();
     expect(screen.getAllByRole('listitem').length).toBeGreaterThan(8);
@@ -55,7 +55,7 @@ describe('program pages', () => {
     expect(await screen.findByText("You'll sign in with Google")).toBeInTheDocument();
     const [graph] = Array.from(container.querySelectorAll('script[type="application/ld+json"]')).map((script) => JSON.parse(script.textContent!)['@graph']);
     expect(graph.map((node: { '@type': string }) => node['@type'])).toEqual(['WebPage', 'BreadcrumbList']);
-    expect(graph[0]).toMatchObject({ url, inLanguage: 'en', name: locale === 'pt-BR' ? 'Grupos de Estudo de Inglês para Devs' : 'Free English Study Groups for Devs', author: { name: 'Filipe Bojikian Rissi' } });
+    expect(graph[0]).toMatchObject({ url, inLanguage: 'en', name: locale === 'pt-BR' ? 'Grupo de Estudo de Inglês Grátis' : 'Free English Study Groups Online', author: { name: 'Filipe Bojikian Rissi' } });
     expect(graph[1].itemListElement[1]).toMatchObject({ item: url });
     expect(JSON.stringify(graph)).not.toMatch(/FAQPage|ItemList"|Course|Event/);
     expect(await screen.findByRole('complementary')).toBeInTheDocument();
@@ -64,7 +64,7 @@ describe('program pages', () => {
   it.each([['en', 'Terms of Use'], ['pt-BR', 'Termos de Uso']] as const)('renders the %s terms page', (locale, title) => {
     const { container } = render(<StudyGroupsPolicyPage locale={locale} document="terms" />);
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(screen.getByText(/2026-11-23/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-11-24/)).toBeInTheDocument();
     expect(container.querySelector('[data-path]')).toHaveAttribute('data-path', '/study-groups/terms');
     expect(container.querySelector('#content-policy')).not.toBeNull();
   });
@@ -72,7 +72,7 @@ describe('program pages', () => {
   it.each([['en', 'Privacy Policy', /Contact form/], ['pt-BR', 'Política de Privacidade', /Formulário de contato/]] as const)('renders the site-wide %s privacy policy with the contact form and cookie sections (D-7)', (locale, title, contactSection) => {
     const { container } = render(<PrivacyPage locale={locale} />);
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(screen.getByText(/2026-11-23/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-11-24/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: contactSection })).toBeInTheDocument();
     expect(container.querySelector('[data-page="privacy"]')).toHaveAttribute('data-path', '/privacy');
     expect(container.querySelector('#cookies')).not.toBeNull();

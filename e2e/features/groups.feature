@@ -9,9 +9,9 @@ Feature: Groups and membership
     When I create a group and confirm the content policy
     Then the group exists and I own it
 
-  Scenario: the landing page card shows only the name and summary (D3)
+  Scenario: the landing page card shows only the name, the icon or its placeholder, and the summary (D3)
     When a visitor opens the landing page
-    Then each group card shows only its name and summary
+    Then each group card shows only its name, its icon (or the first letter of its name) and its summary
 
   Scenario: signed-out users clicking a card sign in first and land on the join screen (1.2, 3.2)
     Given I am signed out

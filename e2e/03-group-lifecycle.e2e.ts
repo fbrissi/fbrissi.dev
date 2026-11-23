@@ -50,7 +50,7 @@ test.describe('group lifecycle', () => {
     await expect(card.getByRole('link', { name: 'Settings' })).toBeVisible();
   });
 
-  test('the landing page card shows only the name and summary (D3)', async ({ page }) => {
+  test('the landing page card shows only the name, the icon or its placeholder, and the summary (D3)', async ({ page }) => {
     await page.goto('/study-groups');
     const card = page.getByRole('listitem').filter({ hasText: input.name });
     await expect(card).toBeVisible();
@@ -62,7 +62,8 @@ test.describe('group lifecycle', () => {
 
     const publicList = await page.request.get('/api/study-group/groups');
     const listed = ((await publicList.json()) as { groups: Record<string, unknown>[] }).groups.find((group) => group.id === groupId);
-    expect(Object.keys(listed ?? {}).sort()).toEqual(['id', 'name', 'summary']);
+    expect(Object.keys(listed ?? {}).sort()).toEqual(['iconUrl', 'id', 'name', 'summary']);
+    await expect(card.locator('[data-placeholder]')).toHaveText(input.name[0].toUpperCase());
   });
 
   test('signed-out users clicking a card sign in first and land on the join screen (1.2, 3.2)', async ({ browser }) => {

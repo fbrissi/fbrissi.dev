@@ -1,14 +1,25 @@
 @icons
 Feature: Group icons
-  Owners give their group an icon. Icons are checked by content, stored without metadata, served only through
-  short-lived signed links inside the app, and never shown on the public pages.
+  Owners give their group an icon. Icons are checked by content, stored without metadata and served only through
+  short-lived signed links: in the app, and on the public landing card of a listed group. A group without an icon
+  shows the first letter of its name instead.
 
   @smoke
-  Scenario: the owner uploads an icon; members see it through a signed link, the public page never
-    Given I own a group with a member
+  Scenario: the owner uploads an icon; members and the public landing card of the listed group see it through a signed link
+    Given I own a listed group with a member
     When I upload an icon
     Then the member sees it through a signed link
-    And the public landing never shows it
+    And a visitor sees it on the group's card on the public landing
+
+  Scenario: an unlisted group and its icon never appear on the public landing
+    Given my group with an icon is unlisted
+    When a visitor opens the public landing and the public groups list
+    Then neither the group nor its icon is there
+
+  Scenario: a group without an icon shows the first letter of its name wherever icons appear
+    Given my group has no icon
+    When I open the public landing, the board, the settings, My groups and the join screen
+    Then each shows the first letter of the group name on the orange accent instead of an icon
 
   Scenario Outline: an icon that is <kind> is refused with <status>
     Given I own a group

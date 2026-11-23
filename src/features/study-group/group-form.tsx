@@ -122,7 +122,7 @@ export function GroupProfileFields({ values, errors, onChange }: { values: Profi
       </Field>
       <label className="flex items-start gap-2 text-sm text-text-secondary">
         <input type="checkbox" checked={values.listed} onChange={(event) => onChange({ listed: event.target.checked })} />
-        <span>List this group on the public study groups page (name and summary only).</span>
+        <span>List this group on the public study groups page (name, icon and summary only).</span>
       </label>
     </>
   );

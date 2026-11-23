@@ -55,21 +55,38 @@ test.describe('program pages and the site-wide privacy policy (D1, Q1, Q2, D-7)'
     const main = page.getByRole('main');
     await expect(main.getByRole('link', { name: 'Join a free English study group' })).toHaveAttribute('href', /\/api\/study-group\/auth\/login\?returnTo=/);
     await expect(main.getByText("You'll sign in with Google", { exact: true })).toBeVisible();
-    await expect(page).toHaveTitle('Free English Study Groups for Devs | Filipe Bojikian Rissi');
+    await expect(page).toHaveTitle('Free English Study Groups Online | Filipe Bojikian Rissi');
     await expect(main.getByRole('link', { name: /Create a group/i }).first()).toBeVisible();
     await expect(page.locator('a[href="/study-groups/terms"]').first()).toBeVisible();
     await expect(page.locator('a[href="/privacy"]').first()).toBeVisible();
   });
 
+  for (const [path, title, description] of [
+    ['/study-groups', 'Free English Study Groups Online | Filipe Bojikian Rissi', /^Practice English online in a free study group\. Join an English conversation group/],
+    ['/pt-br/grupos-de-estudo-de-ingles', 'Grupo de Estudo de Inglês Grátis | Filipe Bojikian Rissi', /^Pratique inglês online grátis em um grupo de conversação em inglês\./],
+  ] as const) {
+    test(`the ${path} landing invites anyone who wants to practice English, not only developers`, async ({ page }) => {
+      await page.goto(path);
+      await expect(page).toHaveTitle(title);
+      await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', description);
+      await expect(page.locator('meta[property="og:title"]')).not.toHaveAttribute('content', /devs|developers|desenvolvedores/i);
+      const main = page.getByRole('main');
+      await expect(main.getByRole('heading', { level: 1 })).toHaveText('Free English study groups');
+      const text = (await main.innerText()).toLowerCase();
+      expect(text.match(/developer|desenvolvedor/g) ?? []).toHaveLength(1);
+      expect(text).toContain('started among developers with devtalk');
+    });
+  }
+
   test('the pt-BR landing keeps a Portuguese title, description and notice, with the English page as its content', async ({ page }) => {
     await page.goto('/pt-br/grupos-de-estudo-de-ingles');
-    await expect(page).toHaveTitle('Grupos de Estudo de Inglês para Devs | Filipe Bojikian Rissi');
-    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Pratique inglês com outros desenvolvedores/);
+    await expect(page).toHaveTitle('Grupo de Estudo de Inglês Grátis | Filipe Bojikian Rissi');
+    await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Pratique inglês online grátis em um grupo de conversação em inglês/);
     const main = page.getByRole('main');
     const note = main.getByRole('note');
     await expect(note).toHaveAttribute('lang', 'pt-BR');
     await expect(note).toContainText('Esta página está em inglês de propósito');
-    await expect(main.getByRole('heading', { level: 1 })).toHaveText('Free English study groups for developers');
+    await expect(main.getByRole('heading', { level: 1 })).toHaveText('Free English study groups');
     await expect(main.getByRole('link', { name: 'Join a free English study group' })).toBeVisible();
     await expect(main.getByText("You'll sign in with Google", { exact: true })).toBeVisible();
     await expect(main.getByRole('heading', { level: 3, name: 'What data do you keep?' })).toBeVisible();

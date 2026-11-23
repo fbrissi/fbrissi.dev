@@ -1,6 +1,6 @@
 ---
 title: "Grupos de estudo de inglês"
-description: "Um programa gratuito hospedado neste site que ajuda desenvolvedores a criar seus próprios grupos de estudo de inglês: sugerir materiais, escolher o tema da semana e praticar a conversação juntos."
+description: "Um programa gratuito hospedado neste site em que qualquer pessoa pode criar ou entrar em um grupo de estudo de inglês: sugerir materiais, escolher o tema da semana e praticar a conversação juntos."
 url: "/pt-br/grupos-de-estudo-de-ingles"
 stack:
   - Next.js
@@ -13,13 +13,13 @@ stack:
 order: 2
 ---
 
-Os grupos de estudo de inglês são uma iniciativa pessoal para incentivar desenvolvedores a criar seus próprios grupos. Quase toda a documentação, as discussões de open source e o trabalho remoto em software acontecem em inglês, e ler costuma ser bem mais fácil do que falar. Um grupo pequeno que se encontra toda semana para conversar sobre temas técnicos reais é um jeito prático de diminuir essa distância.
+Os grupos de estudo de inglês são uma iniciativa pessoal para ajudar as pessoas a criar seus próprios grupos. Ler em inglês costuma ser bem mais fácil do que falar, e um grupo pequeno que se encontra toda semana para conversar sobre um tema que todos prepararam é um jeito prático de diminuir essa distância. Qualquer pessoa pode criar ou entrar em um grupo; grupos com foco em tecnologia também são bem-vindos.
 
 [Entre ou monte um grupo de estudo de inglês](/pt-br/grupos-de-estudo-de-ingles).
 
 ## Do DevTalk a um programa aberto
 
-O programa nasceu do quadro do DevTalk, um grupo de estudo em que os membros sugeriam vídeos, artigos e livros e escolhiam o tema da semana. Aquele quadro não era listado e abria com um código de acesso compartilhado. O programa transforma isso em algo que qualquer desenvolvedor pode usar: entrar, criar um grupo e convidar pessoas. O DevTalk passou a ser um grupo entre outros.
+O programa nasceu do quadro do DevTalk, um grupo de estudo em que os membros sugeriam vídeos, artigos e livros e escolhiam o tema da semana. Aquele quadro não era listado e abria com um código de acesso compartilhado. O programa transforma isso em algo que qualquer pessoa pode usar: entrar, criar um grupo e convidar pessoas. O DevTalk passou a ser um grupo entre outros.
 
 ## Como um grupo funciona
 
@@ -29,7 +29,7 @@ O programa nasceu do quadro do DevTalk, um grupo de estudo em que os membros sug
 4. Os membros sugerem materiais; o dono escolhe o tema da semana por sorteio ou votação.
 5. O grupo se reúne na própria chamada e conversa sobre o tema em inglês.
 
-O dono pode revisar as sugestões antes de aparecerem, trocar o código de acesso, remover membros e excluir ou restaurar conteúdo. Cada pessoa pode criar até três grupos.
+O dono pode revisar as sugestões antes de aparecerem, trocar o código de acesso, remover membros e excluir conteúdo definitivamente. Cada pessoa pode criar até três grupos.
 
 ## Arquitetura
 

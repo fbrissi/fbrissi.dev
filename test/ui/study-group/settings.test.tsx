@@ -209,7 +209,7 @@ describe('group settings', () => {
     expect(section.querySelector('img')).not.toBeNull();
     fireEvent.click(within(section).getByRole('button', { name: 'Remove icon' }));
     await answerConfirm(true);
-    expect(await within(section).findByText('No icon yet.')).toBeInTheDocument();
+    expect(await within(section).findByText('No icon yet. Members see the first letter of the group name instead.')).toBeInTheDocument();
   });
 
   it('shows no notices when there are none', async () => {

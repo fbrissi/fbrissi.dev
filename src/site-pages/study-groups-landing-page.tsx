@@ -40,7 +40,7 @@ export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; api
         // The content is in English on both pages; only the Portuguese page's title, description and notice aren't.
         inLanguage: 'en',
         isPartOf: { '@id': websiteId },
-        about: { '@type': 'Thing', name: 'English language practice for software developers' },
+        about: { '@type': 'Thing', name: 'English language practice' },
         author: personNode(locale),
         publisher: { '@id': personId },
         breadcrumb: { '@id': `${url}#breadcrumb` }

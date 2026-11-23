@@ -5,10 +5,11 @@ import { useCallback, useEffect, useState } from 'react';
 import enMessages from '@/i18n/messages/en.json';
 import ptMessages from '@/i18n/messages/pt-BR.json';
 import type { Locale } from '@/lib/i18n';
-import type { GroupCard } from '@/workers/study-group/contract';
+import type { GroupListResponse } from '@/workers/study-group/contract';
 
 import { groupPath, signInHref } from './api';
 import { useSession } from './session';
+import { GroupIcon } from './group-icon';
 import { Banner, buttonClass, cardClass } from './ui';
 
 function messagesFor(locale: Locale) {
@@ -52,7 +53,7 @@ type DirectoryState = 'loading' | 'ready' | 'error';
 export function GroupDirectory({ locale }: { locale: Locale }) {
   const { api, user } = useSession();
   const messages = messagesFor(locale);
-  const [groups, setGroups] = useState<GroupCard[]>([]);
+  const [groups, setGroups] = useState<GroupListResponse['groups']>([]);
   const [cursor, setCursor] = useState<string | null>(null);
   const [state, setState] = useState<DirectoryState>('loading');
 
@@ -80,7 +81,10 @@ export function GroupDirectory({ locale }: { locale: Locale }) {
       <ul className="m-0 grid list-none gap-4 p-0 sm:grid-cols-2 lg:grid-cols-3">
         {groups.map((group) => (
           <li key={group.id} className={`${cardClass} flex flex-col gap-3 p-6`}>
-            <h3 className="text-xl font-normal tracking-tight wrap-anywhere">{group.name}</h3>
+            <div className="flex items-center gap-3">
+              <GroupIcon url={group.iconUrl} name={group.name} size={48} />
+              <h3 className="text-xl font-normal tracking-tight wrap-anywhere">{group.name}</h3>
+            </div>
             <p className="flex-1 text-sm leading-relaxed text-text-secondary wrap-anywhere">{group.summary}</p>
             <a className={`${buttonClass.secondarySmall} self-start`} href={user ? groupPath(group.id) : signInHref(groupPath(group.id))}>
               {user ? messages.openGroup : messages.signInToJoin}

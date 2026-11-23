@@ -83,7 +83,7 @@
       }
     ],
     "studyGroups": {
-      "title": "Grupos de estudo de inglês para desenvolvedores",
+      "title": "Grupos de estudo de inglês gratuitos",
       "text": "Um programa gratuito que mantenho neste site: crie um grupo pequeno, sugira materiais, escolha o tema da semana e pratique a conversação em inglês.",
       "cta": "Entre em um grupo de estudo de inglês grátis"
     },
@@ -142,10 +142,10 @@
     "description": "Textos sobre engenharia backend, segurança e infraestrutura, começando pelo meu TCC de 2010 sobre certificação digital."
   },
   "studyGroups": {
-    "title": "Grupos de estudo de inglês para desenvolvedores",
-    "seoTitle": "Grupos de Estudo de Inglês para Devs",
-    "seoDescription": "Pratique inglês com outros desenvolvedores em grupos pequenos e gratuitos. Entre ou crie um grupo, escolha o tema técnico da semana e converse em inglês.",
-    "intro": "A maior parte da documentação, das discussões de open source, das palestras e das vagas remotas em software acontece em inglês. Ler já é um começo; falar com confiança exige prática. Este programa gratuito ajuda desenvolvedores a praticar juntos, em grupos de conversação pequenos e acolhedores.",
+    "title": "Grupos de estudo de inglês gratuitos",
+    "seoTitle": "Grupo de Estudo de Inglês Grátis",
+    "seoDescription": "Pratique inglês online grátis em um grupo de conversação em inglês. Entre em um grupo de estudo ou crie o seu, escolha o tema da semana e converse.",
+    "intro": "Ler em inglês é um começo. Falar com confiança exige prática, e praticar fica mais fácil com algumas pessoas que aparecem toda semana. Aqui qualquer pessoa pode criar ou entrar em um grupo de estudo pequeno e gratuito, escolher um tema em conjunto e conversar sobre ele em inglês. O programa começou entre desenvolvedores, com o DevTalk, e grupos com foco em tecnologia continuam bem-vindos.",
     "appLanguageNote": "Esta página está em inglês de propósito. O objetivo do programa é incentivar você a praticar inglês, e a prática começa pela leitura: o cadastro, os quadros dos grupos e os encontros também são todos em inglês.",
     "signIn": "Entrar com o Google",
     "createGroup": "Criar um grupo",
@@ -153,12 +153,12 @@
     "joinCta": "Entre em um grupo de estudo de inglês grátis",
     "signInNote": "Você entra com a sua conta Google",
     "whyTitle": "Por que praticar inglês em grupo",
-    "whyIntro": "Ler documentação em inglês é uma habilidade. Explicar um trade-off em voz alta num code review ou numa entrevista é outra, e ela só melhora quando você fala. Estudar sozinho com um aplicativo raramente leva até lá. Um grupo pequeno, que se encontra toda semana para conversar sobre um tema técnico que todos prepararam, e onde dá para errar na frente de colegas, leva.",
+    "whyIntro": "Ler e ouvir são uma habilidade. Responder a uma pergunta em voz alta é outra, e ela só melhora quando você fala. Estudar sozinho com um aplicativo raramente leva até lá. Um grupo pequeno, que se encontra toda semana para conversar sobre algo que todos prepararam e deixa cada pessoa errar diante de gente amigável, leva.",
     "why": [
-      "Documentação, notas de versão, RFCs e a maioria das respostas para problemas difíceis são escritas primeiro em inglês.",
-      "Projetos open source, issues e code reviews acontecem em inglês, então você consegue contribuir e ser entendido.",
-      "Times internacionais e remotos contratam quem sabe explicar trade-offs, fazer perguntas e conduzir reuniões em inglês.",
-      "Conversar toda semana sobre temas técnicos reais aumenta o vocabulário e a confiança mais rápido do que estudar sozinho."
+      "Você fala toda semana com as mesmas pessoas, então percebe o próprio progresso de um encontro para o outro.",
+      "Todos preparam o mesmo vídeo, artigo, capítulo de livro ou podcast, então a conversa tem onde se apoiar.",
+      "Errar faz parte. Ninguém dá nota, e o próximo encontro é mais uma tentativa.",
+      "Cada grupo escolhe os próprios temas: trabalho, viagens, livros, tecnologia ou o que interessar aos membros."
     ],
     "howTitle": "Como funciona",
     "how": [
@@ -169,9 +169,9 @@
       "Encontrem-se na chamada de vocês e conversem sobre o tema em inglês. Errar faz parte da prática."
     ],
     "startTitle": "Monte o seu grupo",
-    "startText": "Você não precisa ser professor para montar um grupo. Precisa de alguns colegas, um horário fixo e um tema. Crie o grupo aqui, escreva um resumo público curto e as regras, e compartilhe o código de acesso com quem você quer convidar: seu time, sua turma da faculdade ou uma comunidade de que você já participa. Durante a semana os membros sugerem vídeos, artigos ou palestras, e o quadro escolhe o próximo tema por sorteio ou votação. Os encontros acontecem na ferramenta de chamada que vocês já usam.",
+    "startText": "Você não precisa ser professor para montar um grupo. Precisa de algumas pessoas, um horário fixo e um tema. Crie o grupo aqui, escreva um resumo público curto e as regras, e compartilhe o código de acesso com quem você quer convidar: amigos, colegas de trabalho ou de turma, ou uma comunidade de que você já participa. Durante a semana os membros sugerem vídeos, artigos ou palestras, e o quadro escolhe o próximo tema por sorteio ou votação. Os encontros acontecem na ferramenta de chamada que vocês já usam.",
     "groupsTitle": "Grupos abertos para participar",
-    "groupsIntro": "Cada cartão mostra o nome e o resumo escritos por quem criou o grupo. Peça o código de acesso ao grupo antes de solicitar a entrada, ou monte o seu se nenhum combinar com o seu horário.",
+    "groupsIntro": "Cada cartão mostra o nome, o ícone e o resumo escritos por quem criou o grupo. Peça o código de acesso ao grupo antes de solicitar a entrada, ou monte o seu se nenhum combinar com o seu horário.",
     "groupsNoScript": "Ative o JavaScript para ver os grupos abertos.",
     "groupsEmpty": "Ainda não há grupos listados. Seja o primeiro a criar um.",
     "groupsError": "Não foi possível carregar os grupos. Tente novamente mais tarde.",
@@ -189,11 +189,11 @@
       },
       {
         "q": "Que nível de inglês eu preciso ter?",
-        "a": "O suficiente para acompanhar um vídeo ou artigo técnico curto. Cada grupo define o nível e as regras no resumo, então leia antes de pedir para entrar."
+        "a": "O suficiente para acompanhar um vídeo ou artigo curto em inglês. Cada grupo define o nível e as regras no resumo, então leia antes de pedir para entrar."
       },
       {
         "q": "Os grupos têm professor ou nativo?",
-        "a": "Normalmente não. São desenvolvedores praticando entre si. A ideia é falar com frequência, com colegas, sobre assuntos que você já domina."
+        "a": "Normalmente não. São pessoas praticando entre si. A ideia é falar com frequência, com colegas, sobre assuntos de que você gosta."
       },
       {
         "q": "Onde e quando os grupos se encontram?",
@@ -209,7 +209,7 @@
       },
       {
         "q": "Quais dados são guardados?",
-        "a": "Do Google, o identificador da sua conta, o seu e-mail, se ele é verificado e o seu nome; nunca a sua foto de perfil. Depois, o que você adiciona: o seu nome de exibição, os grupos que você cria e os ícones deles (guardados de forma privada, sem metadados de foto, e mostrados apenas aos membros), os seus pedidos de entrada, participações, sugestões e votos, e o seu aceite dos Termos e da Política de Privacidade. Excluir é definitivo e imediato. Para manter você conectado, guardamos apenas um hash do token da sua sessão, e quando o administrador da plataforma exclui algo ou bane uma conta, um log de moderação guarda um rótulo curto, o motivo e a data, nunca o conteúdo completo; um banimento também guarda o ID Google e o e-mail da conta enquanto durar. O seu e-mail é usado apenas para enviar e-mails de serviço sobre os seus grupos e pedidos (nunca marketing, e você pode desligá-los), enviados pelo Amazon SES, com um registro de cada e-mail guardado por 30 dias. O seu e-mail nunca é mostrado a outros membros nem aos donos dos grupos. A Política de Privacidade explica por quanto tempo cada dado é guardado e como baixar os seus dados ou excluir a sua conta. Dúvidas sobre o programa, denúncias de abuso e solicitações de dados vão para groups@fbrissi.dev."
+        "a": "Do Google, o identificador da sua conta, o seu e-mail, se ele é verificado e o seu nome; nunca a sua foto de perfil. Depois, o que você adiciona: o seu nome de exibição, os grupos que você cria e os ícones deles (guardados de forma privada, sem metadados de foto, e mostrados na página pública apenas para grupos listados), os seus pedidos de entrada, participações, sugestões e votos, e o seu aceite dos Termos e da Política de Privacidade. Excluir é definitivo e imediato. Para manter você conectado, guardamos apenas um hash do token da sua sessão, e quando o administrador da plataforma exclui algo ou bane uma conta, um log de moderação guarda um rótulo curto, o motivo e a data, nunca o conteúdo completo; um banimento também guarda o ID Google e o e-mail da conta enquanto durar. O seu e-mail é usado apenas para enviar e-mails de serviço sobre os seus grupos e pedidos (nunca marketing, e você pode desligá-los), enviados pelo Amazon SES, com um registro de cada e-mail guardado por 30 dias. O seu e-mail nunca é mostrado a outros membros nem aos donos dos grupos. A Política de Privacidade explica por quanto tempo cada dado é guardado e como baixar os seus dados ou excluir a sua conta. Dúvidas sobre o programa, denúncias de abuso e solicitações de dados vão para groups@fbrissi.dev."
       }
     ],
     "policiesTitle": "Regras e privacidade",

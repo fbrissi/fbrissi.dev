@@ -6,7 +6,7 @@ z.config({ jitless: true });
 export const STUDY_GROUP_API_PREFIX = '/api/study-group';
 
 /** Current versions (dates) of the program documents, shown on the pages and recorded when a user accepts them. */
-export const POLICY_VERSIONS = { terms: '2026-11-23', privacy: '2026-11-23' } as const;
+export const POLICY_VERSIONS = { terms: '2026-11-24', privacy: '2026-11-24' } as const;
 export type PolicyDocument = keyof typeof POLICY_VERSIONS;
 
 /**
@@ -14,7 +14,7 @@ export type PolicyDocument = keyof typeof POLICY_VERSIONS;
  * user obligations). Users must have accepted this version or a later one; a minor edit only moves POLICY_VERSIONS and
  * takes effect on publication without asking anyone again (Q18). The 2026-11-22 versions are material: they add
  * Amazon SES and Cloudflare R2, service emails, icons, bans and the transfer grounds. The 2026-11-23 versions only add
- * the groups@fbrissi.dev channel (minor).
+ * the groups@fbrissi.dev channel, and the 2026-11-24 versions show listed groups' icons on the public page (both minor).
  */
 export const MATERIAL_POLICY_VERSIONS: Record<PolicyDocument, string> = { terms: '2026-11-22', privacy: '2026-11-22' };
 
@@ -357,7 +357,8 @@ export interface MyGroupsResponse {
 }
 
 export interface GroupListResponse {
-  groups: GroupCard[];
+  /** Listed groups only, each with its signed icon URL (or null); the response is cached for a minute. */
+  groups: (GroupCard & { iconUrl: string | null })[];
   nextCursor: string | null;
 }
 

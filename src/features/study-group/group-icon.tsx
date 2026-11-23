@@ -8,16 +8,31 @@ import { errorMessage, type StudyGroupApi } from './api';
 import { useReasonDialog } from './reason-dialog';
 import { Banner, buttonClass, cardClass, hintClass } from './ui';
 
-/** The group icon from its short-lived signed URL; nothing when the group has none. */
-export function GroupIcon({ url, size = 48, className = '' }: { url: string | null; size?: number; className?: string }) {
-  if (!url) return null;
-  return <img src={url} alt="" width={size} height={size} className={`shrink-0 rounded-lg border border-line object-cover ${className}`} style={{ width: size, height: size }} />;
+/** The first letter or digit of a group name (any script), or its first character, for the placeholder. */
+export function groupInitial(name: string): string {
+  const trimmed = name.trim();
+  return (trimmed.match(/[\p{L}\p{N}]/u)?.[0] ?? Array.from(trimmed)[0] ?? '?').toLocaleUpperCase();
+}
+
+/**
+ * The group icon from its short-lived signed URL or, for a group without one, a placeholder with the name's first
+ * letter on the orange accent, at the same size and shape. The group name is always shown next to it, so both are
+ * decorative (empty alt text, aria-hidden).
+ */
+export function GroupIcon({ url, name, size = 48, className = '' }: { url: string | null; name: string; size?: number; className?: string }) {
+  const box = `shrink-0 rounded-lg border border-line ${className}`;
+  if (url) return <img src={url} alt="" width={size} height={size} className={`${box} object-cover`} style={{ width: size, height: size }} />;
+  return (
+    <span aria-hidden="true" data-placeholder="" className={`${box} inline-flex select-none items-center justify-center bg-accent font-normal text-bg`} style={{ width: size, height: size, fontSize: Math.round(size * 0.45) }}>
+      {groupInitial(name)}
+    </span>
+  );
 }
 
 type Notice = { tone: 'success' | 'error'; text: string } | null;
 
 /** Upload and removal (owner), or removal with a reason (platform admin), of the group icon. */
-export function IconSettings({ api, groupId, iconUrl, isOwner, onChange }: { api: StudyGroupApi; groupId: string; iconUrl: string | null; isOwner: boolean; onChange: (iconUrl: string | null) => void }) {
+export function IconSettings({ api, groupId, groupName, iconUrl, isOwner, onChange }: { api: StudyGroupApi; groupId: string; groupName: string; iconUrl: string | null; isOwner: boolean; onChange: (iconUrl: string | null) => void }) {
   const [notice, setNotice] = useState<Notice>(null);
   const [busy, setBusy] = useState(false);
   const { dialog, ask, confirm } = useReasonDialog();
@@ -88,11 +103,12 @@ export function IconSettings({ api, groupId, iconUrl, isOwner, onChange }: { api
       {dialog}
       <h2 id="icon-title" ref={title} tabIndex={-1} className="mb-1 text-2xl font-normal tracking-tight focus:outline-none">Group icon</h2>
       <p className="mb-5 text-sm text-text-secondary">
-        Shown to members on the board and in their group list, never on the public page. PNG, JPEG or WebP, up to 256 KB and 512 × 512 pixels.
+        Shown on the board, in members’ group lists and on the join page, and, for a listed group, on the public program page. PNG, JPEG or WebP, up to 256 KB and 512 × 512 pixels.
         Photo metadata (such as location) is removed. Offensive or political images are removed and can lead to a ban.
       </p>
       <div className="mb-4 flex items-center gap-4">
-        {iconUrl ? <GroupIcon url={iconUrl} size={64} /> : <p className={hintClass}>No icon yet.</p>}
+        <GroupIcon url={iconUrl} name={groupName} size={64} />
+        {iconUrl ? null : <p className={hintClass}>No icon yet. Members see the first letter of the group name instead.</p>}
       </div>
       {notice ? <div className="mb-4"><Banner tone={notice.tone} title={notice.text} /></div> : null}
       <div className="flex flex-wrap items-center gap-3">

@@ -5,7 +5,7 @@ resource "cloudflare_queue" "contact_form" {
 }
 
 resource "cloudflare_queue" "contact_form_sandbox" {
-  count      = local.sandbox_contact_queue_count
+  count      = local.sandbox_count
   account_id = local.cloudflare_account_id
   queue_name = "${local.project_name}-sandbox-contact-form"
 }
@@ -17,7 +17,7 @@ resource "cloudflare_queue" "contact_form_dead_letter" {
 }
 
 resource "cloudflare_queue" "contact_form_sandbox_dead_letter" {
-  count      = local.sandbox_contact_queue_count
+  count      = local.sandbox_count
   account_id = local.cloudflare_account_id
   queue_name = "${local.project_name}-sandbox-contact-form-dlq"
 }
