@@ -26,6 +26,11 @@ locals {
   # Alias kept so Portuguese-style typos still reach the inbox
   public_contact_email_aliases = ["contato@fbrissi.dev"]
 
+  # The English study groups program's own address (Reply-To of its notifications, abuse reports, program questions and
+  # its personal-data requests), forwarded to the same verified inbox. Keep it in sync with STUDY_GROUPS_EMAIL in
+  # workers/study-group/contract.ts.
+  study_groups_email = "groups@fbrissi.dev"
+
   # Study group notifications are sent by SES from this address (workers/study-group/ses.ts).
   notifications_email_from = "notifications@fbrissi.dev"
 

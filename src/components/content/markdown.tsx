@@ -28,6 +28,16 @@ export function Markdown({ content }: MarkdownProps) {
             const external = /^https?:\/\//.test(String(props.href));
             return <a {...attributes} {...(external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} />;
           },
+          table(props) {
+            // Wide tables scroll inside their own box, so the page never scrolls sideways on a phone.
+            const attributes: Omit<typeof props, 'node'> & { node?: unknown } = { ...props };
+            delete attributes.node;
+            return (
+              <div className="mb-4 max-w-full overflow-x-auto">
+                <table {...attributes} />
+              </div>
+            );
+          },
           pre({ children, ...props }) {
             return (
               <pre className="overflow-x-auto rounded-xl border border-line bg-[rgba(2,6,23,0.9)] p-5 shadow" {...props}>

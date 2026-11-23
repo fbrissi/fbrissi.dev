@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { acceptNextDialog, api, createGroupViaApi, freshUser, groupInput, joinAndApprove, sessionFor, suggest, type GroupInput } from './support';
+import { answerConfirmDialog, api, createGroupViaApi, freshUser, groupInput, joinAndApprove, sessionFor, suggest, type GroupInput } from './support';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -38,12 +38,12 @@ test.describe('access code and membership', () => {
     await expect(code).toHaveText(oldCode);
 
     // Cancelling the confirmation keeps the code.
-    owner.once('dialog', (dialog) => void dialog.dismiss());
     await owner.getByRole('button', { name: 'Create a new code' }).click();
+    await answerConfirmDialog(owner, false);
     await expect(code).toHaveText(oldCode);
 
-    acceptNextDialog(owner);
     await owner.getByRole('button', { name: 'Create a new code' }).click();
+    await answerConfirmDialog(owner);
     await expect(owner.getByText('New code created.')).toBeVisible();
     newCode = (await code.textContent())?.trim() ?? '';
     expect(newCode).not.toBe(oldCode);
@@ -61,8 +61,8 @@ test.describe('access code and membership', () => {
 
   test('a member leaves the group and loses access', async () => {
     await leaver.goto(`/study-groups/g/${groupId}`);
-    acceptNextDialog(leaver);
     await leaver.getByRole('button', { name: 'Leave group' }).click();
+    await answerConfirmDialog(leaver);
     await leaver.waitForURL(/\/study-groups\/my$/);
     await expect(leaver.getByText(input.name)).toHaveCount(0);
     expect((await api(leaver, 'GET', `/groups/${groupId}`)).status).toBe(403);
@@ -80,9 +80,10 @@ test.describe('access code and membership', () => {
 
     await owner.goto(`/study-groups/g/${groupId}/settings`);
     const members = owner.locator('section[aria-labelledby="members-settings-title"]');
-    acceptNextDialog(owner);
     await members.getByRole('button', { name: `Remove ${removedName}` }).click();
-    await expect(members.getByText(removedName)).toHaveCount(0);
+    await answerConfirmDialog(owner);
+    await expect(members.getByText(`${removedName} was removed from the group.`)).toBeVisible();
+    await expect(members.getByRole('listitem').filter({ hasText: removedName })).toHaveCount(0);
 
     expect((await api(removed, 'GET', `/groups/${groupId}`)).status).toBe(403);
     expect((await api(removed, 'GET', `/groups/${groupId}/materials`)).status).toBe(403);

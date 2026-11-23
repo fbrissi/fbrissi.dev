@@ -89,28 +89,30 @@ test.describe('platform admin', () => {
     await admin.getByRole('button', { name: 'Delete “Buy cheap followers”' }).click();
     await answerReasonDialog(admin, materialReason);
     await expect(admin.getByRole('heading', { name: 'Buy cheap followers' })).toHaveCount(0);
+    await expect(admin.getByRole('status').filter({ hasText: '“Buy cheap followers” was deleted permanently.' })).toBeVisible();
   });
 
   test('the admin deletes a join request message with a reason', async () => {
     await admin.goto(`/study-groups/g/${keptId}/settings`);
     const name = (await api<{ user: { displayName: string } }>(applicant, 'GET', '/me')).body.user.displayName;
-    await admin.getByRole('button', { name: `Delete the message from ${name}` }).click();
+    await admin.getByRole('button', { name: `Delete message from ${name}` }).click();
     await answerReasonDialog(admin, messageReason);
     await expect(admin.getByText('Message deleted.')).toBeVisible();
     await expect(admin.getByText('Call me at +55 11 99999-9999')).toHaveCount(0);
 
     // The owner can't delete join request messages.
     await owner.goto(`/study-groups/g/${keptId}/settings`);
-    await expect(owner.getByRole('button', { name: /Delete the message from/ })).toHaveCount(0);
+    await expect(owner.getByRole('button', { name: /Delete message from/ })).toHaveCount(0);
   });
 
   test('the admin deletes a whole group with a reason', async ({ browser }) => {
     await admin.goto(`/study-groups/g/${doomedId}/settings`);
     await admin.getByLabel(`Type “${doomed.name}” to confirm`).fill(doomed.name);
-    await admin.getByLabel(/^Reason/).fill(groupReason);
     await admin.getByRole('button', { name: 'Delete group permanently' }).click();
+    await answerReasonDialog(admin, groupReason);
     await admin.waitForURL(/\/study-groups\/admin$/);
-    await expect(admin.getByRole('listitem').filter({ hasText: doomed.name })).toHaveCount(0);
+    await expect(admin.getByRole('status').filter({ hasText: `“${doomed.name}” was deleted permanently.` })).toBeVisible();
+    await expect(admin.getByRole('region', { name: 'All groups' }).getByRole('listitem').filter({ hasText: doomed.name })).toHaveCount(0);
 
     expect((await api(owner, 'GET', `/groups/${doomedId}`)).status).toBe(404);
     const visitor = await browser.newPage();

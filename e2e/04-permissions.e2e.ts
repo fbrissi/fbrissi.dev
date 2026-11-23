@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { api, createGroupViaApi, freshUser, groupInput, joinAndApprove, sessionFor, suggest, users } from './support';
+import { answerConfirmDialog, api, createGroupViaApi, freshUser, groupInput, joinAndApprove, sessionFor, suggest, users } from './support';
 
 test.describe.configure({ mode: 'serial' });
 
@@ -152,8 +152,9 @@ test.describe('member and owner permissions', () => {
 
   test('the owner deletes content; the member cannot', async () => {
     await owner.goto(`/study-groups/g/${groupId}`);
-    owner.once('dialog', (dialog) => void dialog.accept());
     await owner.getByRole('button', { name: 'Delete “Owner article”' }).click();
+    await answerConfirmDialog(owner);
+    await expect(owner.getByRole('status').filter({ hasText: '“Owner article” was deleted permanently.' })).toBeVisible();
     await expect(owner.getByRole('heading', { name: 'Owner article' })).toHaveCount(0);
     expect((await api(member, 'DELETE', `/groups/${groupId}/materials/${memberMaterial}`, {})).status).toBe(403);
   });

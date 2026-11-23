@@ -1,7 +1,7 @@
 ---
 title: Terms of Use
 description: Terms of Use and content policy of the English study groups program for developers.
-version: '2026-11-22'
+version: '2026-11-23'
 ---
 
 These Terms of Use govern the English study groups program available at `fbrissi.dev/study-groups` (the "program"). By creating an account you agree to them. Users in Brazil: the [Portuguese version](/pt-br/study-groups/terms) prevails.
@@ -67,11 +67,11 @@ The platform admin can open any group and delete any group, content, icon or joi
 - the groups it owns are deleted permanently, and the owner is told by email, with the reason;
 - its suggestions, votes, memberships and join requests are hidden from other users.
 
-A ban lasts at most 2 years unless the platform admin renews it, again with a written reason; when it ends, the account can be used again. The platform admin can lift a ban at any time, also with a written reason, and the account owner is told by email that the account was restored. Groups deleted by the ban are not restored. If you think a ban is a mistake, use the [contact page](/contact).
+A ban lasts at most 2 years unless the platform admin renews it, again with a written reason; when it ends, the account can be used again. The platform admin can lift a ban at any time, also with a written reason, and the account owner is told by email that the account was restored. Groups deleted by the ban are not restored. If you think a ban is a mistake, write to groups@fbrissi.dev.
 
 ## 7. Reporting abuse
 
-Report abuse, inappropriate content or security issues through the [contact page](/contact) or at contact@fbrissi.dev. We aim to answer within 15 days.
+Report abuse, inappropriate content or security issues, and ask questions about the program, at **groups@fbrissi.dev**. We aim to answer within 15 days.
 
 ## 8. A free service without warranties
 

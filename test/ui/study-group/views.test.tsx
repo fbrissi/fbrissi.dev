@@ -78,6 +78,7 @@ describe('my groups (3.4, Q5)', () => {
   const data: MyGroupsResponse = {
     groups: [{ id: 'own1234567', name: 'Own', summary: 'Owned group', role: 'owner', iconUrl: '/api/study-group/icons/own1234567/abcdefghjkmnpqrs.png?exp=1&sig=s' }, { id: 'mem1234567', name: 'Joined', summary: 'Joined group', role: 'member', iconUrl: null }],
     pending: [{ id: 'pen1234567', name: 'Waiting', summary: 'Pending group', requestedAt: '2026-11-03T00:00:00Z' }],
+    rejected: [{ id: 'rej1234567', name: 'Declined', summary: 'Rejected group', canAskAgainAt: '2026-11-23T12:00:00.000Z' }],
     notices: [
       { id: 1, action: 'delete_group', groupId: 'gone', label: 'Gone group', reason: 'Spam and promotion', createdAt: '2026-11-04T00:00:00Z' },
       { id: 2, action: 'custom_action', groupId: 'own1234567', label: 'Thing', reason: 'Some reason here', createdAt: '2026-11-04T00:00:00Z' }
@@ -93,10 +94,18 @@ describe('my groups (3.4, Q5)', () => {
     const notices = screen.getByRole('region', { name: 'Moderation notices' });
     expect(notices).toHaveTextContent('Group deleted: “Gone group”');
     expect(notices).toHaveTextContent('custom_action: “Thing”');
+    expect(screen.getByRole('region', { name: 'Not approved' })).toHaveTextContent("Declined · the owner didn’t approve your request. You can ask again after November 23, 2026 at 9:00 AM (Brasília time).");
+  });
+
+  it('shows a one-time status message left by a group deletion', async () => {
+    window.sessionStorage.setItem('study-groups:flash', '“Old” was deleted permanently.');
+    renderWith({ 'GET /me': { user }, 'GET /me/groups': { groups: [], pending: [], rejected: [], notices: [] } }, <MyGroupsView />);
+    expect(await screen.findByText('“Old” was deleted permanently.')).toBeInTheDocument();
+    expect(window.sessionStorage.getItem('study-groups:flash')).toBeNull();
   });
 
   it('shows the empty state and errors', async () => {
-    renderWith({ 'GET /me': { user }, 'GET /me/groups': { groups: [], pending: [], notices: [] } }, <MyGroupsView />);
+    renderWith({ 'GET /me': { user }, 'GET /me/groups': { groups: [], pending: [], rejected: [], notices: [] } }, <MyGroupsView />);
     expect(await screen.findByRole('link', { name: 'create one' })).toHaveAttribute('href', '/study-groups/new');
     expect(screen.queryByRole('region', { name: 'Moderation notices' })).not.toBeInTheDocument();
     cleanup();
@@ -110,7 +119,7 @@ describe('account (2.3–2.5)', () => {
     let attempt = 0;
     const fetchMock = renderWith({
       'GET /me': { user },
-      'GET /me/groups': { groups: [], pending: [], notices: [] },
+      'GET /me/groups': { groups: [], pending: [], rejected: [], notices: [] },
       'PATCH /me': () => (attempt++ === 0 ? apiError(500, 'Save failed') : { user: { ...user, displayName: 'Liv' } })
     }, <AccountView />);
     const name = await screen.findByLabelText('Display name');
@@ -119,6 +128,12 @@ describe('account (2.3–2.5)', () => {
     fireEvent.change(name, { target: { value: '  ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
     expect(screen.getByText('Use 1 to 40 characters.')).toBeInTheDocument();
+    fireEvent.change(name, { target: { value: 'Liv\u202E' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    expect(screen.getByText('Remove invisible or text-direction characters.')).toBeInTheDocument();
+    fireEvent.change(name, { target: { value: 'liv@example.com' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
+    expect(screen.getByText("Don't include an email address.")).toBeInTheDocument();
     fireEvent.change(name, { target: { value: ' Liv ' } });
     expect(screen.queryByText('Use 1 to 40 characters.')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Save name' }));
@@ -132,7 +147,7 @@ describe('account (2.3–2.5)', () => {
     let attempt = 0;
     renderWith({
       'GET /me': { user },
-      'GET /me/groups': { groups: [{ id: 'own1234567', name: 'Own', summary: 's', role: 'owner' }, { id: 'mem1234567', name: 'Joined', summary: 's', role: 'member' }], pending: [], notices: [] },
+      'GET /me/groups': { groups: [{ id: 'own1234567', name: 'Own', summary: 's', role: 'owner' }, { id: 'mem1234567', name: 'Joined', summary: 's', role: 'member' }], pending: [], rejected: [], notices: [] },
       'DELETE /me': () => (attempt++ === 0 ? apiError(500, 'Delete failed') : null)
     }, <AccountView />);
     const section = await screen.findByRole('region', { name: 'Delete my account' });
@@ -152,7 +167,7 @@ describe('account (2.3–2.5)', () => {
     let attempt = 0;
     const fetchMock = renderWith({
       'GET /me': { user },
-      'GET /me/groups': { groups: [], pending: [], notices: [] },
+      'GET /me/groups': { groups: [], pending: [], rejected: [], notices: [] },
       'GET /me/notifications': { emailEnabled: true },
       'PUT /me/notifications': (body: Record<string, unknown> | undefined) => (attempt++ === 1 ? apiError(500, 'Save failed') : { emailEnabled: body?.emailEnabled })
     }, <AccountView />);
@@ -173,7 +188,7 @@ describe('account (2.3–2.5)', () => {
   });
 
   it('shows an error when the email setting can’t be loaded', async () => {
-    renderWith({ 'GET /me': { user }, 'GET /me/groups': { groups: [], pending: [], notices: [] }, 'GET /me/notifications': apiError(500, 'Load failed') }, <AccountView />);
+    renderWith({ 'GET /me': { user }, 'GET /me/groups': { groups: [], pending: [], rejected: [], notices: [] }, 'GET /me/notifications': apiError(500, 'Load failed') }, <AccountView />);
     const section = await screen.findByRole('region', { name: 'Emails' });
     expect(await within(section).findByText('Load failed')).toBeInTheDocument();
     expect(within(section).getByRole('checkbox')).toBeDisabled();
@@ -233,8 +248,19 @@ describe('welcome (2.2, D9, Q4)', () => {
     const boxes = screen.getAllByRole('checkbox');
     expect(boxes.every((box) => !(box as HTMLInputElement).checked)).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Create my account' }));
-    expect(screen.getByText('Check all three boxes to create your account.')).toBeInTheDocument();
-    boxes.forEach((box) => fireEvent.click(box));
+    // The message is announced and the focus moves to the first unchecked box, marked invalid.
+    expect(screen.getByRole('alert')).toHaveTextContent('Check all three boxes to create your account.');
+    expect(boxes[0]).toHaveFocus();
+    expect(boxes[0]).toHaveAttribute('aria-invalid', 'true');
+    expect(boxes[0]).toHaveAttribute('aria-describedby', 'welcome-error');
+    fireEvent.click(boxes[0]);
+    fireEvent.click(screen.getByRole('button', { name: 'Create my account' }));
+    expect(boxes[1]).toHaveFocus();
+    expect(boxes[0]).not.toHaveAttribute('aria-invalid');
+    fireEvent.click(boxes[1]);
+    fireEvent.click(screen.getByRole('button', { name: 'Create my account' }));
+    expect(boxes[2]).toHaveFocus();
+    fireEvent.click(boxes[2]);
     fireEvent.click(screen.getByRole('button', { name: 'Create my account' }));
     expect(await screen.findByText('No pending sign-up')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Create my account' }));
@@ -264,7 +290,7 @@ describe('admin console (5.2, 5.5)', () => {
       'GET /me': { user: admin },
       'GET /admin/groups': { groups: [adminGroup('aaa'), adminGroup('bbb', { ownerName: null, listed: false })], nextCursor: 'c1' },
       'GET /admin/groups?cursor=c1': { groups: [adminGroup('ccc')], nextCursor: null },
-      'GET /admin/moderation-log': { actions: [action(3, { action: 'unban_user', groupId: null, actorName: null, reason: 'Ban expired' }), action(2), action(1, { groupId: null, actorName: null })], nextCursor: '1' },
+      'GET /admin/moderation-log': { actions: [action(3, { action: 'unban_user', targetType: 'user', groupId: null, actorName: null, reason: 'Ban expired' }), action(2), action(1, { groupId: null, actorName: null })], nextCursor: '1' },
       'GET /admin/moderation-log?cursor=1': { actions: [action(0)], nextCursor: null }
     }, <AdminConsoleView />);
     const groups = await screen.findByRole('region', { name: 'All groups' });
@@ -276,11 +302,18 @@ describe('admin console (5.2, 5.5)', () => {
     expect(within(groups).queryByRole('button', { name: 'Load more' })).not.toBeInTheDocument();
 
     const log = screen.getByRole('region', { name: 'Moderation log' });
-    expect(await within(log).findByText(/delete_material · material 2 in g1 · “Item 2”/)).toBeInTheDocument();
+    expect(await within(log).findByText(/Material deleted · material 2 in g1 · “Item 2”/)).toBeInTheDocument();
     expect(within(log).getByText(/Former admin/)).toBeInTheDocument();
     expect(within(log).getByText(/Automatic · .* · Reason: Ban expired/)).toBeInTheDocument();
+    expect(within(log).getByText(/Ban lifted · user 3/)).toBeInTheDocument();
     fireEvent.click(within(log).getByRole('button', { name: 'Load more' }));
     expect(await within(log).findByText(/“Item 0”/)).toBeInTheDocument();
+  });
+
+  it('shows the status message a group deletion left for the admin page', async () => {
+    window.sessionStorage.setItem('study-groups:flash', '“Spam” was deleted permanently.');
+    renderWith({ 'GET /me': { user: admin }, 'GET /admin/groups': { groups: [], nextCursor: null }, 'GET /admin/users': { users: [], nextCursor: null }, 'GET /admin/moderation-log': { actions: [], nextCursor: null } }, <AdminConsoleView />);
+    expect(await screen.findByText('“Spam” was deleted permanently.')).toBeInTheDocument();
   });
 
   it('shows empty and error states, and refuses non-admins', async () => {

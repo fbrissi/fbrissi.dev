@@ -25,7 +25,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "e2e:features": "node scripts/check-e2e-features.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-sqs": "^3.1168.0",

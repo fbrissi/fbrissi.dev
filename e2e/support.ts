@@ -177,9 +177,12 @@ export function groupUrl(id: string, page: '' | '/settings' = ''): string {
   return `/study-groups/g/${id}${page}`;
 }
 
-/** Accepts the next `window.confirm`. */
-export function acceptNextDialog(page: Page): void {
-  page.once('dialog', (dialog) => void dialog.accept());
+/** Answers the in-page confirmation (no reason) that the last click opened: confirms it, or cancels it. */
+export async function answerConfirmDialog(page: Page, confirmed = true) {
+  const dialog = page.getByRole('dialog');
+  await expect(dialog).toBeVisible();
+  await (confirmed ? dialog.getByRole('button').last() : dialog.getByRole('button', { name: 'Cancel' })).click();
+  await expect(dialog).toHaveCount(0);
 }
 
 /**

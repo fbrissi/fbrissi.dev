@@ -114,6 +114,8 @@ describe('notification sender', () => {
     const restored = await insert('account_restored', 'member01');
     expect(await sender()(restored)).toBe('sent');
     expect(send.mock.calls[1][0].subject).toBe('Your English Study Groups account was restored');
+    // Account notices ignore the opt-out, so they carry no one-click unsubscribe headers.
+    for (const call of send.mock.calls) expect(call[0].headers).toEqual({ 'Auto-Submitted': 'auto-generated' });
   });
 
   it('sends only to the allowlist outside production, with the sandbox prefix', async () => {

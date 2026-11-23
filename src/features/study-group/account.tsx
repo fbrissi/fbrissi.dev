@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { LIMITS, updateProfileSchema, type CurrentUser, type MyGroup } from '@/workers/study-group/contract';
+import { friendlyValidationMessages, LIMITS, STUDY_GROUPS_EMAIL, updateProfileSchema, type CurrentUser, type MyGroup } from '@/workers/study-group/contract';
 
 import { errorMessage } from './api';
 import { navigate } from './navigation';
@@ -23,7 +23,8 @@ function ProfileSection({ user }: { user: CurrentUser }) {
     event.preventDefault();
     const parsed = updateProfileSchema.safeParse({ displayName: name });
     if (!parsed.success) {
-      setNotice({ tone: 'error', text: `Use ${LIMITS.displayName.min} to ${LIMITS.displayName.max} characters.` });
+      const friendly = parsed.error.issues.find((issue) => friendlyValidationMessages.includes(issue.message));
+      setNotice({ tone: 'error', text: friendly?.message ?? `Use ${LIMITS.displayName.min} to ${LIMITS.displayName.max} characters.` });
       return;
     }
     try {
@@ -148,7 +149,7 @@ export function AccountView() {
           <div>
             <p className={eyebrowClass}>English study groups</p>
             <h1 className="mt-2 text-3xl font-normal tracking-tight sm:text-5xl">Account</h1>
-            <p className={`${hintClass} mt-2`}>Questions about your data? Use the <a className="text-accent" href="/contact">contact page</a>.</p>
+            <p className={`${hintClass} mt-2`}>Questions about your data? Write to <a className="text-accent" href={`mailto:${STUDY_GROUPS_EMAIL}`}>{STUDY_GROUPS_EMAIL}</a>.</p>
           </div>
           <ProfileSection user={user} />
           <EmailSection />

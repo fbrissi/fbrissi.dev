@@ -6,14 +6,15 @@ z.config({ jitless: true });
 export const STUDY_GROUP_API_PREFIX = '/api/study-group';
 
 /** Current versions (dates) of the program documents, shown on the pages and recorded when a user accepts them. */
-export const POLICY_VERSIONS = { terms: '2026-11-22', privacy: '2026-11-22' } as const;
+export const POLICY_VERSIONS = { terms: '2026-11-23', privacy: '2026-11-23' } as const;
 export type PolicyDocument = keyof typeof POLICY_VERSIONS;
 
 /**
  * The latest version of each document with a material change (new processors, purposes, legal bases, transfers or
  * user obligations). Users must have accepted this version or a later one; a minor edit only moves POLICY_VERSIONS and
  * takes effect on publication without asking anyone again (Q18). The 2026-11-22 versions are material: they add
- * Amazon SES and Cloudflare R2, service emails, icons, bans and the transfer grounds.
+ * Amazon SES and Cloudflare R2, service emails, icons, bans and the transfer grounds. The 2026-11-23 versions only add
+ * the groups@fbrissi.dev channel (minor).
  */
 export const MATERIAL_POLICY_VERSIONS: Record<PolicyDocument, string> = { terms: '2026-11-22', privacy: '2026-11-22' };
 
@@ -71,6 +72,8 @@ export type NotificationKind = (typeof notificationKinds)[number];
 export const accountNoticeKinds: readonly NotificationKind[] = ['account_banned', 'account_restored'];
 /** A ban record is deleted this many years after the ban or its last renewal, which lifts the ban. */
 export const BAN_RETENTION_YEARS = 2;
+/** The program's own address (Cloudflare Email Routing): replies to notices, abuse reports and data requests. */
+export const STUDY_GROUPS_EMAIL = 'groups@fbrissi.dev';
 
 const trimmed = (min: number, max: number) => z.string().trim().min(min).max(max);
 const httpUrl = z
@@ -109,15 +112,52 @@ export const castVoteSchema = z.object({
 });
 
 /**
- * Links or web addresses in a group name: a scheme, `www.`, or a host with a common top-level domain, in any case
- * (`Node.js` stays allowed; `ASP.NET` is blocked). Group names go into emails, so they must not carry links.
+ * Group names go into emails, so they must not carry links. Any host-like text is refused, in any case: a scheme
+ * (`https://`, `mailto:`), `www.`, an IPv4 address, or any `label.tld` (a dot followed by 2 or more letters, or a punycode `xn--` label). Common
+ * tech names with a dot are allowed first: anything ending in `.js` (Node.js, Vue.js, Next.js; `.js` is not a
+ * top-level domain), ASP.NET, VB.NET, ADO.NET and Socket.IO, and `.NET` on its own. They only count when nothing
+ * host-like follows (`node.js.com` is still refused).
  */
-const urlLikeName = /[a-z0-9-]\.(com|net|org|io|dev|app|br|co|me|info|xyz|ly|gg|link|site|online|shop|top|ru|cn)\b/i;
+const techNames = /\b(?:[a-z0-9-]+\.js|asp\.net|vb\.net|ado\.net|socket\.io)\b(?!\.[a-z0-9])/gi;
+const schemeLike = /[a-z][a-z0-9+.-]*:\/\/|\b(?:https?|ftp|file|mailto|javascript|data|tel|sms|ws|wss):/i;
+const hostLike = /(?:^|[^a-z0-9-])(?:[a-z0-9-]+\.)+(?:[a-z]{2,63}|xn--[a-z0-9-]{1,59})(?![a-z0-9-])/i;
+const ipv4Like = /\b\d{1,3}(?:\.\d{1,3}){3}\b/;
+
+export function looksLikeLink(value: string): boolean {
+  const text = value.replace(techNames, ' ');
+  return schemeLike.test(text) || /www\./i.test(text) || hostLike.test(text) || ipv4Like.test(text);
+}
+
 export const groupNameUrlMessage = "Group names can't contain links or web addresses.";
 
+/**
+ * Text other people see (display names, group names and summaries) can't hide or reorder characters: zero-width
+ * characters (U+200B–U+200F, U+FEFF) and bidirectional controls (U+202A–U+202E, U+2066–U+2069) are refused, and so is
+ * an email address.
+ */
+const invisibleCharacters = /[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/;
+const emailLike = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+export const invisibleCharactersMessage = 'Remove invisible or text-direction characters.';
+export const emailInTextMessage = "Don't include an email address.";
+
+export function hasInvisibleCharacters(value: string): boolean {
+  return invisibleCharacters.test(value);
+}
+
+export function looksLikeEmail(value: string): boolean {
+  return emailLike.test(value);
+}
+
+const visibleText = (min: number, max: number) => trimmed(min, max)
+  .refine((value) => !hasInvisibleCharacters(value), invisibleCharactersMessage)
+  .refine((value) => !looksLikeEmail(value), emailInTextMessage);
+
+/** Validation messages written for people; the API returns them as the error instead of "Invalid request". */
+export const friendlyValidationMessages: readonly string[] = [groupNameUrlMessage, invisibleCharactersMessage, emailInTextMessage];
+
 export const groupProfileSchema = z.object({
-  name: trimmed(LIMITS.groupName.min, LIMITS.groupName.max).refine((value) => !/https?:\/\/|www\./i.test(value) && !urlLikeName.test(value), groupNameUrlMessage),
-  summary: trimmed(LIMITS.groupSummary.min, LIMITS.groupSummary.max),
+  name: visibleText(LIMITS.groupName.min, LIMITS.groupName.max).refine((value) => !looksLikeLink(value), groupNameUrlMessage),
+  summary: visibleText(LIMITS.groupSummary.min, LIMITS.groupSummary.max),
   rules: z.array(trimmed(1, 300)).max(30),
   meetingDay: trimmed(1, 20),
   meetingStart: time,
@@ -150,7 +190,7 @@ export const signupSchema = z.object({
 });
 
 export const updateProfileSchema = z.object({
-  displayName: trimmed(LIMITS.displayName.min, LIMITS.displayName.max),
+  displayName: visibleText(LIMITS.displayName.min, LIMITS.displayName.max),
 });
 
 export const emailPreferencesSchema = z.object({
@@ -295,9 +335,24 @@ export interface PendingGroupRequest extends GroupCard {
   requestedAt: string;
 }
 
+/** A request the owner rejected less than the cooldown ago: the user can ask again from `canAskAgainAt`. */
+export interface RejectedGroupRequest extends GroupCard {
+  canAskAgainAt: string;
+}
+
+/**
+ * When a rejected requester can ask again, in Brasília time (the program's reference time zone), with the exact
+ * moment so the day shown is never early: "November 23, 2026 at 9:00 AM (Brasília time)".
+ */
+export function formatAskAgainAt(iso: string): string {
+  const moment = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', dateStyle: 'long', timeStyle: 'short' }).format(new Date(iso));
+  return `${moment.replace(/\s/g, ' ')} (Brasília time)`;
+}
+
 export interface MyGroupsResponse {
   groups: MyGroup[];
   pending: PendingGroupRequest[];
+  rejected: RejectedGroupRequest[];
   notices: ModerationNotice[];
 }
 
@@ -340,6 +395,8 @@ export interface ModerationLogResponse {
 export interface GroupPreviewResponse {
   group: GroupCard & { iconUrl: string | null };
   membership: Membership;
+  /** Set while a rejected request's cooldown runs: the user can ask again from then. */
+  canAskAgainAt: string | null;
 }
 
 export interface GroupResponse {

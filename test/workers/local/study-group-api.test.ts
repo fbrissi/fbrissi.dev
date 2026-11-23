@@ -87,7 +87,7 @@ describe('local study group API', () => {
     }));
   });
 
-  it('sends notifications in-process to Mailpit, from notifications@ with Reply-To contact@', async () => {
+  it('sends notifications in-process to Mailpit, from notifications@ with Reply-To groups@', async () => {
     await import('@/workers/local/study-group-api');
     const { notify } = mocks.createHandler.mock.calls[0][0];
     const past = new Date(Date.now() - 1000).toISOString();
@@ -112,7 +112,7 @@ describe('local study group API', () => {
     expect(mocks.sendMail).toHaveBeenCalledWith({
       from: { name: 'English Study Groups', address: 'notifications@fbrissi.dev' },
       to: 'owner@example.test',
-      replyTo: 'contact@fbrissi.dev',
+      replyTo: 'groups@fbrissi.dev',
       subject: 'S',
       text: 'T',
       html: '<p>H</p>',

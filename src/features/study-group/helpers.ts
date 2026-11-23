@@ -103,3 +103,32 @@ export function formatTime(time: string): string {
 export function formatMeeting(group: GroupInfo): string {
   return `${group.meetingDay} ${formatTime(group.meetingStart)} - ${formatTime(group.meetingEnd)} (${timezoneLabels[group.timezone] ?? group.timezone})`;
 }
+
+/** Readable names of the moderation log actions; an unknown code is shown as is. */
+const moderationActionLabels: Record<string, string> = {
+  delete_group: 'Group deleted',
+  delete_material: 'Material deleted',
+  delete_join_message: 'Join request message deleted',
+  delete_icon: 'Group icon removed',
+  ban_user: 'Account banned',
+  renew_ban: 'Ban renewed',
+  unban_user: 'Ban lifted',
+};
+
+export function moderationActionLabel(action: string): string {
+  return moderationActionLabels[action] ?? action;
+}
+
+const flashKey = 'study-groups:flash';
+
+/** A one-time status message for the next page, after an action that navigates away (a group deletion). */
+export function setFlash(text: string): void {
+  writeStorage('sessionStorage', flashKey, text);
+}
+
+/** Reads and clears the one-time status message, or '' when there is none. */
+export function takeFlash(): string {
+  const text = readStorage('sessionStorage', flashKey);
+  writeStorage('sessionStorage', flashKey, null);
+  return text;
+}

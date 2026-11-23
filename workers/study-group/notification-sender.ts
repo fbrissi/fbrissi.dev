@@ -125,11 +125,10 @@ export function createNotificationSender(deps: NotificationSenderDeps) {
         subject: studyGroupEmailSubject(input),
         text: studyGroupEmailText(input),
         html: studyGroupEmailHtml(input),
-        headers: {
-          'List-Unsubscribe': `<${urls.oneClick}>`,
-          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
-          'Auto-Submitted': 'auto-generated',
-        },
+        // Ban and restore notices ignore the email setting, so they don't offer a one-click unsubscribe that wouldn't stop them.
+        headers: accountNoticeKinds.includes(row.kind)
+          ? { 'Auto-Submitted': 'auto-generated' }
+          : { 'List-Unsubscribe': `<${urls.oneClick}>`, 'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click', 'Auto-Submitted': 'auto-generated' },
       });
       await finish(row.id, 'sent', nowIso, messageId);
       return 'sent';

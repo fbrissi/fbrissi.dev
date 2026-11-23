@@ -76,7 +76,7 @@ test.describe('study group emails', () => {
     expect(`${mail.Text}${mail.HTML}`).not.toContain(accepted.email);
     expect(`${mail.Text}${mail.HTML}`).not.toContain(accepted.givenName);
     expect(mail.From).toEqual({ Address: 'notifications@fbrissi.dev', Name: 'English Study Groups' });
-    expect(mail.ReplyTo.map((address) => address.Address)).toEqual(['contact@fbrissi.dev']);
+    expect(mail.ReplyTo.map((address) => address.Address)).toEqual(['groups@fbrissi.dev']);
     expect(mail.To.map((address) => address.Address)).toEqual([owner.email]);
     expect(headers['List-Unsubscribe']?.[0]).toMatch(/^<http:\/\/localhost:3000\/api\/study-group\/unsubscribe\?t=[\w.%-]+>$/);
     expect(headers['List-Unsubscribe-Post']).toEqual(['List-Unsubscribe=One-Click']);
@@ -105,12 +105,14 @@ test.describe('study group emails', () => {
     expect(again.status).toBe(409);
     expect(again.body.error).toMatch(/You can ask again after [A-Z][a-z]+ \d{1,2}, \d{4} at \d{1,2}:\d{2} [AP]M \(Brasília time\)\./);
 
-    // The join form shows the wait as a form error; the code field stays valid.
+    // The group page and My groups show the rejection and when to ask again, before any code is typed.
     await declinedPage.goto(`/study-groups/g/${groupId}`);
-    await declinedPage.getByLabel('Group code').fill(accessCode);
-    await declinedPage.getByRole('button', { name: 'Send request' }).click();
-    await expect(declinedPage.getByRole('alert').filter({ hasText: /You can ask again after/ })).toBeVisible();
-    await expect(declinedPage.getByLabel('Group code')).toHaveAttribute('aria-invalid', 'false');
+    const rejection = declinedPage.getByRole('alert').filter({ hasText: 'The owner didn’t approve your request to join this group.' });
+    await expect(rejection).toContainText(/You can ask again after [A-Z][a-z]+ \d{1,2}, \d{4} at \d{1,2}:\d{2} [AP]M \(Brasília time\)/);
+    await expect(declinedPage.getByLabel('Access code')).toHaveCount(0);
+    await declinedPage.goto('/study-groups/my');
+    const notApproved = declinedPage.getByRole('region', { name: 'Not approved' });
+    await expect(notApproved).toContainText(/the owner didn.t approve your request\. You can ask again after .* \(Brasília time\)\./);
   });
 
   test('the one-click unsubscribe POST from a mail provider turns emails off, and the account turns them back on', async () => {

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-import { groupNameUrlMessage, groupProfileSchema, LIMITS, type GroupInfo, type GroupProfileInput, type ModerationMode } from '@/workers/study-group/contract';
+import { friendlyValidationMessages, groupProfileSchema, LIMITS, type GroupInfo, type GroupProfileInput, type ModerationMode } from '@/workers/study-group/contract';
 
 import { hintClass, inputClass } from './ui';
 
@@ -60,7 +60,7 @@ export function parseProfile(values: ProfileValues): { data: GroupProfileInput }
   const errors: ProfileErrors = {};
   for (const issue of parsed.error.issues) {
     const field = issue.path[0] as TextField;
-    errors[field] = field === 'name' && issue.message === groupNameUrlMessage ? groupNameUrlMessage : messages[field];
+    errors[field] = friendlyValidationMessages.includes(issue.message) ? issue.message : messages[field];
   }
   return { errors };
 }

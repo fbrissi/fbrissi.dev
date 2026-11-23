@@ -33,6 +33,9 @@ describe('study group emails', () => {
     expect(html).toContain('src="https://fbrissi.dev/images/avatar.png"');
     expect(html).not.toMatch(/sandbox|local development/i);
     expect(html).toContain('background:#f97316;color:#111111;');
+    // The shared layout: the contact form card with the avatar header and the title.
+    expect(html).toContain('<div class="header">');
+    expect(html).toContain('New requests to join Go &lt;b&gt;Talk&lt;/b&gt; &amp; &quot;friends&quot;</h2>');
     expect(html).not.toContain('#2563eb');
   });
 
@@ -62,8 +65,12 @@ describe('study group emails', () => {
     const text = studyGroupEmailText(banned);
     expect(text).toContain('Reason: Political propaganda');
     expect(text).toContain('The ban lasts 2 years unless it is renewed or lifted earlier.');
-    expect(text).toContain('If you think this is a mistake, reply to this email or write through the contact page');
-    expect(text).toContain('Contact page: https://fbrissi.dev/contact');
+    expect(text).toContain('If you think this is a mistake, reply to this email or write to groups@fbrissi.dev, which is also the channel for requests about your personal data.');
+    expect(text).toContain('Email groups@fbrissi.dev: mailto:groups@fbrissi.dev');
+    // The ban notice is sent even with emails off, so it offers no unsubscribe link.
+    expect(text).not.toMatch(/Unsubscribe|Email settings/);
+    expect(text).toContain('It is sent even if you turned service emails off.');
+    expect(studyGroupEmailHtml(banned)).not.toContain('Unsubscribe');
     expect(studyGroupEmailText({ ...banned, reason: undefined })).toContain('Reason: \n');
   });
 

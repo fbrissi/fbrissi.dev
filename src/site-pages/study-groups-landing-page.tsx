@@ -7,6 +7,7 @@ import { localizedPath, type Locale } from '@/lib/i18n';
 import { getMessages } from '@/lib/site';
 import { breadcrumbList, pageUrl, personId, personNode, websiteId } from '@/lib/structured-data';
 import { programPaths } from '@/lib/study-groups';
+import { STUDY_GROUPS_EMAIL } from '@/workers/study-group/contract';
 
 const sectionTitleClass = 'mb-6 text-2xl font-normal tracking-tight sm:text-3xl';
 const policyLinkClass = 'text-accent hover:text-accent-hover';
@@ -21,7 +22,8 @@ export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; api
   const allMessages = getMessages(locale);
   const messages = getMessages('en').studyGroups;
   const entryNote = locale === 'pt-BR' ? allMessages.studyGroups.appLanguageNote : null;
-  // The Terms, the Privacy Policy and the contact page are bilingual (LGPD): each landing links to its own language.
+  // The Terms and the Privacy Policy are bilingual (LGPD): each landing links to its own language. Program questions,
+  // abuse reports and data requests go to the program's own address.
   const policyLanguage = locale === 'pt-BR' ? 'pt-BR' : undefined;
   const url = pageUrl(locale, programPaths.landing);
   // WebPage and BreadcrumbList only: the group list is client-rendered and the program is not a course or an event.
@@ -104,7 +106,7 @@ export function StudyGroupsLandingPage({ locale, apiUrl }: { locale: Locale; api
           <li><a className={policyLinkClass} hrefLang={policyLanguage} href={localizedPath(locale, programPaths.terms)}>{messages.terms}</a></li>
           <li><a className={policyLinkClass} hrefLang={policyLanguage} href={`${localizedPath(locale, programPaths.terms)}#content-policy`}>{messages.contentPolicy}</a></li>
           <li><a className={policyLinkClass} hrefLang={policyLanguage} href={localizedPath(locale, programPaths.privacy)}>{messages.privacy}</a></li>
-          <li><a className={policyLinkClass} hrefLang={policyLanguage} href={localizedPath(locale, '/contact')}>{messages.contact}</a></li>
+          <li><a className={policyLinkClass} href={`mailto:${STUDY_GROUPS_EMAIL}`}>{messages.contact}</a></li>
         </ul>
       </section>
       </div>

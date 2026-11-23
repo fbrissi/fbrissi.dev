@@ -5,6 +5,7 @@ import {
   joinGroupSchema,
   LIMITS,
   NOTIFICATION_LIMITS,
+  formatAskAgainAt,
   REASON_REQUIRED_MESSAGE,
   reasonSchema,
   STUDY_GROUP_API_PREFIX,
@@ -107,13 +108,27 @@ export async function createGroup(context: UserContext): Promise<RouteResult> {
   return { status: 201, body: { group } satisfies CreateGroupResponse };
 }
 
+const REJOIN_COOLDOWN_MS = NOTIFICATION_LIMITS.rejoinCooldownDays * DAY_MS;
+
+/** When a rejected requester can ask to join again, or null when no rejection is within the cooldown. */
+async function canAskAgainAt(context: GroupContext): Promise<string | null> {
+  const { app, group, user } = context;
+  const rejectedAt = await app.repository.latestRejection(group.id, user.id, new Date(app.clock().getTime() - REJOIN_COOLDOWN_MS).toISOString());
+  return rejectedAt ? new Date(Date.parse(rejectedAt) + REJOIN_COOLDOWN_MS).toISOString() : null;
+}
+
 export async function previewGroup(context: GroupContext): Promise<RouteResult> {
   const { group, user, isMember, app } = context;
   let membership: Membership = 'none';
   if (group.ownerId === user.id) membership = 'owner';
   else if (isMember) membership = 'member';
   else if (await app.repository.hasPendingRequest(group.id, user.id)) membership = 'pending';
-  return { status: 200, body: { group: { id: group.id, name: group.name, summary: group.summary, iconUrl: await iconUrl(context, group.icon) }, membership } satisfies GroupPreviewResponse };
+  const body: GroupPreviewResponse = {
+    group: { id: group.id, name: group.name, summary: group.summary, iconUrl: await iconUrl(context, group.icon) },
+    membership,
+    canAskAgainAt: membership === 'none' ? await canAskAgainAt(context) : null,
+  };
+  return { status: 200, body };
 }
 
 /** A wrong code fails with the same generic error every time; every attempt counts against the join rate limit. */
@@ -122,21 +137,15 @@ export async function joinGroup(context: GroupContext): Promise<RouteResult> {
   const { group, user, isMember, app } = context;
   if (isMember || group.ownerId === user.id) throw new HttpError(409, 'You are already a member of this group');
   if (await app.repository.hasPendingRequest(group.id, user.id)) throw new HttpError(409, 'You already asked to join this group');
-  const clock = app.clock().getTime();
-  const cooldown = NOTIFICATION_LIMITS.rejoinCooldownDays * DAY_MS;
-  const rejectedAt = await app.repository.latestRejection(group.id, user.id, new Date(clock - cooldown).toISOString());
-  if (rejectedAt) {
-    // Brasília time, the program's reference time zone; the exact moment, so the day shown is never early.
-    const again = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Sao_Paulo', dateStyle: 'long', timeStyle: 'short' })
-      .format(new Date(Date.parse(rejectedAt) + cooldown)).replace(/\s/g, ' ');
-    throw new HttpError(409, `Your request to join this group was not approved. You can ask again after ${again} (Brasília time).`);
-  }
+  const again = await canAskAgainAt(context);
+  if (again) throw new HttpError(409, `Your request to join this group was not approved. You can ask again after ${formatAskAgainAt(again)}.`);
   if (!timingSafeEqual(input.code, group.accessCode)) throw new HttpError(403, 'invalid_code');
   if ((await app.repository.countPendingRequestsByUser(user.id)) >= LIMITS.pendingRequestsPerUser) {
     throw new HttpError(409, `You can have at most ${LIMITS.pendingRequestsPerUser} pending requests`);
   }
   // E1: one digest to the owner per group every 6 hours, with no requester name or message. The unclaimed DevTalk
   // group has no owner and gets none until it is claimed.
+  const clock = app.clock().getTime();
   const digest = group.ownerId
     ? { ownerId: group.ownerId, windowStart: new Date(clock - NOTIFICATION_LIMITS.joinDigestWindowHours * HOUR_MS).toISOString() }
     : undefined;

@@ -102,6 +102,26 @@ resource "cloudflare_email_routing_rule" "public_contact" {
   depends_on = [cloudflare_email_routing_dns.domain]
 }
 
+# The study groups address (groups@) forwards to the same verified inbox, apart from the contact aliases.
+resource "cloudflare_email_routing_rule" "study_groups" {
+  zone_id = local.cloudflare_zone_id
+  name    = "Forward ${local.study_groups_email} to the verified contact inbox"
+  enabled = true
+
+  matchers = [{
+    type  = "literal"
+    field = "to"
+    value = local.study_groups_email
+  }]
+
+  actions = [{
+    type  = "forward"
+    value = [local.contact_email_to]
+  }]
+
+  depends_on = [cloudflare_email_routing_dns.domain]
+}
+
 # Alias addresses (e.g. contato@) forward to the same verified inbox.
 resource "cloudflare_email_routing_rule" "public_contact_alias" {
   for_each = toset(local.public_contact_email_aliases)

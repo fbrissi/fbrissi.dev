@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 
-import { acceptNextDialog, api, createGroupViaApi, freshUser, groupInput, joinAndApprove, sessionFor, suggest, users, type GroupInput } from './support';
+import { answerConfirmDialog, api, createGroupViaApi, freshUser, groupInput, joinAndApprove, sessionFor, suggest, users, type GroupInput } from './support';
 
 interface LogResponse {
   actions: { action: string; targetType: string; targetId: string; groupId: string | null; label: string; reason: string }[];
@@ -166,8 +166,8 @@ test.describe('admin participation and management', () => {
     await member.goto(`/study-groups/g/${groupId}`);
     await member.getByRole('button', { name: /^Vote for: Second topic/ }).click();
     await expect(member.getByRole('button', { name: /^Your vote: Second topic/ })).toBeVisible();
-    acceptNextDialog(admin);
     await admin.getByRole('button', { name: 'Close vote' }).click();
+    await answerConfirmDialog(admin);
     await expect(admin.getByRole('heading', { name: 'This week’s topic' }).or(admin.getByRole('heading', { name: "This week's topic" }))).toBeVisible();
     const current = await api<{ round: { status: string; winnerMaterialId: number } }>(admin, 'GET', `/groups/${groupId}/rounds/current`);
     expect(current.body.round).toMatchObject({ status: 'closed', winnerMaterialId: second });

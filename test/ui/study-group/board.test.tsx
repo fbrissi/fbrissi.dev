@@ -7,7 +7,7 @@ import { SessionProvider } from '@/features/study-group/session';
 import { highlightMs, pollIntervalMs } from '@/features/study-group/study-group-board';
 import type { CurrentRoundResponse, GroupRole, Material, Member, Round, TallyEntry } from '@/workers/study-group/contract';
 
-import { admin, answerReason, apiError, bodyOf, calls, closedRound, group, material, pending, stubApi, user, votingRound, type Routes } from './fake-api';
+import { admin, answerConfirm, answerReason, apiError, bodyOf, calls, closedRound, group, material, pending, stubApi, user, votingRound, type Routes } from './fake-api';
 
 vi.stubGlobal('React', React);
 
@@ -85,6 +85,15 @@ describe('join screen (D5)', () => {
     return stubApi({ 'GET /me': { user }, [`GET ${base}`]: apiError(403, 'Forbidden'), ...routes });
   }
 
+  it('shows a rejected request and when to ask again instead of the form', async () => {
+    join({ [`GET ${base}/preview`]: { group: { id: group.id, name: group.name, summary: group.summary, iconUrl: null }, membership: 'none', canAskAgainAt: '2026-11-29T12:00:00.000Z' } });
+    render(<SessionProvider><GroupBoardView /></SessionProvider>);
+    const rejection = await screen.findByRole('alert');
+    expect(rejection).toHaveTextContent('The owner didn’t approve your request to join this group.');
+    expect(rejection).toHaveTextContent('You can ask again after November 29, 2026 at 9:00 AM (Brasília time), or look for another group on the study groups page.');
+    expect(screen.queryByLabelText('Access code')).not.toBeInTheDocument();
+  });
+
   it('asks for the code, explains wrong codes and sends the request with an optional message', async () => {
     let attempt = 0;
     const fetchMock = join({
@@ -100,16 +109,16 @@ describe('join screen (D5)', () => {
     expect(screen.getByText(group.summary)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
-    expect(screen.getByRole('alert')).toHaveTextContent('Please enter the group code.');
-    fireEvent.change(screen.getByLabelText('Group code'), { target: { value: ' wrong ' } });
+    expect(screen.getByRole('alert')).toHaveTextContent('Please enter the access code.');
+    fireEvent.change(screen.getByLabelText('Access code'), { target: { value: ' wrong ' } });
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
     expect(await screen.findByRole('alert')).toHaveTextContent("That code didn't work.");
-    expect(screen.getByLabelText('Group code')).toHaveAttribute('aria-invalid', 'true');
+    expect(screen.getByLabelText('Access code')).toHaveAttribute('aria-invalid', 'true');
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
     // The 7-day wait is about the request, not the code: a form-level error, and the code field stays valid.
     expect(await screen.findByText('Your request to join this group was not approved. You can ask again after November 29, 2026 at 9:00 AM (Brasília time).')).toBeInTheDocument();
-    expect(screen.getByLabelText('Group code')).toHaveAttribute('aria-invalid', 'false');
+    expect(screen.getByLabelText('Access code')).toHaveAttribute('aria-invalid', 'false');
     expect(screen.queryByText("That code didn't work.", { exact: false })).not.toBeInTheDocument();
 
     fireEvent.change(screen.getByLabelText(/Message to the owner/), { target: { value: ' Hi! ' } });
@@ -163,14 +172,15 @@ describe('board for members', () => {
     let leaveResult: unknown = apiError(409, 'Nope');
     setup({ role: 'member', routes: { [`POST ${base}/leave`]: () => leaveResult } });
     const leave = await screen.findByRole('button', { name: 'Leave group' });
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     fireEvent.click(leave);
+    expect(await answerConfirm(false)).toHaveTextContent('Leave this group?');
     expect(navigation.navigate).not.toHaveBeenCalled();
-    confirm.mockReturnValue(true);
     fireEvent.click(leave);
+    await answerConfirm(true);
     expect(await screen.findByText('Nope')).toBeInTheDocument();
     leaveResult = null;
     fireEvent.click(leave);
+    await answerConfirm(true);
     await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('/study-groups/my'));
   });
 
@@ -309,15 +319,16 @@ describe('board for owners', () => {
     expect(await screen.findByRole('button', { name: 'Close vote' })).toBeInTheDocument();
     expect(screen.getByText('Material 1', { selector: 'span' })).toBeInTheDocument();
 
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     fireEvent.click(screen.getByRole('button', { name: 'Close vote' }));
+    expect(await answerConfirm(false)).toHaveTextContent('Close the vote and pick the winner?');
     expect(calls(fetchMock)).not.toContain(`POST ${base}/rounds/7/close`);
-    confirm.mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: 'Close vote' }));
+    await answerConfirm(true);
     expect(await screen.findByText('Chosen by vote · 2 of 2 votes')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Start vote' }));
     fireEvent.click(await screen.findByRole('button', { name: 'Cancel round' }));
+    expect(await answerConfirm(true)).toHaveTextContent('All votes in this round are discarded. This can’t be undone.');
     expect(await screen.findByRole('heading', { name: /topic hasn't been picked yet/ })).toBeInTheDocument();
   });
 
@@ -352,13 +363,18 @@ describe('board for owners', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Revert “Material 3” to open' }));
     expect(await screen.findByText('This URL is already open in another suggestion')).toBeInTheDocument();
 
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: 'Delete “Material 2”' }));
+    const dialog = await answerConfirm(true);
+    expect(dialog).toHaveTextContent('Delete “Material 2” permanently?');
+    expect(dialog).toHaveTextContent('The suggestion and its votes are deleted. This can’t be undone.');
     expect(await screen.findByText('Nope')).toBeInTheDocument();
     failDelete = false;
     fireEvent.click(screen.getByRole('button', { name: 'Delete “Material 2”' }));
+    // A new action clears the old error; the deletion then shows its own status.
+    await waitFor(() => expect(screen.queryByText('Nope')).not.toBeInTheDocument());
+    await answerConfirm(true);
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Material 2' })).not.toBeInTheDocument());
-    expect(confirm).toHaveBeenCalledWith('Delete “Material 2” permanently? The suggestion and its votes are deleted. This can’t be undone.');
+    expect(screen.getByRole('status')).toHaveTextContent('“Material 2” was deleted permanently.');
     expect(bodyOf(fetchMock, `DELETE ${base}/materials/2`)).toEqual({});
   });
 
@@ -416,7 +432,6 @@ describe('board for the platform admin', () => {
     const { fetchMock } = setup({ role: 'platform_admin', me: admin, tally: [{ materialId: 1, votes: 1, voters: ['Bo'] }], routes: { [`DELETE ${base}/materials/1`]: null } });
     expect(await screen.findByRole('button', { name: 'Delete “Material 1”' })).toBeInTheDocument();
     expect(screen.getByText('Platform admin')).toBeInTheDocument();
-    const confirm = vi.spyOn(window, 'confirm');
     fireEvent.click(screen.getByRole('button', { name: 'Delete “Material 1”' }));
     const dialog = await answerReason(null);
     expect(dialog).toHaveTextContent('Delete “Material 1” permanently?');
@@ -428,7 +443,6 @@ describe('board for the platform admin', () => {
     await waitFor(() => expect(screen.queryByRole('heading', { name: 'Material 1' })).not.toBeInTheDocument());
     expect(bodyOf(fetchMock, `DELETE ${base}/materials/1`)).toEqual({ reason: 'Spam and self-promotion' });
     expect(screen.getByRole('heading', { name: 'Open materials' })).toHaveFocus();
-    expect(confirm).not.toHaveBeenCalled();
   });
 
   it('lets the admin manage a group they are not in, without suggesting or voting (decision 3)', async () => {

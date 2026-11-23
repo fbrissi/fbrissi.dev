@@ -6,7 +6,7 @@ import { GroupSettingsView } from '@/features/study-group/group-settings';
 import { SessionProvider } from '@/features/study-group/session';
 import type { GroupRole, GroupSettings, JoinRequest, Member, ModerationNotice } from '@/workers/study-group/contract';
 
-import { admin, answerReason, apiError, bodyOf, calls, group, stubApi, user, type Routes } from './fake-api';
+import { admin, answerConfirm, answerReason, apiError, bodyOf, calls, group, stubApi, user, type Routes } from './fake-api';
 
 vi.stubGlobal('React', React);
 
@@ -85,6 +85,9 @@ describe('group settings', () => {
     fireEvent.change(name, { target: { value: 'Join www.example.test' } });
     fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
     expect(within(form).getByText("Group names can't contain links or web addresses.")).toBeInTheDocument();
+    fireEvent.change(name, { target: { value: 'Go\u200BTalk' } });
+    fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
+    expect(within(form).getByText('Remove invisible or text-direction characters.')).toBeInTheDocument();
 
     fireEvent.change(name, { target: { value: 'Go Talk 2' } });
     fireEvent.change(within(form).getByLabelText('Meeting link (optional)'), { target: { value: '' } });
@@ -119,13 +122,14 @@ describe('group settings', () => {
     fireEvent.click(within(section).getByRole('button', { name: 'Copy' }));
     expect(await within(section).findByText("Couldn't copy. Select the code and copy it manually.")).toBeInTheDocument();
 
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     fireEvent.click(within(section).getByRole('button', { name: 'Create a new code' }));
-    confirm.mockReturnValue(true);
+    expect(await answerConfirm(false)).toHaveTextContent('The current code stops working for new requests.');
     fireEvent.click(within(section).getByRole('button', { name: 'Create a new code' }));
+    await answerConfirm(true);
     expect(await within(section).findByText('Rotate failed')).toBeInTheDocument();
     rotateFails = false;
     fireEvent.click(within(section).getByRole('button', { name: 'Create a new code' }));
+    await answerConfirm(true);
     expect(await within(section).findByText('New code created.')).toBeInTheDocument();
     expect(within(section).getByLabelText('Access code')).toHaveTextContent('newcode98765');
   });
@@ -163,10 +167,10 @@ describe('group settings', () => {
     const fetchMock = setup({ role: 'platform_admin', me: admin, routes: { [`DELETE ${base}/requests/1/message`]: null } });
     expect(await screen.findByText(/You are moderating this group as the platform admin/)).toBeInTheDocument();
     const section = screen.getByRole('region', { name: 'Join requests' });
-    fireEvent.click(within(section).getByRole('button', { name: 'Delete the message from Oscar' }));
+    fireEvent.click(within(section).getByRole('button', { name: 'Delete message from Oscar' }));
     expect(await answerReason(null)).toHaveTextContent('Delete the message from Oscar permanently?');
     expect(calls(fetchMock)).not.toContain(`DELETE ${base}/requests/1/message`);
-    fireEvent.click(within(section).getByRole('button', { name: 'Delete the message from Oscar' }));
+    fireEvent.click(within(section).getByRole('button', { name: 'Delete message from Oscar' }));
     await answerReason('Personal data in the message');
     expect(await within(section).findByText('Message deleted.')).toBeInTheDocument();
     expect(within(section).getByRole('heading', { name: 'Join requests' })).toHaveFocus();
@@ -179,14 +183,17 @@ describe('group settings', () => {
     setup({ routes: { [`DELETE ${base}/members/user0002`]: () => (fail ? apiError(404, 'Member not found') : null) } });
     const section = await screen.findByRole('region', { name: 'Members' });
     expect(within(section).queryByRole('button', { name: 'Remove Olivia' })).not.toBeInTheDocument();
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     fireEvent.click(within(section).getByRole('button', { name: 'Remove Max' }));
-    confirm.mockReturnValue(true);
+    expect(await answerConfirm(false)).toHaveTextContent('Remove Max from the group?');
     fireEvent.click(within(section).getByRole('button', { name: 'Remove Max' }));
+    await answerConfirm(true);
     expect(await within(section).findByText('Member not found')).toBeInTheDocument();
     fail = false;
     fireEvent.click(within(section).getByRole('button', { name: 'Remove Max' }));
-    await waitFor(() => expect(within(section).queryByText(/Max/)).not.toBeInTheDocument());
+    await answerConfirm(true);
+    expect(await within(section).findByText('Max was removed from the group.')).toBeInTheDocument();
+    expect(within(section).queryByRole('button', { name: 'Remove Max' })).not.toBeInTheDocument();
+    expect(within(section).getByRole('heading', { name: 'Members' })).toHaveFocus();
   });
 
   it('shows the group icon and updates it after a removal', async () => {
@@ -197,11 +204,11 @@ describe('group settings', () => {
       [`GET ${base}/members`]: { members },
       [`DELETE ${base}/icon`]: null
     });
-    vi.spyOn(window, 'confirm').mockReturnValue(true);
     render(<SessionProvider><GroupSettingsView /></SessionProvider>);
     const section = await screen.findByRole('region', { name: 'Group icon' });
     expect(section.querySelector('img')).not.toBeNull();
     fireEvent.click(within(section).getByRole('button', { name: 'Remove icon' }));
+    await answerConfirm(true);
     expect(await within(section).findByText('No icon yet.')).toBeInTheDocument();
   });
 
@@ -234,16 +241,17 @@ describe('group settings', () => {
     const fetchMock = setup({ role: 'platform_admin', me: admin, routes: { [`DELETE ${base}`]: null } });
     const section = await screen.findByRole('region', { name: 'Delete the group' });
     fireEvent.change(within(section).getByLabelText('Type “Go Talk” to confirm'), { target: { value: 'Go Talk' } });
-    fireEvent.change(within(section).getByLabelText(/Reason/), { target: { value: ' Too short ' } });
+    expect(within(section).queryByLabelText(/Reason/)).not.toBeInTheDocument();
+    // The reason is asked in the shared dialog, with the same permanent-delete wording.
     fireEvent.click(within(section).getByRole('button', { name: 'Delete group permanently' }));
-    expect(await within(section).findByText('A reason of 10 to 500 characters is required.')).toBeInTheDocument();
+    const dialog = await answerReason(null);
+    expect(dialog).toHaveTextContent('Delete “Go Talk” permanently?');
+    expect(dialog).toHaveTextContent('This can’t be undone.');
     expect(calls(fetchMock)).not.toContain(`DELETE ${base}`);
-    fireEvent.change(within(section).getByLabelText(/Reason/), { target: { value: 'x'.repeat(501) } });
     fireEvent.click(within(section).getByRole('button', { name: 'Delete group permanently' }));
-    expect(calls(fetchMock)).not.toContain(`DELETE ${base}`);
-    fireEvent.change(within(section).getByLabelText(/Reason/), { target: { value: ' Breaks the content policy ' } });
-    fireEvent.click(within(section).getByRole('button', { name: 'Delete group permanently' }));
+    await answerReason(' Breaks the content policy ');
     await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('/study-groups/admin'));
     expect(bodyOf(fetchMock, `DELETE ${base}`)).toEqual({ confirmName: 'Go Talk', reason: 'Breaks the content policy' });
+    expect(window.sessionStorage.getItem('study-groups:flash')).toBe('“Go Talk” was deleted permanently.');
   });
 });

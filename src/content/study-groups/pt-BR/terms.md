@@ -1,7 +1,7 @@
 ---
 title: Termos de Uso
 description: Termos de Uso e política de conteúdo do programa de grupos de estudo de inglês para desenvolvedores.
-version: '2026-11-22'
+version: '2026-11-23'
 ---
 
 Estes Termos de Uso regem o programa de grupos de estudo de inglês disponível em `fbrissi.dev/study-groups` (o "programa"). Ao criar uma conta, você concorda com eles. Para usuários no Brasil, esta versão em português prevalece sobre a [versão em inglês](/study-groups/terms).
@@ -67,11 +67,11 @@ O administrador da plataforma pode abrir qualquer grupo e excluir qualquer grupo
 - os grupos dos quais ela é dona são excluídos definitivamente, e o dono é avisado por e-mail, com o motivo;
 - as suas sugestões, votos, participações e pedidos de entrada ficam ocultos para os outros usuários.
 
-Um banimento dura no máximo 2 anos, a menos que o administrador da plataforma o renove, de novo com um motivo por escrito; quando ele termina, a conta pode ser usada de novo. O administrador da plataforma pode desfazer um banimento a qualquer momento, também com um motivo por escrito, e o dono da conta é avisado por e-mail de que a conta foi restaurada. Os grupos excluídos pelo banimento não são restaurados. Se você acha que um banimento é um engano, use a [página de contato](/pt-br/contact).
+Um banimento dura no máximo 2 anos, a menos que o administrador da plataforma o renove, de novo com um motivo por escrito; quando ele termina, a conta pode ser usada de novo. O administrador da plataforma pode desfazer um banimento a qualquer momento, também com um motivo por escrito, e o dono da conta é avisado por e-mail de que a conta foi restaurada. Os grupos excluídos pelo banimento não são restaurados. Se você acha que um banimento é um engano, escreva para groups@fbrissi.dev.
 
 ## 7. Como denunciar abusos
 
-Denuncie abusos, conteúdos inadequados ou problemas de segurança pela [página de contato](/pt-br/contact) ou pelo e-mail contact@fbrissi.dev. Nosso objetivo é responder em até 15 dias.
+Denuncie abusos, conteúdos inadequados ou problemas de segurança, e tire dúvidas sobre o programa, pelo e-mail **groups@fbrissi.dev**. Nosso objetivo é responder em até 15 dias.
 
 ## 8. Serviço gratuito e sem garantias
 

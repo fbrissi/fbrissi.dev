@@ -77,3 +77,11 @@ export async function answerReason(reason: string | null): Promise<HTMLElement> 
   }
   return dialog;
 }
+
+/** Answers an in-page confirmation (no reason): confirms it or cancels it. Returns the dialog element. */
+export async function answerConfirm(confirmed: boolean): Promise<HTMLElement> {
+  const dialog = await screen.findByRole('dialog');
+  const buttons = within(dialog).getAllByRole('button');
+  fireEvent.click(confirmed ? buttons[buttons.length - 1] : within(dialog).getByRole('button', { name: 'Cancel' }));
+  return dialog;
+}

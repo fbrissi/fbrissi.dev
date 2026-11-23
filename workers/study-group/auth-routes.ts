@@ -3,6 +3,8 @@ import {
   acceptPoliciesSchema,
   deleteAccountSchema,
   LIMITS,
+  looksLikeEmail,
+  NOTIFICATION_LIMITS,
   signupSchema,
   updateProfileSchema,
   type CurrentUser,
@@ -70,8 +72,10 @@ function toBase64(bytes: Uint8Array): string {
   return btoa(binary);
 }
 
+/** The Google name as the first display name, without invisible or text-direction characters, and never an email. */
 function defaultDisplayName(name: string): string {
-  return name.slice(0, LIMITS.displayName.max).trim() || 'Member';
+  const visible = name.replace(/[\u200B-\u200F\u202A-\u202E\u2066-\u2069\uFEFF]/g, '').slice(0, LIMITS.displayName.max).trim();
+  return visible && !looksLikeEmail(visible) ? visible : 'Member';
 }
 
 async function startSession(context: RequestContext, userId: string, email: string): Promise<string> {
@@ -206,13 +210,16 @@ export async function acceptPolicies(context: UserContext): Promise<RouteResult>
 export async function myGroups(context: UserContext): Promise<RouteResult> {
   const { repository, clock } = context.app;
   const since = new Date(clock().getTime() - NOTICE_WINDOW_MS).toISOString();
-  const [groups, pending, notices] = await Promise.all([
+  const cooldownMs = NOTIFICATION_LIMITS.rejoinCooldownDays * 24 * 60 * 60 * 1000;
+  const [groups, pending, rejections, notices] = await Promise.all([
     repository.listMyGroups(context.user.id),
     repository.listMyPendingRequests(context.user.id),
+    repository.listMyRecentRejections(context.user.id, new Date(clock().getTime() - cooldownMs).toISOString()),
     repository.listOwnerNotices(context.user.id, since),
   ]);
   const withIcons = await Promise.all(groups.map(async ({ icon, ...group }) => ({ ...group, iconUrl: await iconUrl(context, icon) })));
-  return { status: 200, body: { groups: withIcons, pending, notices } satisfies MyGroupsResponse };
+  const rejected = rejections.map(({ decidedAt, ...group }) => ({ ...group, canAskAgainAt: new Date(Date.parse(decidedAt) + cooldownMs).toISOString() }));
+  return { status: 200, body: { groups: withIcons, pending, rejected, notices } satisfies MyGroupsResponse };
 }
 
 /** Owned groups include their icon itself (base64), so the export holds everything the user uploaded. */

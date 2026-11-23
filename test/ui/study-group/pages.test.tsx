@@ -31,11 +31,12 @@ describe('program pages', () => {
     expect(container.querySelector('[lang="en"]')).not.toBeNull();
     expect(screen.getAllByRole('listitem').length).toBeGreaterThan(8);
     const links = screen.getAllByRole('link').map((link) => link.getAttribute('href'));
-    // The bilingual policies and the contact page open in the page's own language.
+    // The bilingual policies open in the page's own language; reports and data requests go to the program's address.
     const prefix = locale === 'pt-BR' ? '/pt-br' : '';
-    expect(links).toEqual(expect.arrayContaining([`${prefix}/study-groups/terms`, `${prefix}/study-groups/terms#content-policy`, `${prefix}/privacy`, `${prefix}/contact`]));
+    expect(links).toEqual(expect.arrayContaining([`${prefix}/study-groups/terms`, `${prefix}/study-groups/terms#content-policy`, `${prefix}/privacy`, 'mailto:groups@fbrissi.dev']));
     const policies = within(screen.getByRole('region', { name: 'Rules and privacy' }));
-    for (const link of policies.getAllByRole('link')) expect(link.getAttribute('hreflang')).toBe(locale === 'pt-BR' ? 'pt-BR' : null);
+    for (const link of policies.getAllByRole('link').slice(0, 3)) expect(link.getAttribute('hreflang')).toBe(locale === 'pt-BR' ? 'pt-BR' : null);
+    expect(policies.getByRole('link', { name: 'Report abuse or send a data request: groups@fbrissi.dev' })).toHaveAttribute('href', 'mailto:groups@fbrissi.dev');
     const note = screen.queryByRole('note');
     if (locale === 'pt-BR') {
       expect(note).toHaveAttribute('lang', 'pt-BR');
@@ -63,7 +64,7 @@ describe('program pages', () => {
   it.each([['en', 'Terms of Use'], ['pt-BR', 'Termos de Uso']] as const)('renders the %s terms page', (locale, title) => {
     const { container } = render(<StudyGroupsPolicyPage locale={locale} document="terms" />);
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(screen.getByText(/2026-11-22/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-11-23/)).toBeInTheDocument();
     expect(container.querySelector('[data-path]')).toHaveAttribute('data-path', '/study-groups/terms');
     expect(container.querySelector('#content-policy')).not.toBeNull();
   });
@@ -71,7 +72,7 @@ describe('program pages', () => {
   it.each([['en', 'Privacy Policy', /Contact form/], ['pt-BR', 'Política de Privacidade', /Formulário de contato/]] as const)('renders the site-wide %s privacy policy with the contact form and cookie sections (D-7)', (locale, title, contactSection) => {
     const { container } = render(<PrivacyPage locale={locale} />);
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(screen.getByText(/2026-11-22/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-11-23/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: contactSection })).toBeInTheDocument();
     expect(container.querySelector('[data-page="privacy"]')).toHaveAttribute('data-path', '/privacy');
     expect(container.querySelector('#cookies')).not.toBeNull();
@@ -84,7 +85,7 @@ describe('app pages', () => {
     ['board', GroupBoardPage], ['settings', GroupSettingsPage], ['new group', NewGroupPage], ['my groups', MyGroupsPage],
     ['account', AccountPage], ['welcome', WelcomePage], ['admin', AdminPage], ['unsubscribe', UnsubscribePage]
   ] as const)('renders the %s page inside the English study group shell', async (_name, Page) => {
-    stubApi({ 'GET /me': { user }, 'GET /auth/signup': { displayName: 'Olivia' }, 'GET /me/groups': { groups: [], pending: [], notices: [] } });
+    stubApi({ 'GET /me': { user }, 'GET /auth/signup': { displayName: 'Olivia' }, 'GET /me/groups': { groups: [], pending: [], rejected: [], notices: [] } });
     window.history.pushState({}, '', '/study-groups/my');
     const { container } = render(<Page apiUrl="/api/study-group" />);
     expect(container.querySelector('[lang="en"]')).not.toBeNull();

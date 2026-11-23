@@ -220,6 +220,21 @@ describe('account', () => {
     await expectJson(await h.handler(request('PATCH', '/me', { cookie, body: { displayName: '  Liv  ' } })), 200);
     expect((await (await h.handler(request('GET', '/me', { cookie }))).json()).user.displayName).toBe('Liv');
     await expectJson(await h.handler(request('PATCH', '/me', { cookie, body: { displayName: 'x'.repeat(41) } })), 400);
+    // Invisible or text-direction characters (even a name made only of them) and email addresses are refused.
+    for (const displayName of ['\u200B\u200B', 'Liv\u202Eevil', '\u2066Liv\u2069', 'A\u200Fb', 'Li\uFEFFv']) {
+      await expectJson(await h.handler(request('PATCH', '/me', { cookie, body: { displayName } })), 400, { error: 'Remove invisible or text-direction characters.', issues: expect.anything() });
+    }
+    for (const displayName of ['liv@example.com', 'Liv (liv@mail.example.org)']) {
+      await expectJson(await h.handler(request('PATCH', '/me', { cookie, body: { displayName } })), 400, { error: "Don't include an email address.", issues: expect.anything() });
+    }
+    await expectJson(await h.handler(request('PATCH', '/me', { cookie, body: { displayName: 'Liv @ home' } })), 200);
+  });
+
+  it('cleans the Google name used as the first display name', async () => {
+    for (const [name, expected] of [['Ana\u202E\u200B Silva', 'Ana Silva'], ['ana@example.com', 'Member'], ['\u200B', 'Member']]) {
+      const cookie = await signValue({ sub: `fake-${expected}`, email: 'new@example.test', name, returnTo: '/study-groups/my' }, sessionSecret, new Date(h.clock.now + 60_000));
+      await expectJson(await h.handler(request('GET', '/auth/signup', { cookie: `__Host-sg_signup=${cookie}` })), 200, { displayName: expected });
+    }
   });
 
   it('asks for re-acceptance after a policy change and blocks writes until then (Q18)', async () => {

@@ -7,6 +7,7 @@ import { SiteEffects } from '@/components/layout/site-effects';
 import { AccountNav, ConsentBanner } from '@/features/study-group/app-chrome';
 import { CookieNotice } from '@/features/study-group/cookie-notice';
 import { SessionProvider } from '@/features/study-group/session';
+import { STUDY_GROUPS_EMAIL } from '@/workers/study-group/contract';
 
 /* c8 ignore next: Vite and Next expose imported assets with different shapes. */
 const profileImageUrl = typeof profileImage === 'string' ? profileImage : profileImage.src;
@@ -35,7 +36,7 @@ export function StudyGroupShell({ apiUrl, children }: { apiUrl?: string; childre
             <nav aria-label="Policies" className="flex flex-wrap gap-4">
               <a className="hover:text-accent" href="/study-groups/terms">Terms of Use</a>
               <a className="hover:text-accent" href="/privacy">Privacy Policy</a>
-              <a className="hover:text-accent" href="/contact">Contact</a>
+              <a className="hover:text-accent" href={`mailto:${STUDY_GROUPS_EMAIL}`}>{STUDY_GROUPS_EMAIL}</a>
             </nav>
           </footer>
         </div>

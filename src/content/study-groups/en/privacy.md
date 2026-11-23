@@ -1,14 +1,14 @@
 ---
 title: Privacy Policy
 description: How fbrissi.dev, its contact form and the English study groups program collect, use and protect personal data under the Brazilian General Data Protection Law (LGPD).
-version: '2026-11-22'
+version: '2026-11-23'
 ---
 
 This policy explains how `fbrissi.dev` handles personal data under the Brazilian General Data Protection Law (Law 13,709/2018, "LGPD"): the contact form (section 2) and the English study groups program at `fbrissi.dev/study-groups` (sections 3 to 5, 7 and 11); section 6 covers both. Browsing the rest of the site doesn't require any personal data. Users in Brazil: the [Portuguese version](/pt-br/privacy) prevails.
 
 ## 1. Controller and contact
 
-The controller is **Filipe Bojikian Rissi**, an individual based in Brazil. For any question, request or complaint about your data, use the [contact page](/contact) or write to contact@fbrissi.dev. As a small-scale processing agent, the controller is exempt from appointing a Data Protection Officer (CD/ANPD Resolution 2/2022), and this channel serves that purpose.
+The controller is **Filipe Bojikian Rissi**, an individual based in Brazil. For any question, request or complaint about your data, use the [contact page](/contact) or write to contact@fbrissi.dev. For the English study groups program (program questions, abuse reports and requests about your study group data), write to **groups@fbrissi.dev**. As a small-scale processing agent, the controller is exempt from appointing a Data Protection Officer (CD/ANPD Resolution 2/2022), and this channel serves that purpose.
 
 ## 2. Contact form
 
@@ -58,8 +58,8 @@ Consent is not the main legal basis. We record your acceptance of the Terms and 
 
 ## 6. Service providers and international transfer
 
-- **Cloudflare** hosts the site, the contact API and its queue, sends the contact form email, forwards emails sent to contact@fbrissi.dev and contato@fbrissi.dev (Email Routing), provides Turnstile, and for the study groups runs the API, stores the database (Cloudflare D1) and the group icons (Cloudflare R2), and applies rate limits.
-- **Amazon Web Services (Amazon SES)** sends the study groups service emails, from notifications@fbrissi.dev, and my replies sent as contact@fbrissi.dev. It receives the recipient's email address, the subject and body of the email and sending metadata. If an email bounces or the recipient marks it as spam, Amazon SES may add the address to the account's suppression list, which stops further emails to it.
+- **Cloudflare** hosts the site, the contact API and its queue, sends the contact form email, forwards emails sent to contact@fbrissi.dev, contato@fbrissi.dev and groups@fbrissi.dev (Email Routing), provides Turnstile, and for the study groups runs the API, stores the database (Cloudflare D1) and the group icons (Cloudflare R2), and applies rate limits.
+- **Amazon Web Services (Amazon SES)** sends the study groups service emails, from notifications@fbrissi.dev with replies going to groups@fbrissi.dev, and my replies sent as contact@fbrissi.dev. It receives the recipient's email address, the subject and body of the email and sending metadata. If an email bounces or the recipient marks it as spam, Amazon SES may add the address to the account's suppression list, which stops further emails to it.
 - **Google** provides the personal Gmail account that receives contact messages, under its own terms and [privacy policy](https://policies.google.com/privacy), and processes the study groups sign-in under its own privacy policy.
 
 Some of these providers store or process data outside Brazil, including in the United States. In these cases, the data is transferred under the providers' contractual commitments to protect it and the safeguards allowed by LGPD art. 33. Each provider receives only the data it needs for its service. You can ask for more information about these transfers through the [contact page](/contact).
@@ -86,7 +86,7 @@ Under LGPD art. 18 you can ask for: confirmation and access, correction, anonymi
 - **turn service emails off or on** on the account page, or turn them off with the unsubscribe link in any email;
 - **delete** your account and its data.
 
-If your account is banned, you can't sign in to use these tools: ask for a copy or the deletion of your data through the [contact page](/contact). For any other request, use the [contact page](/contact) too. We answer within **15 days**. As a small-scale processing agent, I may use the extended deadlines of CD/ANPD Resolution 2/2022 (art. 14 and 15), but I aim to answer much sooner. You can also complain to the Brazilian Data Protection Authority (ANPD).
+If your account is banned, you can't sign in to use these tools: ask for a copy or the deletion of your data at groups@fbrissi.dev. For any other request about your study group data, write to groups@fbrissi.dev; for the contact form, use the [contact page](/contact). We answer within **15 days**. As a small-scale processing agent, I may use the extended deadlines of CD/ANPD Resolution 2/2022 (art. 14 and 15), but I aim to answer much sooner. You can also complain to the Brazilian Data Protection Authority (ANPD).
 
 <span id="cookies"></span>
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type FormEvent } from 'react';
 
-import { LIMITS, type GroupPreviewResponse } from '@/workers/study-group/contract';
+import { formatAskAgainAt, LIMITS, type GroupPreviewResponse } from '@/workers/study-group/contract';
 
 import { errorMessage, hasStatus, type StudyGroupApi } from './api';
 import { GroupIcon } from './group-icon';
@@ -30,7 +30,7 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     if (!code.trim()) {
-      setError('Please enter the group code.');
+      setError('Please enter the access code.');
       return;
     }
     setSubmitting(true);
@@ -48,6 +48,7 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
   };
 
   const waiting = sent || preview.membership === 'pending';
+  const rejectedUntil = waiting ? null : preview.canAskAgainAt;
 
   return (
     <section className="mx-auto max-w-lg py-6">
@@ -61,10 +62,14 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
         <Banner tone="success" title="Your request was sent.">
           <p className="text-text-secondary">The owner reviews each request. Once approved, this page opens the board; you won&apos;t need the code again.</p>
         </Banner>
+      ) : rejectedUntil ? (
+        <Banner tone="error" title="The owner didn’t approve your request to join this group.">
+          <p className="text-text-secondary">You can ask again after {formatAskAgainAt(rejectedUntil)}, or look for another group on the <a className="text-accent" href="/study-groups">study groups page</a>.</p>
+        </Banner>
       ) : (
         <form noValidate onSubmit={submit} className={`${cardClass} flex flex-col gap-4 p-6`}>
           <h2 className="text-xl font-normal">Ask to join</h2>
-          <label htmlFor="join-code" className="text-sm tracking-wide text-text-secondary">Group code</label>
+          <label htmlFor="join-code" className="text-sm tracking-wide text-text-secondary">Access code</label>
           <input
             id="join-code"
             className={inputClass}

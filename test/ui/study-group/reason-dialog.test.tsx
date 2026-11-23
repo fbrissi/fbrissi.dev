@@ -5,7 +5,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { reasonRequired, useReasonDialog } from '@/features/study-group/reason-dialog';
 
 function Harness() {
-  const { dialog, ask } = useReasonDialog();
+  const { dialog, ask, confirm } = useReasonDialog();
   const [answer, setAnswer] = useState('none');
   const open = async (destructive: boolean) => {
     const reason = await ask({ title: 'Ban Ana?', text: 'They can’t sign in.', confirmLabel: 'Ban user', destructive });
@@ -15,6 +15,7 @@ function Harness() {
     <>
       <button type="button" onClick={() => void open(true)}>Open</button>
       <button type="button" onClick={() => void open(false)}>Open safe</button>
+      <button type="button" onClick={() => void confirm({ title: 'Leave?', text: 'You can come back.', confirmLabel: 'Leave group' }).then((yes) => setAnswer(String(yes)))}>Ask confirm</button>
       <p>Answer: {answer}</p>
       {dialog}
     </>
@@ -82,5 +83,36 @@ describe('reason dialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open' }));
     await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Cancel' })));
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
+  });
+});
+
+describe('confirmation dialog and focus trap', () => {
+  it('asks without a reason, starting on Cancel, and keeps Tab and Shift+Tab inside', async () => {
+    render(<Harness />);
+    fireEvent.click(screen.getByRole('button', { name: 'Ask confirm' }));
+    const dialog = screen.getByRole('dialog', { name: 'Leave?' });
+    expect(within(dialog).queryByRole('textbox')).not.toBeInTheDocument();
+    const cancel = within(dialog).getByRole('button', { name: 'Cancel' });
+    const leave = within(dialog).getByRole('button', { name: 'Leave group' });
+    expect(cancel).toHaveFocus();
+    // Shift+Tab on the first control wraps to the last; Tab on the last wraps to the first.
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(leave).toHaveFocus();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(cancel).toHaveFocus();
+    // Tab from the first control to the next is left to the browser (not prevented).
+    expect(fireEvent.keyDown(window, { key: 'Tab' })).toBe(true);
+    // Focus that escaped (to <body>) is brought back in either direction.
+    (document.activeElement as HTMLElement).blur();
+    fireEvent.keyDown(window, { key: 'Tab' });
+    expect(cancel).toHaveFocus();
+    (document.activeElement as HTMLElement).blur();
+    fireEvent.keyDown(window, { key: 'Tab', shiftKey: true });
+    expect(leave).toHaveFocus();
+    await act(async () => fireEvent.click(leave));
+    expect(screen.getByText('Answer: true')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Ask confirm' }));
+    await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Cancel' })));
+    expect(screen.getByText('Answer: false')).toBeInTheDocument();
   });
 });

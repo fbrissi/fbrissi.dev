@@ -20,7 +20,7 @@ type Notice = { tone: 'success' | 'error'; text: string } | null;
 export function IconSettings({ api, groupId, iconUrl, isOwner, onChange }: { api: StudyGroupApi; groupId: string; iconUrl: string | null; isOwner: boolean; onChange: (iconUrl: string | null) => void }) {
   const [notice, setNotice] = useState<Notice>(null);
   const [busy, setBusy] = useState(false);
-  const { dialog, ask } = useReasonDialog();
+  const { dialog, ask, confirm } = useReasonDialog();
   const title = useRef<HTMLHeadingElement>(null);
 
   const run = async (action: () => Promise<string>) => {
@@ -54,9 +54,16 @@ export function IconSettings({ api, groupId, iconUrl, isOwner, onChange }: { api
   };
 
   const remove = async () => {
+    setNotice(null);
     let reason: string | undefined;
     if (isOwner) {
-      if (!window.confirm('Remove the group icon? The image is deleted permanently. This can’t be undone.')) return;
+      const confirmed = await confirm({
+        title: 'Remove the group icon permanently?',
+        text: 'The image is deleted permanently. This can’t be undone.',
+        confirmLabel: 'Remove icon',
+        destructive: true,
+      });
+      if (!confirmed) return;
     } else {
       const answer = await ask({
         title: 'Remove the group icon permanently?',

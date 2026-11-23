@@ -76,12 +76,12 @@ test.describe('group lifecycle', () => {
     await expect(member.getByRole('main')).not.toContainText(input.meetingUrl ?? '');
 
     // A wrong code fails with a generic error.
-    await member.getByLabel('Group code').fill('wrong-code-123');
+    await member.getByLabel('Access code').fill('wrong-code-123');
     await member.getByRole('button', { name: 'Send request' }).click();
     await expect(member.locator('#join-error')).toHaveText("That code didn't work. Check the latest code with the group.");
 
     // The right code creates a pending request with an optional message.
-    await member.getByLabel('Group code').fill(accessCode);
+    await member.getByLabel('Access code').fill(accessCode);
     await member.getByLabel(/Message to the owner/).fill('Hi! I am Max from the meetup.');
     await member.getByRole('button', { name: 'Send request' }).click();
     await expect(member.getByText('Your request was sent.')).toBeVisible();
@@ -173,7 +173,8 @@ test.describe('group lifecycle', () => {
     await expect(owner.getByLabel(/^Reason/)).toHaveCount(0);
     await remove.click();
     await owner.waitForURL(/\/study-groups\/my$/);
-    await expect(owner.getByText(doomed.name)).toHaveCount(0);
+    await expect(owner.getByRole('status').filter({ hasText: `“${doomed.name}” was deleted permanently.` })).toBeVisible();
+    await expect(owner.getByRole('link', { name: doomed.name })).toHaveCount(0);
 
     expect((await api(owner, 'GET', `/groups/${id}`)).status).toBe(404);
     const visitor = await browser.newPage();

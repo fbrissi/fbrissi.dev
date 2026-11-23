@@ -1,14 +1,14 @@
 ---
 title: Política de Privacidade
 description: Como o fbrissi.dev, o formulário de contato e o programa de grupos de estudo de inglês coletam, usam e protegem dados pessoais conforme a Lei Geral de Proteção de Dados (LGPD).
-version: '2026-11-22'
+version: '2026-11-23'
 ---
 
 Esta política explica como o `fbrissi.dev` trata dados pessoais conforme a Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018, "LGPD"): o formulário de contato (seção 2) e o programa de grupos de estudo de inglês em `fbrissi.dev/study-groups` (seções 3 a 5, 7 e 11); a seção 6 vale para os dois. Navegar pelo restante do site não exige nenhum dado pessoal. Para usuários no Brasil, esta versão em português prevalece sobre a [versão em inglês](/privacy).
 
 ## 1. Controlador e contato
 
-O controlador é **Filipe Bojikian Rissi**, pessoa física residente no Brasil. Para dúvidas, solicitações ou reclamações sobre os seus dados, use a [página de contato](/pt-br/contact) ou escreva para contact@fbrissi.dev. Como agente de tratamento de pequeno porte, o controlador está dispensado de indicar um encarregado (Resolução CD/ANPD 2/2022), e este canal cumpre essa função.
+O controlador é **Filipe Bojikian Rissi**, pessoa física residente no Brasil. Para dúvidas, solicitações ou reclamações sobre os seus dados, use a [página de contato](/pt-br/contact) ou escreva para contact@fbrissi.dev. Para o programa de grupos de estudo de inglês (dúvidas sobre o programa, denúncias de abuso e solicitações sobre os seus dados nos grupos de estudo), escreva para **groups@fbrissi.dev**. Como agente de tratamento de pequeno porte, o controlador está dispensado de indicar um encarregado (Resolução CD/ANPD 2/2022), e este canal cumpre essa função.
 
 ## 2. Formulário de contato
 
@@ -58,8 +58,8 @@ O consentimento não é a base legal principal. Registramos o seu aceite dos Ter
 
 ## 6. Fornecedores e transferência internacional
 
-- **Cloudflare** hospeda o site, a API de contato e a sua fila, envia o e-mail do formulário de contato, encaminha os e-mails enviados para contact@fbrissi.dev e contato@fbrissi.dev (Email Routing), fornece o Turnstile e, nos grupos de estudo, executa a API, armazena o banco de dados (Cloudflare D1) e os ícones dos grupos (Cloudflare R2) e aplica os limites de requisições.
-- **Amazon Web Services (Amazon SES)** envia os e-mails de serviço dos grupos de estudo, de notifications@fbrissi.dev, e as minhas respostas enviadas como contact@fbrissi.dev. Ela recebe o endereço de e-mail do destinatário, o assunto e o corpo do e-mail e metadados de envio. Se um e-mail voltar ou o destinatário marcá-lo como spam, o Amazon SES pode incluir o endereço na lista de supressão da conta, o que impede novos envios para ele.
+- **Cloudflare** hospeda o site, a API de contato e a sua fila, envia o e-mail do formulário de contato, encaminha os e-mails enviados para contact@fbrissi.dev, contato@fbrissi.dev e groups@fbrissi.dev (Email Routing), fornece o Turnstile e, nos grupos de estudo, executa a API, armazena o banco de dados (Cloudflare D1) e os ícones dos grupos (Cloudflare R2) e aplica os limites de requisições.
+- **Amazon Web Services (Amazon SES)** envia os e-mails de serviço dos grupos de estudo, de notifications@fbrissi.dev com respostas para groups@fbrissi.dev, e as minhas respostas enviadas como contact@fbrissi.dev. Ela recebe o endereço de e-mail do destinatário, o assunto e o corpo do e-mail e metadados de envio. Se um e-mail voltar ou o destinatário marcá-lo como spam, o Amazon SES pode incluir o endereço na lista de supressão da conta, o que impede novos envios para ele.
 - **Google** fornece a conta pessoal do Gmail que recebe as mensagens de contato, conforme os seus próprios termos e a sua [política de privacidade](https://policies.google.com/privacy?hl=pt-BR), e trata o login dos grupos de estudo conforme a sua própria política de privacidade.
 
 Alguns desses fornecedores armazenam ou tratam dados fora do Brasil, inclusive nos Estados Unidos. Nesses casos, os dados são transferidos com base nos compromissos contratuais desses fornecedores de protegê-los e nas garantias admitidas pelo art. 33 da LGPD. Cada fornecedor recebe apenas os dados necessários para o seu serviço. Você pode pedir mais informações sobre essas transferências pela [página de contato](/pt-br/contact).
@@ -86,7 +86,7 @@ Pelo art. 18 da LGPD, você pode solicitar: confirmação e acesso, correção, 
 - **desligar ou ligar os e-mails de serviço** na página da conta, ou desligá-los pelo link de cancelamento em qualquer e-mail;
 - **excluir** a sua conta e os seus dados.
 
-Se a sua conta estiver banida, você não consegue entrar para usar essas ferramentas: peça uma cópia ou a exclusão dos seus dados pela [página de contato](/pt-br/contact). Para qualquer outra solicitação, use também a [página de contato](/pt-br/contact). Respondemos em até **15 dias**. Como agente de tratamento de pequeno porte, posso usar os prazos diferenciados da Resolução CD/ANPD 2/2022 (arts. 14 e 15), mas procuro responder bem antes. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
+Se a sua conta estiver banida, você não consegue entrar para usar essas ferramentas: peça uma cópia ou a exclusão dos seus dados pelo e-mail groups@fbrissi.dev. Para qualquer outra solicitação sobre os seus dados nos grupos de estudo, escreva para groups@fbrissi.dev; para o formulário de contato, use a [página de contato](/pt-br/contact). Respondemos em até **15 dias**. Como agente de tratamento de pequeno porte, posso usar os prazos diferenciados da Resolução CD/ANPD 2/2022 (arts. 14 e 15), mas procuro responder bem antes. Você também pode reclamar à Autoridade Nacional de Proteção de Dados (ANPD).
 
 <span id="cookies"></span>
 

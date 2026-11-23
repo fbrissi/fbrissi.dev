@@ -1,6 +1,6 @@
 import type { z } from 'zod';
 import type { Role } from './authorization';
-import { REASON_REQUIRED_MESSAGE, type ErrorResponse } from './contract';
+import { friendlyValidationMessages, REASON_REQUIRED_MESSAGE, type ErrorResponse } from './contract';
 import type { CacheLike, JwksProvider, OidcClient } from './oidc';
 import type { BucketLike } from './icons';
 import { deleteIconObjects, signIconUrl, validIconUrls } from './icons';
@@ -136,8 +136,11 @@ export async function parseBody<T>(request: Request, schema: z.ZodType<T>): Prom
   const result = schema.safeParse(body);
   if (!result.success) {
     // A bad moderation reason gets the same plain message on every admin route.
-    const reasonIssue = result.error.issues.some((issue) => issue.path[0] === 'reason');
-    throw new HttpError(400, reasonIssue ? REASON_REQUIRED_MESSAGE : 'Invalid request', result.error.issues);
+    // Messages written for people (links in a group name, invisible characters) are returned as the error.
+    const { issues } = result.error;
+    const reasonIssue = issues.some((issue) => issue.path[0] === 'reason');
+    const friendly = issues.find((issue) => friendlyValidationMessages.includes(issue.message));
+    throw new HttpError(400, reasonIssue ? REASON_REQUIRED_MESSAGE : friendly?.message ?? 'Invalid request', issues);
   }
   return result.data;
 }

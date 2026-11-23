@@ -5,7 +5,7 @@ agents (agente de tratamento de pequeno porte, ATPP; CD/ANPD Resolution 2/2022, 
 published Privacy Policy (`src/content/study-groups/*/privacy.md`) and the code; update both in the same change.
 
 - **Controller:** Filipe Bojikian Rissi, individual, Brazil.
-- **Channel (no encarregado, Res. 2/2022 art. 11):** contact@fbrissi.dev and the contact page.
+- **Channel (no encarregado, Res. 2/2022 art. 11):** contact@fbrissi.dev and the contact page; for the study groups program (questions, abuse reports, data requests, banned users included), groups@fbrissi.dev.
 - **ATPP status:** individual (art. 2, I), no exclusion under art. 3, no high-risk processing under art. 4 (no large
   scale, no sensitive data, no automated decisions, no minors: the program is 18+). Uses the doubled deadlines of
   arts. 14 and 15. Re-check if the program grows large or admits minors.

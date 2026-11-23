@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 
 import { POLICY_VERSIONS } from '@/workers/study-group/contract';
 
@@ -21,6 +21,9 @@ export function WelcomeView() {
   const [adult, setAdult] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
+  const termsBox = useRef<HTMLInputElement>(null);
+  const privacyBox = useRef<HTMLInputElement>(null);
+  const adultBox = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     api.getSignup().then(({ displayName }) => { setName(displayName); setPhase('ready'); }, () => setPhase('expired'));
@@ -41,6 +44,8 @@ export function WelcomeView() {
     event.preventDefault();
     if (!terms || !privacy || !adult) {
       setError('Check all three boxes to create your account.');
+      // The message is announced (role="alert") and the focus moves to the first box left unchecked.
+      [termsBox, privacyBox, adultBox].find((box) => !box.current!.checked)!.current!.focus();
       return;
     }
     setBusy(true);
@@ -70,18 +75,18 @@ export function WelcomeView() {
       <p className="mb-6 text-text-secondary">Before we create your account, please read and accept the rules. If you decline, nothing about you is kept.</p>
       <form noValidate onSubmit={submit} className={`${cardClass} flex flex-col gap-4 p-6`}>
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" checked={terms} onChange={(event) => setTerms(event.target.checked)} />
+          <input ref={termsBox} type="checkbox" checked={terms} aria-invalid={error && !terms ? true : undefined} aria-describedby={error ? 'welcome-error' : undefined} onChange={(event) => setTerms(event.target.checked)} />
           <span>I have read and accept the <a className="text-accent" href="/study-groups/terms" target="_blank" rel="noopener">Terms of Use and content policy</a> (version {POLICY_VERSIONS.terms}).</span>
         </label>
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" checked={privacy} onChange={(event) => setPrivacy(event.target.checked)} />
+          <input ref={privacyBox} type="checkbox" checked={privacy} aria-invalid={error && !privacy ? true : undefined} aria-describedby={error ? 'welcome-error' : undefined} onChange={(event) => setPrivacy(event.target.checked)} />
           <span>I have read and accept the <a className="text-accent" href="/privacy" target="_blank" rel="noopener">Privacy Policy</a> (version {POLICY_VERSIONS.privacy}).</span>
         </label>
         <label className="flex items-start gap-2 text-sm">
-          <input type="checkbox" checked={adult} onChange={(event) => setAdult(event.target.checked)} />
+          <input ref={adultBox} type="checkbox" checked={adult} aria-invalid={error && !adult ? true : undefined} aria-describedby={error ? 'welcome-error' : undefined} onChange={(event) => setAdult(event.target.checked)} />
           <span>I am 18 years old or older.</span>
         </label>
-        {error ? <Banner tone="error" title={error} /> : null}
+        {error ? <div id="welcome-error"><Banner tone="error" title={error} /></div> : null}
         <div className="flex flex-wrap gap-3">
           <button type="submit" className={buttonClass.primary} disabled={busy}>Create my account</button>
           <button type="button" className={buttonClass.secondarySmall} disabled={busy} onClick={() => void decline()}>Decline</button>

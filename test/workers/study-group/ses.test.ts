@@ -12,7 +12,7 @@ function sender(response: Response | (() => Response)) {
 }
 
 describe('SES v2 sender', () => {
-  it('signs a SendEmail call from notifications@ with Reply-To contact@ and the custom headers', async () => {
+  it('signs a SendEmail call from notifications@ with Reply-To groups@ and the custom headers', async () => {
     const { fetch, send } = sender(Response.json({ MessageId: 'ses-1' }));
     await expect(send(email)).resolves.toEqual({ messageId: 'ses-1' });
 
@@ -24,7 +24,7 @@ describe('SES v2 sender', () => {
     expect(JSON.parse(init.body as string)).toEqual({
       FromEmailAddress: 'English Study Groups <notifications@fbrissi.dev>',
       Destination: { ToAddresses: ['member@example.test'] },
-      ReplyToAddresses: ['contact@fbrissi.dev'],
+      ReplyToAddresses: ['groups@fbrissi.dev'],
       Content: {
         Simple: {
           Subject: { Data: 'You joined Go Talk', Charset: 'UTF-8' },

@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react'
 import { BAN_RETENTION_YEARS, type AdminGroup, type AdminUser, type ModerationAction } from '@/workers/study-group/contract';
 
 import { errorMessage, groupPath, type StudyGroupApi } from './api';
-import { formatDate, formatYearDate, pluralize } from './helpers';
+import { formatDate, formatYearDate, moderationActionLabel, pluralize, takeFlash } from './helpers';
 import { useReasonDialog, type ReasonRequest } from './reason-dialog';
 import { RequireUser, useSession } from './session';
 import { Banner, buttonClass, cardClass, eyebrowClass, hintClass, inputClass } from './ui';
@@ -150,7 +150,7 @@ function UsersSection({ api, onModerated }: { api: StudyGroupApi; onModerated: (
       }));
       const done = { ban: `${user.displayName} is banned.`, renew: `The ban on ${user.displayName} was renewed.`, unban: `${user.displayName} is no longer banned.` };
       setNotice({ tone: 'success', text: done[action] });
-      setFocusLabel({ ban: `Unban ${user.displayName}`, renew: `Renew the ban on ${user.displayName}`, unban: `Ban ${user.displayName}` }[action]);
+      setFocusLabel({ ban: `Unban ${user.displayName}`, renew: `Renew ban for ${user.displayName}`, unban: `Ban ${user.displayName}` }[action]);
       onModerated();
     } catch (actionError) {
       setNotice({ tone: 'error', text: errorMessage(actionError) });
@@ -183,7 +183,7 @@ function UsersSection({ api, onModerated }: { api: StudyGroupApi; onModerated: (
               <span className="col-start-2 row-span-2 row-start-1 flex flex-wrap justify-end gap-2">
                 {user.isPlatformAdmin ? null : user.ban ? (
                   <>
-                    <button type="button" className={buttonClass.ghost} aria-label={`Renew the ban on ${user.displayName}`} onClick={() => void act(user, 'renew')}>Renew ban</button>
+                    <button type="button" className={buttonClass.ghost} aria-label={`Renew ban for ${user.displayName}`} onClick={() => void act(user, 'renew')}>Renew ban</button>
                     <button type="button" className={buttonClass.secondarySmall} aria-label={`Unban ${user.displayName}`} onClick={() => void act(user, 'unban')}>Unban</button>
                   </>
                 ) : (
@@ -214,7 +214,7 @@ function LogSection({ api }: { api: StudyGroupApi }) {
         <ol className="m-0 list-none p-0">
           {items.map((action) => (
             <li key={action.id} className="border-t border-line py-3 text-sm">
-              <p className="wrap-anywhere">{action.action} · {action.targetType} {action.targetId}{action.groupId ? ` in ${action.groupId}` : ''} · “{action.label}”</p>
+              <p className="wrap-anywhere">{moderationActionLabel(action.action)} · {action.targetType} {action.targetId}{action.groupId ? ` in ${action.groupId}` : ''} · “{action.label}”</p>
               <p className="text-text-secondary wrap-anywhere">{action.actorName ?? (action.reason === 'Ban expired' ? 'Automatic' : 'Former admin')} · {formatDate(action.createdAt)} · Reason: {action.reason}</p>
             </li>
           ))}
@@ -228,6 +228,10 @@ function LogSection({ api }: { api: StudyGroupApi }) {
 export function AdminConsoleView() {
   const { api } = useSession();
   const [logVersion, setLogVersion] = useState(0);
+  const [flash, setFlashText] = useState('');
+  useEffect(() => {
+    setFlashText((current) => current || takeFlash());
+  }, []);
   return (
     <RequireUser>
       {(user) => user.isPlatformAdmin ? (
@@ -236,6 +240,7 @@ export function AdminConsoleView() {
             <p className={eyebrowClass}>Platform admin</p>
             <h1 className="mt-2 text-3xl font-normal tracking-tight sm:text-5xl">Moderation</h1>
           </div>
+          {flash ? <Banner tone="success" title={flash} /> : null}
           <GroupsSection api={api} />
           <UsersSection api={api} onModerated={() => setLogVersion((version) => version + 1)} />
           <LogSection key={logVersion} api={api} />

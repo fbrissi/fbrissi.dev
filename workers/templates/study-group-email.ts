@@ -1,4 +1,5 @@
-import { BAN_RETENTION_YEARS, NOTIFICATION_LIMITS, type NotificationKind } from '../study-group/contract';
+import { accountNoticeKinds, BAN_RETENTION_YEARS, NOTIFICATION_LIMITS, STUDY_GROUPS_EMAIL, type NotificationKind } from '../study-group/contract';
+import { environmentBadge, renderEmailHtml, renderEmailText, type EmailContent } from './email-layout';
 import type { StudyGroupEnvironment } from '../study-group/environment';
 
 /**
@@ -66,9 +67,9 @@ function content(input: StudyGroupEmailInput): Content {
         paragraphs: [
           `The platform admin deleted your group ${groupName}.`,
           `Reason: ${input.reason ?? ''}`,
-          'The group, its members, suggestions, votes, rounds and icon were deleted permanently. If you think this was a mistake, reply to this email or use the contact page.',
+          `The group, its members, suggestions, votes, rounds and icon were deleted permanently. If you think this was a mistake, reply to this email or write to ${STUDY_GROUPS_EMAIL}.`,
         ],
-        action: { label: 'Contact page', url: `${appOrigin}/contact` },
+        action: { label: 'Find a group', url: `${appOrigin}/study-groups` },
       };
     case 'account_banned':
       return {
@@ -77,9 +78,9 @@ function content(input: StudyGroupEmailInput): Content {
           'The platform admin banned your English Study Groups account for breaking the Terms of Use. You can no longer sign in, the groups you owned were deleted permanently, and your content is hidden from other users while the ban lasts.',
           `The ban lasts ${BAN_RETENTION_YEARS} years unless it is renewed or lifted earlier.`,
           `Reason: ${input.reason ?? ''}`,
-          'If you think this is a mistake, reply to this email or write through the contact page, which is also the channel for requests about your personal data.',
+          `If you think this is a mistake, reply to this email or write to ${STUDY_GROUPS_EMAIL}, which is also the channel for requests about your personal data.`,
         ],
-        action: { label: 'Contact page', url: `${appOrigin}/contact` },
+        action: { label: `Email ${STUDY_GROUPS_EMAIL}`, url: `mailto:${STUDY_GROUPS_EMAIL}` },
       };
     case 'account_restored':
       return {
@@ -114,12 +115,42 @@ function environmentNote(environment: StudyGroupEnvironment): string | null {
   return null;
 }
 
-function footer(input: StudyGroupEmailInput) {
+/** The study group email in the shared layout; only the slots differ by kind. */
+function layout(input: StudyGroupEmailInput): EmailContent {
+  const { subject, paragraphs, action } = content(input);
+  const note = environmentNote(input.environment);
+  // Ban and restore notices ignore the email setting, so they offer no unsubscribe link.
+  const accountNotice = accountNoticeKinds.includes(input.kind);
   return {
-    reason: 'You get this email because you have an English Study Groups account at fbrissi.dev.',
-    account: `${input.appOrigin}/study-groups/account`,
-    privacy: `${input.appOrigin}/privacy`,
-    unsubscribe: input.unsubscribeUrl,
+    lang: 'en',
+    siteUrl: input.appOrigin,
+    heading: subject,
+    badge: environmentBadge(input.environment),
+    preheader: paragraphs[0],
+    blocks: [
+      { kind: 'paragraph', text: 'Hi,' },
+      ...paragraphs.map((text) => ({ kind: 'paragraph' as const, text })),
+      { kind: 'button', label: action.label, url: action.url },
+      { kind: 'signature', avatarSize: 48, lines: [{ text: 'English Study Groups at fbrissi.dev', style: 'plain' }] },
+      ...(note ? [{ kind: 'note' as const, text: note }] : []),
+    ],
+    footer: accountNotice
+      ? {
+        text: 'You get this email because it is about your English Study Groups account at fbrissi.dev. It is sent even if you turned service emails off.',
+        links: [{ label: 'Privacy Policy', url: `${input.appOrigin}/privacy` }],
+        linksOnNewLine: true,
+        separator: '--',
+      }
+      : {
+        text: 'You get this email because you have an English Study Groups account at fbrissi.dev.',
+        links: [
+          { label: 'Email settings', url: `${input.appOrigin}/study-groups/account` },
+          { label: 'Unsubscribe', textLabel: 'Unsubscribe from these emails', url: input.unsubscribeUrl },
+          { label: 'Privacy Policy', url: `${input.appOrigin}/privacy` },
+        ],
+        linksOnNewLine: true,
+        separator: '--',
+      },
   };
 }
 
@@ -128,65 +159,9 @@ export function studyGroupEmailSubject(input: StudyGroupEmailInput): string {
 }
 
 export function studyGroupEmailText(input: StudyGroupEmailInput): string {
-  const { paragraphs, action } = content(input);
-  const links = footer(input);
-  const note = environmentNote(input.environment);
-  return [
-    'Hi,',
-    ...paragraphs,
-    `${action.label}: ${action.url}`,
-    'English Study Groups at fbrissi.dev',
-    ...(note ? [`(${note})`] : []),
-    `--\n${links.reason}\nEmail settings: ${links.account}\nUnsubscribe from these emails: ${links.unsubscribe}\nPrivacy Policy: ${links.privacy}`,
-  ].join('\n\n');
+  return renderEmailText(layout(input));
 }
 
 export function studyGroupEmailHtml(input: StudyGroupEmailInput): string {
-  const { paragraphs, action } = content(input);
-  const links = footer(input);
-  const note = environmentNote(input.environment);
-  const font = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
-  const avatarUrl = `${input.appOrigin}/images/avatar.png`;
-  const body = paragraphs.map((paragraph) => `<p style="margin:0 0 16px;">${escapeHtml(paragraph)}</p>`).join('\n        ');
-  const button = `<p style="margin:8px 0 28px;"><a href="${escapeHtml(action.url)}" style="display:inline-block;padding:10px 18px;border-radius:8px;background:#f97316;color:#111111;text-decoration:none;font-size:14px;">${escapeHtml(action.label)}</a></p>`;
-  const noteHtml = note ? `<p style="margin:16px 0 0;font-size:12px;line-height:1.5;color:#666666;">${note}</p>` : '';
-
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body style="margin:0;padding:0;background:#ffffff;">
-  <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;background:#ffffff;">
-    <tr>
-      <td style="padding:24px 20px;font-family:${font};font-size:15px;line-height:1.6;color:#222222;">
-        <p style="margin:0 0 16px;">Hi,</p>
-        ${body}
-        ${button}
-        <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse;">
-          <tr>
-            <td valign="middle" style="padding:0 14px 0 0;">
-              <img src="${avatarUrl}" alt="" width="48" height="48" style="display:block;width:48px;height:auto;border:0;border-radius:24px;">
-            </td>
-            <td valign="middle" style="font-family:${font};font-size:14px;line-height:1.45;color:#444444;">English Study Groups at fbrissi.dev</td>
-          </tr>
-        </table>
-        ${noteHtml}
-        <p style="margin:28px 0 0;padding-top:16px;border-top:1px solid #e5e5e5;font-size:12px;line-height:1.5;color:#888888;">
-          ${links.reason}<br>
-          <a href="${escapeHtml(links.account)}" style="color:#c2410c;text-decoration:none;">Email settings</a> ·
-          <a href="${escapeHtml(links.unsubscribe)}" style="color:#c2410c;text-decoration:none;">Unsubscribe</a> ·
-          <a href="${escapeHtml(links.privacy)}" style="color:#c2410c;text-decoration:none;">Privacy Policy</a>
-        </p>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
-}
-
-function escapeHtml(text: string): string {
-  const entities: Record<string, string> = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
-  return text.replace(/[&<>"']/g, (character) => entities[character]);
+  return renderEmailHtml(layout(input));
 }

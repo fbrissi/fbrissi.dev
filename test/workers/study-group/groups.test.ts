@@ -21,12 +21,26 @@ const call = (method: string, path: string, cookie?: string, body?: unknown) => 
 
 describe('groups', () => {
   it('rejects group names that look like links or web addresses, on create and update', async () => {
-    for (const name of ['Visit https://evil.test', 'www.example', 'Join fbrissi.dev now', 'go-talk.com.br', 'HTTP://SHOUT', 'EVIL.COM', 'Join Evil.Dev', 'ASP.NET Core']) {
-      await expectJson(await call('POST', '/groups', w.owner, { ...groupInput, name, acceptContentPolicy: true }), 400);
+    const refused = [
+      'Visit https://evil.test', 'www.example', 'Join fbrissi.dev now', 'go-talk.com.br', 'HTTP://SHOUT', 'EVIL.COM', 'Join Evil.Dev',
+      // Any label.tld, not only common top-level domains, and IDN-style punycode hosts.
+      'Meet at chat.example.museum', 'Talk on xn--80ak6aa92e.xn--p1ai', 'Go.Talk', 'my-group.engineering',
+      // IP addresses and schemes, with or without slashes.
+      'Join 10.0.0.1 now', 'Go 192.168.0.10', 'mailto:me', 'JavaScript:alert(1)', 'ftp://files', 'Use tel:+5511999999999', 'Data:text',
+      // A tech name followed by more of a host is still a host.
+      'node.js.example', 'asp.net.example',
+    ];
+    for (const name of refused) {
+      await expectJson(await call('POST', '/groups', w.owner, { ...groupInput, name, acceptContentPolicy: true }), 400, { error: "Group names can't contain links or web addresses.", issues: expect.anything() });
       const response = await expectJson(await call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...groupInput, name }), 400);
-      expect(JSON.stringify(response.issues)).toContain("Group names can't contain links or web addresses.");
+      expect(response.error).toBe("Group names can't contain links or web addresses.");
     }
-    for (const name of ['Node.js Talk', 'NODE.JS Talk', 'Vue.js and Nuxt']) {
+    // Invisible characters and email addresses are refused in the name and the summary.
+    await expectJson(await call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...groupInput, name: 'Go\u202ETalk' }), 400, { error: 'Remove invisible or text-direction characters.', issues: expect.anything() });
+    await expectJson(await call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...groupInput, summary: `${groupInput.summary}\u2066` }), 400, { error: 'Remove invisible or text-direction characters.', issues: expect.anything() });
+    await expectJson(await call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...groupInput, summary: `${groupInput.summary} Write to me@example.com` }), 400, { error: "Don't include an email address.", issues: expect.anything() });
+    // Common tech names with a dot, versions, abbreviations and a colon in plain text stay allowed.
+    for (const name of ['Node.js Talk', 'NODE.JS Talk', 'Vue.js and Nuxt', 'Next.js & React', 'ASP.NET Core', 'VB.NET legacy', 'ADO.NET', '.NET devs', 'C#/.NET', 'Socket.IO chat', 'Go 1.22 club', 'Python 3.12', 'e.g. English', 'Mr. Smith', 'Go: the basics', 'U.S. devs']) {
       await expectJson(await call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...groupInput, name }), 200);
     }
   });
@@ -122,6 +136,7 @@ describe('groups', () => {
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.outsider), 200, {
       group: { id: w.groupId, name: 'Go Talk', summary: groupInput.summary, iconUrl: null },
       membership: 'none',
+      canAskAgainAt: null,
     });
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.member), 200, expect.objectContaining({ membership: 'member' }));
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.owner), 200, expect.objectContaining({ membership: 'owner' }));
@@ -130,7 +145,7 @@ describe('groups', () => {
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: w.accessCode, message: 'x'.repeat(201) }), 400);
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: ` ${w.accessCode} `, message: 'Hi! I am Oscar.' }), 201, { status: 'pending' });
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.outsider), 200, expect.objectContaining({ membership: 'pending' }));
-    await expectJson(await call('GET', '/me/groups', w.outsider), 200, { groups: [], pending: [{ id: w.groupId, name: 'Go Talk', summary: groupInput.summary, requestedAt: expect.any(String) }], notices: [] });
+    await expectJson(await call('GET', '/me/groups', w.outsider), 200, { groups: [], pending: [{ id: w.groupId, name: 'Go Talk', summary: groupInput.summary, requestedAt: expect.any(String) }], rejected: [], notices: [] });
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: w.accessCode }), 409, { error: 'You already asked to join this group' });
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.member, { code: w.accessCode }), 409, { error: 'You are already a member of this group' });
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.owner, { code: w.accessCode }), 409);
@@ -145,10 +160,17 @@ describe('groups', () => {
     await expectJson(await call('POST', `/groups/${w.groupId}/requests/${requests[0].id}/approve`, w.owner), 404);
     // A rejected user can ask again only after a 7-day cooldown, and the wait counts no code attempt.
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: 'wrong' }), 409, {
-      error: 'Your request to join this group was not approved. You can ask again after November 23, 2026 at 9:00 AM (Brasília time).',
+      error: 'Your request to join this group was not approved. You can ask again after November 23, 2026 at 9:01 AM (Brasília time).',
     });
+    // The rejection shows on the group page and in My groups before any code is typed.
+    const preview = await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.outsider), 200);
+    expect(preview).toMatchObject({ membership: 'none', canAskAgainAt: expect.stringMatching(/^2026-11-23T12:01:/) });
+    const mine = await expectJson(await call('GET', '/me/groups', w.outsider), 200);
+    expect(mine).toMatchObject({ pending: [], rejected: [{ id: w.groupId, name: 'Go Talk', canAskAgainAt: preview.canAskAgainAt }] });
+    expect((await (await call('GET', `/groups/${w.groupId}/preview`, w.member)).json()).canAskAgainAt).toBeNull();
     h.clock.now += 7 * 86_400_000;
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: w.accessCode }), 201);
+    expect((await (await call('GET', '/me/groups', w.outsider)).json()).rejected).toEqual([]);
   });
 
   it('reports a duplicate request that races the pending check', async () => {

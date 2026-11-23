@@ -457,6 +457,19 @@ export function createRepository(db: D1Like) {
       return rows.map((row) => ({ ...toGroupCard(row), role: row.role, iconUrl: null, icon: storedIcon(row) }));
     },
 
+    /** Groups that rejected the user's request after `since` and that the user hasn't asked to join again or joined. */
+    async listMyRecentRejections(userId: string, since: string): Promise<(GroupCard & { decidedAt: string })[]> {
+      const rows = await many<GroupRow & { decided_at: string }>(
+        `SELECT g.*, MAX(jr.decided_at) AS decided_at FROM join_requests jr JOIN groups g ON g.id = jr.group_id
+         WHERE jr.user_id = ? AND jr.status = 'rejected' AND jr.decided_at > ?
+           AND NOT EXISTS (SELECT 1 FROM join_requests p WHERE p.group_id = g.id AND p.user_id = jr.user_id AND p.status = 'pending')
+           AND NOT EXISTS (SELECT 1 FROM group_members gm WHERE gm.group_id = g.id AND gm.user_id = jr.user_id)
+         GROUP BY g.id ORDER BY decided_at DESC`,
+        userId, since
+      );
+      return rows.map((row) => ({ ...toGroupCard(row), decidedAt: row.decided_at }));
+    },
+
     async listMyPendingRequests(userId: string): Promise<PendingGroupRequest[]> {
       const rows = await many<GroupRow & { requested_at: string }>(
         `SELECT g.*, jr.created_at AS requested_at FROM join_requests jr JOIN groups g ON g.id = jr.group_id

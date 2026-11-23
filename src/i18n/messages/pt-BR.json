@@ -180,7 +180,7 @@
     "openGroup": "Abrir grupo",
     "signInToJoin": "Entre para participar",
     "signInFailed": "Não foi possível entrar. Tente novamente.",
-    "signInBanned": "Esta conta Google está banida dos grupos de estudo por violar a política de conteúdo. Se você acha que é um engano, use a página de contato.",
+    "signInBanned": "Esta conta Google está banida dos grupos de estudo por violar a política de conteúdo. Se você acha que é um engano, escreva para groups@fbrissi.dev.",
     "faqTitle": "Perguntas frequentes",
     "faq": [
       {
@@ -209,7 +209,7 @@
       },
       {
         "q": "Quais dados são guardados?",
-        "a": "Do Google, o identificador da sua conta, o seu e-mail, se ele é verificado e o seu nome; nunca a sua foto de perfil. Depois, o que você adiciona: o seu nome de exibição, os grupos que você cria e os ícones deles (guardados de forma privada, sem metadados de foto, e mostrados apenas aos membros), os seus pedidos de entrada, participações, sugestões e votos, e o seu aceite dos Termos e da Política de Privacidade. Excluir é definitivo e imediato. Para manter você conectado, guardamos apenas um hash do token da sua sessão, e quando o administrador da plataforma exclui algo ou bane uma conta, um log de moderação guarda um rótulo curto, o motivo e a data, nunca o conteúdo completo; um banimento também guarda o ID Google e o e-mail da conta enquanto durar. O seu e-mail é usado apenas para enviar e-mails de serviço sobre os seus grupos e pedidos (nunca marketing, e você pode desligá-los), enviados pelo Amazon SES, com um registro de cada e-mail guardado por 30 dias. O seu e-mail nunca é mostrado a outros membros nem aos donos dos grupos. A Política de Privacidade explica por quanto tempo cada dado é guardado e como baixar os seus dados ou excluir a sua conta."
+        "a": "Do Google, o identificador da sua conta, o seu e-mail, se ele é verificado e o seu nome; nunca a sua foto de perfil. Depois, o que você adiciona: o seu nome de exibição, os grupos que você cria e os ícones deles (guardados de forma privada, sem metadados de foto, e mostrados apenas aos membros), os seus pedidos de entrada, participações, sugestões e votos, e o seu aceite dos Termos e da Política de Privacidade. Excluir é definitivo e imediato. Para manter você conectado, guardamos apenas um hash do token da sua sessão, e quando o administrador da plataforma exclui algo ou bane uma conta, um log de moderação guarda um rótulo curto, o motivo e a data, nunca o conteúdo completo; um banimento também guarda o ID Google e o e-mail da conta enquanto durar. O seu e-mail é usado apenas para enviar e-mails de serviço sobre os seus grupos e pedidos (nunca marketing, e você pode desligá-los), enviados pelo Amazon SES, com um registro de cada e-mail guardado por 30 dias. O seu e-mail nunca é mostrado a outros membros nem aos donos dos grupos. A Política de Privacidade explica por quanto tempo cada dado é guardado e como baixar os seus dados ou excluir a sua conta. Dúvidas sobre o programa, denúncias de abuso e solicitações de dados vão para groups@fbrissi.dev."
       }
     ],
     "policiesTitle": "Regras e privacidade",
@@ -217,7 +217,7 @@
     "terms": "Termos de Uso",
     "contentPolicy": "Política de conteúdo",
     "privacy": "Política de Privacidade",
-    "contact": "Denunciar abuso ou fazer uma solicitação de dados",
+    "contact": "Denunciar abuso ou fazer uma solicitação de dados: groups@fbrissi.dev",
     "policyVersion": "Versão",
     "backToProgram": "Voltar aos grupos de estudo",
     "cookieNotice": "Usamos apenas cookies e armazenamento local estritamente necessários: a sessão de login, uma verificação temporária durante o login e suas preferências de idioma e de aviso. Sem analytics nem anúncios.",

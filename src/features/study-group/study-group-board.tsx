@@ -10,7 +10,7 @@ import { GroupHeader } from './group-header';
 import { applyVote, isEligible, pluralize } from './helpers';
 import { DiscussedList, MaterialCard, MaterialListSkeleton } from './materials';
 import { RoundPanel } from './round-panel';
-import { useReasonDialog } from './reason-dialog';
+import { useReasonDialog, type ReasonRequest } from './reason-dialog';
 import { SuggestForm } from './suggest-form';
 import { Banner, buttonClass, cardClass, hintClass, StateCard } from './ui';
 
@@ -39,7 +39,8 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
   const [busy, setBusy] = useState(false);
   const [actionError, setActionError] = useState('');
   const [highlightId, setHighlightId] = useState<number | null>(null);
-  const { dialog, ask } = useReasonDialog();
+  const { dialog, ask, confirm } = useReasonDialog();
+  const [actionNotice, setActionNotice] = useState('');
   const openTitle = useRef<HTMLHeadingElement>(null);
 
   const applyRound = ({ round: nextRound, tally: nextTally, myVote: nextVote }: { round: Round | null; tally: TallyEntry[]; myVote: number | null }) => {
@@ -91,10 +92,12 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
     return () => window.clearTimeout(id);
   }, [highlightId]);
 
-  const run = async (action: () => Promise<void>, confirmText?: string) => {
-    if (confirmText && !window.confirm(confirmText)) return;
-    setBusy(true);
+  const run = async (action: () => Promise<void>, confirmation?: ReasonRequest) => {
+    // A new action clears the last message, so an old status never sits next to it.
     setActionError('');
+    setActionNotice('');
+    if (confirmation && !(await confirm(confirmation))) return;
+    setBusy(true);
     try {
       await action();
     } catch (error) {
@@ -105,13 +108,24 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
   };
 
   const startRound = (mode: RoundMode) => run(async () => applyRound(await api.createRound(groupId, { mode })));
-  const closeRound = (id: number) => run(async () => applyRound(await api.closeRound(groupId, id)), 'Close the vote and pick the winner?');
-  const cancelRound = (id: number) => run(async () => applyRound(await api.cancelRound(groupId, id)), 'Cancel this round? All votes will be discarded.');
+  const closeRound = (id: number) => run(async () => applyRound(await api.closeRound(groupId, id)), {
+    title: 'Close the vote and pick the winner?',
+    text: 'Voting ends now and the material with the most votes becomes this week’s topic.',
+    confirmLabel: 'Close vote',
+  });
+  const cancelRound = (id: number) => run(async () => applyRound(await api.cancelRound(groupId, id)), {
+    title: 'Cancel this round?',
+    text: 'All votes in this round are discarded. This can’t be undone.',
+    confirmLabel: 'Cancel round',
+    destructive: true,
+  });
 
   const replaceMaterial = (updated: Material) => setMaterials((list) => list.map((item) => (item.id === updated.id ? updated : item)));
   const setStatus = (material: Material, status: 'open' | 'discussed') => run(async () => replaceMaterial((await api.updateMaterial(groupId, material.id, { status })).material));
   const approve = (material: Material) => run(async () => replaceMaterial((await api.approveMaterial(groupId, material.id)).material));
   const deleteMaterial = async (material: Material) => {
+    setActionError('');
+    setActionNotice('');
     let reason: string | undefined;
     if (role === 'platform_admin') {
       const answer = await ask({
@@ -127,9 +141,15 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
       await api.deleteMaterial(groupId, material.id, reason);
       setMaterials((list) => list.filter((item) => item.id !== material.id));
       setTally((entries) => entries.filter((entry) => entry.materialId !== material.id));
+      setActionNotice(`“${material.title}” was deleted permanently.`);
       // The deleted card took its button with it: move the focus to the list heading.
-      openTitle.current?.focus();
-    }, reason === undefined ? `Delete “${material.title}” permanently? The suggestion and its votes are deleted. This can’t be undone.` : undefined);
+      openTitle.current!.focus();
+    }, reason === undefined ? {
+      title: `Delete “${material.title}” permanently?`,
+      text: 'The suggestion and its votes are deleted. This can’t be undone.',
+      confirmLabel: 'Delete permanently',
+      destructive: true,
+    } : undefined);
   };
 
   const vote = async (roundId: number, material: Material) => {
@@ -161,6 +181,7 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
       <GroupHeader group={group} role={role} />
       {dialog}
       {actionError ? <div className="mb-6"><Banner tone="error" title={actionError} /></div> : null}
+      {actionNotice ? <div className="mb-6"><Banner tone="success" title={actionNotice} /></div> : null}
       {loadState === 'ready' ? (
         <RoundPanel
           round={round}
@@ -238,13 +259,21 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
 function MembersPanel({ api, groupId, role }: { api: StudyGroupApi; groupId: string; role: GroupRole }) {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [error, setError] = useState('');
+  const { dialog, confirm } = useReasonDialog();
 
   useEffect(() => {
     api.listMembers(groupId).then(({ members: list }) => setMembers(list), () => setError("Couldn't load the members."));
   }, [api, groupId]);
 
   const leave = async () => {
-    if (!window.confirm('Leave this group? You will need the access code and the owner’s approval to come back.')) return;
+    setError('');
+    const confirmed = await confirm({
+      title: 'Leave this group?',
+      text: 'You will need the access code and the owner’s approval to come back.',
+      confirmLabel: 'Leave group',
+      destructive: true,
+    });
+    if (!confirmed) return;
     try {
       await api.leaveGroup(groupId);
       navigate('/study-groups/my');
@@ -255,6 +284,7 @@ function MembersPanel({ api, groupId, role }: { api: StudyGroupApi; groupId: str
 
   return (
     <section aria-labelledby="members-title" className={`${cardClass} p-6`}>
+      {dialog}
       <h2 id="members-title" className="mb-3 text-lg font-normal">Members</h2>
       {error ? <p role="alert" className="mb-3 text-sm text-red-500">{error}</p> : null}
       {members ? (

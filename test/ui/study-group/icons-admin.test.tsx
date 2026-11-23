@@ -9,7 +9,7 @@ import { ProgramActions } from '@/features/study-group/program-landing';
 import { SessionProvider } from '@/features/study-group/session';
 import type { AdminUser } from '@/workers/study-group/contract';
 
-import { admin, answerReason, apiError, bodyOf, calls, stubApi, type Routes } from './fake-api';
+import { admin, answerConfirm, answerReason, apiError, bodyOf, calls, stubApi, type Routes } from './fake-api';
 
 vi.stubGlobal('React', React);
 
@@ -82,12 +82,13 @@ describe('group icon', () => {
 
   it('lets the owner remove the icon after an irreversible-delete confirmation', async () => {
     const { fetchMock, onChange } = renderIcons({ 'DELETE /groups/gotalk1234/icon': null }, true, iconUrl);
-    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false);
     fireEvent.click(screen.getByRole('button', { name: 'Remove icon' }));
-    expect(confirm).toHaveBeenCalledWith('Remove the group icon? The image is deleted permanently. This can’t be undone.');
+    const dialog = await answerConfirm(false);
+    expect(dialog).toHaveTextContent('Remove the group icon permanently?');
+    expect(dialog).toHaveTextContent('The image is deleted permanently. This can’t be undone.');
     expect(fetchMock).not.toHaveBeenCalled();
-    confirm.mockReturnValue(true);
     fireEvent.click(screen.getByRole('button', { name: 'Remove icon' }));
+    await answerConfirm(true);
     expect(await screen.findByText('Icon removed.')).toBeInTheDocument();
     expect(onChange).toHaveBeenCalledWith(null);
     expect(bodyOf(fetchMock, 'DELETE /groups/gotalk1234/icon')).toEqual({});
@@ -158,7 +159,7 @@ describe('admin users', () => {
     expect(within(section).getByText(/0 owned groups.*Banned .*: Political propaganda/)).toBeInTheDocument();
     expect(bodyOf(fetchMock, 'POST /admin/users/u1/ban')).toEqual({ reason: 'Political propaganda' });
 
-    fireEvent.click(within(section).getByRole('button', { name: 'Renew the ban on User u2' }));
+    fireEvent.click(within(section).getByRole('button', { name: 'Renew ban for User u2' }));
     expect(await answerReason('Still posting spam elsewhere')).toHaveTextContent('Renew the ban on User u2?');
     expect(await within(section).findByText('The ban on User u2 was renewed.')).toBeInTheDocument();
     expect(within(section).getByText(/Banned .*: Still posting spam elsewhere/)).toBeInTheDocument();

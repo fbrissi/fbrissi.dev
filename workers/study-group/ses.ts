@@ -1,3 +1,4 @@
+import { STUDY_GROUPS_EMAIL } from './contract';
 import { signRequest } from './sigv4';
 
 export interface OutgoingEmail {
@@ -16,7 +17,7 @@ export class PermanentEmailError extends Error {}
 
 export const NOTIFICATIONS_FROM_ADDRESS = 'notifications@fbrissi.dev';
 export const NOTIFICATIONS_FROM = `English Study Groups <${NOTIFICATIONS_FROM_ADDRESS}>`;
-export const NOTIFICATIONS_REPLY_TO = 'contact@fbrissi.dev';
+export const NOTIFICATIONS_REPLY_TO = STUDY_GROUPS_EMAIL;
 
 export interface SesConfig {
   accessKeyId: string;
@@ -37,7 +38,7 @@ async function errorType(response: Response): Promise<string> {
 }
 
 /**
- * Amazon SES v2 SendEmail signed with SigV4, from notifications@fbrissi.dev with Reply-To contact@fbrissi.dev. Errors
+ * Amazon SES v2 SendEmail signed with SigV4, from notifications@fbrissi.dev with Reply-To groups@fbrissi.dev. Errors
  * carry only the status and the SES error type, never the recipient or the response body.
  */
 export function createSesSender(config: SesConfig): SendEmail {

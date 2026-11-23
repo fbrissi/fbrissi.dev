@@ -73,10 +73,10 @@ test.describe('program pages and the site-wide privacy policy (D1, Q1, Q2, D-7)'
     await expect(main.getByRole('link', { name: 'Join a free English study group' })).toBeVisible();
     await expect(main.getByText("You'll sign in with Google", { exact: true })).toBeVisible();
     await expect(main.getByRole('heading', { level: 3, name: 'What data do you keep?' })).toBeVisible();
-    // The bilingual Terms, Privacy Policy and contact page open in Portuguese.
+    // The bilingual Terms and Privacy Policy open in Portuguese; reports and data requests go to groups@.
     await expect(page.locator('main a[href="/pt-br/study-groups/terms"][hreflang="pt-BR"]').first()).toBeVisible();
     await expect(page.locator('main a[href="/pt-br/privacy"][hreflang="pt-BR"]').first()).toBeVisible();
-    await expect(page.locator('main a[href="/pt-br/contact"][hreflang="pt-BR"]').first()).toBeVisible();
+    await expect(page.locator('main a[href="mailto:groups@fbrissi.dev"]').first()).toBeVisible();
   });
 
   test('the sitemap lists the program pages and no app pages (D1, D2)', async ({ request }) => {

@@ -352,7 +352,17 @@ notice until the repository variable `SANDBOX_ENABLED` is `true`. To turn the sa
 add the sandbox redirect URI `https://sandbox.fbrissi.dev/api/study-group/auth/callback` to the Google OAuth client,
 and run Deploy Sandbox (the sandbox D1 starts empty).
 
-**Email notifications** (English only, from `notifications@fbrissi.dev` with Reply-To `contact@fbrissi.dev`):
+**Program address.** `groups@fbrissi.dev` is the study groups' own address: Cloudflare Email Routing forwards it to
+the same verified inbox as `contact@` (`cloudflare_email_routing_rule.study_groups`, `local.study_groups_email`). It is
+the Reply-To of every notification and the channel for program questions, abuse reports, ban appeals and study group
+data requests (banned users included); `contact@` and `/contact` stay the portfolio contact.
+
+**Email layout.** Every email (contact form, contact confirmation, study group notices) is rendered by
+`workers/templates/email-layout.ts`: one HTML and text skeleton with slots (heading, preheader, body blocks, button,
+signature, notes, footer, LOCAL/SANDBOX badge) and the only `escapeHtml`. A template fills the slots; the study group
+notices use the contact form card (green header with the avatar) with the orange button.
+
+**Email notifications** (English only, from `notifications@fbrissi.dev` with Reply-To `groups@fbrissi.dev`):
 
 - Events: a digest to the group owner when join requests wait (with the pending count and no requester name or
   message), the decision to the requester (approved or not, neutral wording, with the 7-day wait before asking the
@@ -418,7 +428,9 @@ The Workers always use Google's fixed endpoints. The fake Google IdP below exist
    `unverified@example.test` (rejected, unverified email). It can also sign in any email and name.
 3. Use Chromium-based browsers locally: the `__Host-` cookies are `Secure`, which browsers accept on
    `http://localhost`.
-4. `kool run e2e` runs the Playwright suite against the stack (it resets the local database).
+4. `kool run e2e` runs the Playwright suite against the stack (it resets the local database). The Gherkin files in
+   `e2e/features/` specify it: every scenario is a Playwright test with the same title, and `kool run yarn e2e:features`
+   checks both directions. Add or rename the scenario first, then the test.
 
 **Before merging v0.4.0: retire the sandbox**, in this order. The merge's Terraform apply runs before the
 release deploy and deletes every sandbox resource, so nothing may still use the sandbox queues, D1 or Pages project
@@ -516,13 +528,15 @@ nothing sandbox-related left to delete and a failure can be fixed before the rel
 
 ## Validation
 
-Run these before shipping:
+Run these before shipping (CI runs the same E2E suite on pull requests in the `Quality / e2e` job with `docker-compose.ci.yml`):
 
 ```bash
 kool run yarn lint
 kool run yarn typecheck
 kool run yarn test:coverage
 kool run yarn build
+kool run yarn e2e:features
+kool start && kool run e2e
 terraform fmt -recursive
 terraform init -backend=false
 terraform validate

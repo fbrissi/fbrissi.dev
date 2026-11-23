@@ -116,7 +116,7 @@ test.describe('account bans', () => {
     await expect(section.getByText(/Banned .*, until .*\d{4}: Repeated political propaganda/)).toBeVisible();
     // The new Unban button has the focus, and the moderation log shows the ban without a reload.
     await expect(section.getByRole('button', { name: `Unban ${banned.givenName}` })).toBeFocused();
-    await expect(adminPage.getByRole('region', { name: 'Moderation log' }).getByText(/ban_user · user/).first()).toBeVisible();
+    await expect(adminPage.getByRole('region', { name: 'Moderation log' }).getByText(/Account banned · user/).first()).toBeVisible();
 
     expect((await api<{ user: unknown }>(bannedPage, 'GET', '/me')).body.user).toBeNull();
     expect((await api<{ groups: unknown[] }>(adminPage, 'GET', `/admin/users?q=${bannedId}`)).body).toMatchObject({ users: [{ ownedGroups: 0 }] });
@@ -124,7 +124,7 @@ test.describe('account bans', () => {
     expect(text).toContain('Reason: Repeated political propaganda');
     const notice = await waitForSubject(banned, /Your English Study Groups account was banned$/);
     expect(notice).toContain('Reason: Repeated political propaganda');
-    expect(notice).toContain('If you think this is a mistake');
+    expect(notice).toContain('If you think this is a mistake, reply to this email or write to groups@fbrissi.dev');
 
     const page = await (await browser.newContext()).newPage();
     await page.goto(signInUrl('/study-groups/my'));

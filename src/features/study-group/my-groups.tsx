@@ -2,27 +2,22 @@
 
 import { useEffect, useState } from 'react';
 
-import type { MyGroupsResponse } from '@/workers/study-group/contract';
+import { formatAskAgainAt, type MyGroupsResponse } from '@/workers/study-group/contract';
 
 import { groupPath } from './api';
 import { GroupIcon } from './group-icon';
-import { formatDate } from './helpers';
+import { formatDate, moderationActionLabel, takeFlash } from './helpers';
 import { RequireUser, useSession } from './session';
 import { Banner, buttonClass, cardClass, eyebrowClass, hintClass } from './ui';
-
-const actionLabels: Record<string, string> = {
-  delete_group: 'Group deleted',
-  delete_material: 'Material deleted',
-  delete_join_message: 'Join request message deleted',
-  delete_icon: 'Group icon removed'
-};
 
 function MyGroupsList() {
   const { api } = useSession();
   const [data, setData] = useState<MyGroupsResponse | null>(null);
   const [error, setError] = useState(false);
+  const [flash, setFlashText] = useState('');
 
   useEffect(() => {
+    setFlashText((current) => current || takeFlash());
     api.myGroups().then(setData, () => setError(true));
   }, [api]);
 
@@ -31,6 +26,7 @@ function MyGroupsList() {
 
   return (
     <div className="flex flex-col gap-10">
+      {flash ? <Banner tone="success" title={flash} /> : null}
       {data.notices.length ? (
         <section aria-labelledby="notices-title" className={`${cardClass} border-red-500/40 p-6`}>
           <h2 id="notices-title" className="mb-2 text-xl font-normal">Moderation notices</h2>
@@ -38,7 +34,7 @@ function MyGroupsList() {
           <ul className="m-0 list-none p-0">
             {data.notices.map((notice) => (
               <li key={notice.id} className="border-t border-line py-3 text-sm">
-                <p className="wrap-anywhere">{actionLabels[notice.action] ?? notice.action}: “{notice.label}” · {formatDate(notice.createdAt)}</p>
+                <p className="wrap-anywhere">{moderationActionLabel(notice.action)}: “{notice.label}” · {formatDate(notice.createdAt)}</p>
                 <p className="text-text-secondary wrap-anywhere">Reason: {notice.reason}</p>
               </li>
             ))}
@@ -72,6 +68,19 @@ function MyGroupsList() {
             {data.pending.map((group) => (
               <li key={group.id} className="border-t border-line py-3 text-sm">
                 <span className="wrap-anywhere">{group.name}</span> <span className={hintClass}>· requested {formatDate(group.requestedAt)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      {data.rejected.length ? (
+        <section aria-labelledby="rejected-title">
+          <h2 id="rejected-title" className="mb-4 text-2xl font-normal tracking-tight">Not approved</h2>
+          <ul className="m-0 list-none p-0">
+            {data.rejected.map((group) => (
+              <li key={group.id} className="border-t border-line py-3 text-sm">
+                <span className="wrap-anywhere">{group.name}</span>{' '}
+                <span className={hintClass}>· the owner didn’t approve your request. You can ask again after {formatAskAgainAt(group.canAskAgainAt)}.</span>
               </li>
             ))}
           </ul>
