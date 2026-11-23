@@ -27,7 +27,13 @@ if [ "${E2E_KEEP_DB:-}" != "1" ]; then
   stamp="$(date +%Y%m%d%H%M%S)"
   docker compose stop study-group-api >/dev/null
   for suffix in "" "-wal" "-shm"; do
-    if [ -f "${db}${suffix}" ]; then mv "${db}${suffix}" "${db}${suffix}.e2e-backup-${stamp}"; fi
+    file="${db}${suffix}"
+    if [ -f "$file" ]; then
+      # On Linux CI the API container (root) owns the database file, so fall back to moving it from a container.
+      mv "$file" "${file}.e2e-backup-${stamp}" 2>/dev/null \
+        || docker run --rm -v "$PWD/$(dirname "$db"):/data" "$image" \
+          mv "/data/$(basename "$file")" "/data/$(basename "$file").e2e-backup-${stamp}"
+    fi
   done
   docker compose start study-group-api >/dev/null
   echo "Reset the local study group database (previous copy: ${db}.e2e-backup-${stamp})."
