@@ -5,6 +5,7 @@ import { isMeetingAt } from './meeting-schedule';
 import { BAN_IN_FORCE, type D1Like } from './repository';
 import { PermanentEmailError, type SendEmail } from './ses';
 import { createUnsubscribeToken, unsubscribeUrls } from './unsubscribe';
+import { reportError } from '../observability/sentry';
 
 /**
  * `done`: the row is gone (account deleted, purged), already handled, or claimed by another delivery. `{ deferSeconds }`:
@@ -170,6 +171,7 @@ export function createNotificationSender(deps: NotificationSenderDeps) {
     } catch (error) {
       if (error instanceof PermanentEmailError || claimed.attempts >= NOTIFICATION_LIMITS.maxDeliveryAttempts) {
         console.error('Study group notification failed', row.id, error instanceof Error ? error.message : error);
+        reportError(error);
         await finish(row.id, 'failed', nowIso);
         return 'failed';
       }

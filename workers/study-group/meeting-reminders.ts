@@ -1,6 +1,7 @@
 import { MEETING_REMINDER_LEADS, type MeetingReminderLead } from './contract';
 import { meetingsBetween } from './meeting-schedule';
 import type { createRepository, DueReminder, QueuedNotification } from './repository';
+import { reportError } from '../observability/sentry';
 
 const HOUR_MS = 60 * 60 * 1000;
 /** A queued reminder is delivered within seconds of its send time; one still pending this long after it was lost. */
@@ -31,6 +32,7 @@ export async function scheduleMeetingReminders(
       return notifications.length;
     } catch (error) {
       console.error('Unable to queue meeting reminders', notifications.length, error instanceof Error ? error.message : error);
+      reportError(error);
       return 0;
     }
   };

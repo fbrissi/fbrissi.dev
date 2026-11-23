@@ -1,6 +1,8 @@
 name = "fbrissi-dev-study-group-api"
 main = "../study-group-api.ts"
 compatibility_date = "2024-01-01"
+# @sentry/cloudflare needs AsyncLocalStorage (node:async_hooks).
+compatibility_flags = ["nodejs_compat"]
 observability.enabled = true
 
 # Production Worker: only the production routes and the production D1. The sandbox runs as its own Worker

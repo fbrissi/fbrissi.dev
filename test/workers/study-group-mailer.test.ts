@@ -4,7 +4,7 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { openD1Sqlite } from '@/workers/local/d1-sqlite';
-import studyGroupMailer, { retryDelaySeconds, type Env, type QueueMessage } from '@/workers/study-group-mailer';
+import { retryDelaySeconds, studyGroupMailer, type Env, type QueueMessage } from '@/workers/study-group-mailer';
 import type { D1Like } from '@/workers/study-group/repository';
 
 import { migrationsDir } from './study-group/harness';

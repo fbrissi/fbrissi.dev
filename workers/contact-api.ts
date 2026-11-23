@@ -1,6 +1,9 @@
+import { withSentry } from '@sentry/cloudflare';
+
+import { reportError, workerSentryOptions, type SentryEnv } from './observability/sentry';
 import { resolveContactEnvironment, resolveContactLocale, type ContactFormRequest, type ContactMessage } from './contact-message';
 
-export interface Env {
+export interface Env extends SentryEnv {
   CONTACT_FORM_QUEUE: { send: (message: ContactMessage) => Promise<void> };
   CONTACT_FORM_SANDBOX_QUEUE: { send: (message: ContactMessage) => Promise<void> };
   CONTACT_FORM_IP_RATE_LIMITER: RateLimiter;
@@ -22,7 +25,8 @@ const allowedOrigins = new Set([
   'https://sandbox.fbrissi.dev',
 ]);
 
-const contactApi = {
+/** The Worker without Sentry (tests call it directly); the default export is the deployed, instrumented copy. */
+export const contactApi = {
   async fetch(request: Request, env: Env): Promise<Response> {
     if (request.method === 'OPTIONS') return new Response(null, { headers: corsHeaders(request) });
 
@@ -62,12 +66,13 @@ const contactApi = {
       return json({ success: true, message: 'Message queued successfully' }, 202, request);
     } catch (error) {
       console.error('Unable to queue contact form submission:', error);
+      reportError(error);
       return json({ error: 'Internal server error' }, 500, request);
     }
   },
 };
 
-export default contactApi;
+export default withSentry(workerSentryOptions('contact-api'), { ...contactApi });
 
 function isValidForm(form: Partial<ContactFormRequest>): form is ContactFormRequest {
   return Boolean(

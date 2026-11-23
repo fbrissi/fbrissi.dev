@@ -117,6 +117,12 @@ Configured manually:
   `GITHUB_APP_INSTALLATION_ID`, and sensitive `GITHUB_APP_PEM_FILE`: the
   `rissi-terraform` GitHub App, installed only on this repository with Actions
   secrets and variables write access and nothing else
+- Terraform Cloud workspace `fbrissi-dev`, sensitive Terraform variable
+  `SENTRY_AUTH_TOKEN`: the token of an internal integration
+  (`fbrissi-dev-terraform`) of the `oliblish` Sentry organization (shared with
+  nota-profile), with Team and Project Read & Write and Organization Read, for
+  the `fbrissi-dev` team, project and client key in `terraform/sentry.tf`.
+  Organization auth tokens only have the `org:ci` scope and can't create them
 - Variable `AGENT_APP_CLIENT_ID` and secret `AGENT_APP_PRIVATE_KEY`: the
   `rissi-agent-ai` GitHub App that publishes the shared
   [Code Review](https://github.com/fbrissi/github-actions#code-review), with
@@ -158,6 +164,13 @@ Published by Terraform, do not set them manually:
   `fbrissi-dev-sandbox-study-group-mailer`
 - Variables `NEXT_PUBLIC_TURNSTILE_SITE_KEY` and `VITE_TURNSTILE_SITE_KEY`
   (legacy releases)
+- Variable `SENTRY_DSN`: the public client key of the `fbrissi-dev` Sentry
+  project. The Deploy workflow builds the site with it
+  (`NEXT_PUBLIC_SENTRY_DSN`) and passes it to the four Workers (`--var
+  SENTRY_DSN`), with the release tag as `SENTRY_RELEASE`. Only errors are sent,
+  without user, cookies, headers, bodies, query strings or email addresses
+  (`workers/observability/sentry-policy.ts`); the sandbox and local runs have no
+  DSN and send nothing
 
 In `automatic` mode (January 1 and July 1, or on demand),
 `.github/workflows/rotate-credentials.yml` replaces the deployment token, the

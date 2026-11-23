@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import contactEmailConsumer, { sendConfirmationEmail } from '@/workers/contact-email-consumer';
+import { contactEmailConsumer, sendConfirmationEmail } from '@/workers/contact-email-consumer';
 
 interface MockEmailMessage {
   from: string;

@@ -5,6 +5,7 @@ import type { CacheLike, JwksProvider, OidcClient } from './oidc';
 import type { BucketLike } from './icons';
 import { deleteIconObjects, signIconUrl, validIconUrls } from './icons';
 import type { GroupRecord, QueuedNotification, SessionUser, StoredIcon, StudyGroupRepository } from './repository';
+import { reportError } from '../observability/sentry';
 
 export type RateLimitKind = 'read' | 'write' | 'auth' | 'join' | 'icon';
 export type FetchLike = (input: Request | string, init?: RequestInit) => Promise<Response>;
@@ -78,6 +79,7 @@ export async function enqueueNotifications(context: RequestContext, notification
     await context.app.notify(notifications);
   } catch (error) {
     console.error('Unable to queue study group notifications:', notifications.map((item) => item.id), error instanceof Error ? error.message : error);
+    reportError(error);
   }
 }
 

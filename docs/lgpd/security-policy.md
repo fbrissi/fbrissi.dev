@@ -33,6 +33,8 @@ queues and SES identity behind them. One person runs everything: Filipe Bojikian
   the schema (README release runbook).
 - **Dependencies:** Dependabot updates, a high-severity audit in CI, and the safe-node-package checks before adding a
   dependency.
+- **Error monitoring:** Sentry receives errors only, with no user, cookies, headers, bodies or query strings, and
+  email addresses redacted (`workers/observability/sentry-policy.ts`); the project doesn't store IP addresses.
 - **Logs:** Cloudflare Workers Logs (up to 7 days); logs carry IDs, never email addresses.
 
 ## Incidents

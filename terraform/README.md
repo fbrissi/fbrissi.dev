@@ -15,6 +15,7 @@ after merge and blocks the release.
 | Cloudflare | API token in the GitHub secret `CLOUDFLARE_API_TOKEN`, copied to the Terraform Cloud variable `CLOUDFLARE_API_TOKEN` | [`cloudflare-token-permissions.json`](cloudflare-token-permissions.json) |
 | AWS | Manually created role `fbrissi-dev-terraform`, assumed through Terraform Cloud OIDC | Root README, "AWS Access" |
 | GitHub | `rissi-terraform` GitHub App | Root README, "GitHub Secrets and Variables" |
+| Sentry | Internal integration token of the `oliblish` Sentry organization in the sensitive Terraform Cloud variable `SENTRY_AUTH_TOKEN` | Team and Project Read & Write, Organization Read (`sentry.tf`: team, project settings and client key); no automated check |
 
 [`cloudflare-token-permissions.json`](cloudflare-token-permissions.json) is the
 only list of Cloudflare permission groups the token needs. It maps every

@@ -1,3 +1,6 @@
+import { withSentry } from '@sentry/cloudflare';
+
+import { workerSentryOptions, type SentryEnv } from './observability/sentry';
 import { parseEmailAllowlist } from './study-group/authorization';
 import { environmentOrigins, PRODUCTION_ORIGIN } from './study-group/environment';
 import { createHandler, type RateLimitKind } from './study-group/handler';
@@ -6,7 +9,7 @@ import { scheduleMeetingReminders } from './study-group/meeting-reminders';
 import { GOOGLE_OIDC, type CacheLike } from './study-group/oidc';
 import { createRepository, type D1Like, type QueuedNotification } from './study-group/repository';
 
-export interface Env {
+export interface Env extends SentryEnv {
   /** The production or the sandbox database: each environment is its own Worker with its own binding. */
   STUDY_GROUP_DB: D1Like;
   STUDY_GROUP_ENVIRONMENT?: string;
@@ -73,7 +76,8 @@ function defaultCache(): CacheLike | undefined {
  * no binding or variable can point it at another identity provider. The fake IdP exists only in the local Docker
  * stack (workers/local).
  */
-const studyGroupApi = {
+/** The Worker without Sentry (tests call it directly); the default export is the deployed, instrumented copy. */
+export const studyGroupApi = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
     // Session cookies are host-only, so sign-in always runs on the canonical host.
@@ -135,4 +139,4 @@ const studyGroupApi = {
   },
 };
 
-export default studyGroupApi;
+export default withSentry(workerSentryOptions('study-group-api'), { ...studyGroupApi });

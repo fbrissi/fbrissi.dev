@@ -33,3 +33,9 @@ variable "STUDY_GROUP_PLATFORM_ADMIN_EMAILS" {
   type      = string
   sensitive = true
 }
+
+# Internal integration token of the oliblish Sentry organization, a sensitive Terraform Cloud variable.
+variable "SENTRY_AUTH_TOKEN" {
+  type      = string
+  sensitive = true
+}

@@ -22,6 +22,7 @@ import {
 import type { BucketLike } from './icons';
 import { createJwksProvider, type CacheLike, type OidcClient } from './oidc';
 import { createRepository, type D1Like, type QueuedNotification } from './repository';
+import { reportError } from '../observability/sentry';
 
 export type { RateLimitKind } from './http';
 
@@ -257,6 +258,7 @@ export function createHandler(deps: StudyGroupHandlerDeps) {
     } catch (error) {
       if (error instanceof HttpError) return Response.json(errorBody(error), { status: error.status, headers: baseHeaders() });
       console.error('Unable to handle study group request:', error);
+      reportError(error);
       return Response.json({ error: 'Internal server error' }, { status: 500, headers: baseHeaders() });
     }
   };

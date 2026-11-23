@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import studyGroupApi, { DAILY_CRON, delaySeconds, environmentOrigins, type Env } from '@/workers/study-group-api';
+import { DAILY_CRON, studyGroupApi, delaySeconds, environmentOrigins, type Env } from '@/workers/study-group-api';
 import { openD1Sqlite } from '@/workers/local/d1-sqlite';
 import type { D1Like } from '@/workers/study-group/repository';
 import { createUnsubscribeToken } from '@/workers/study-group/unsubscribe';

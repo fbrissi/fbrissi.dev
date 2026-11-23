@@ -6,7 +6,7 @@ z.config({ jitless: true });
 export const STUDY_GROUP_API_PREFIX = '/api/study-group';
 
 /** Current versions (dates) of the program documents, shown on the pages and recorded when a user accepts them. */
-export const POLICY_VERSIONS = { terms: '2026-11-25', privacy: '2026-11-25' } as const;
+export const POLICY_VERSIONS = { terms: '2026-11-25', privacy: '2026-11-26' } as const;
 export type PolicyDocument = keyof typeof POLICY_VERSIONS;
 
 /**
@@ -15,9 +15,10 @@ export type PolicyDocument = keyof typeof POLICY_VERSIONS;
  * takes effect on publication without asking anyone again (Q18). The 2026-11-22 versions are material: they add
  * Amazon SES and Cloudflare R2, service emails, icons, bans and the transfer grounds. The 2026-11-23 versions only add
  * the groups@fbrissi.dev channel, the 2026-11-24 versions show listed groups' icons on the public page, and the 2026-11-25
- * versions add meeting reminders to the service emails (all minor).
+ * versions add meeting reminders to the service emails (all minor). The 2026-11-26 privacy policy is material: it adds
+ * Sentry (error monitoring, a new processor with a transfer to the United States).
  */
-export const MATERIAL_POLICY_VERSIONS: Record<PolicyDocument, string> = { terms: '2026-11-22', privacy: '2026-11-22' };
+export const MATERIAL_POLICY_VERSIONS: Record<PolicyDocument, string> = { terms: '2026-11-22', privacy: '2026-11-26' };
 
 export const materialTypes = ['video', 'article', 'book', 'podcast', 'other'] as const;
 export const materialStatuses = ['pending', 'open', 'discussed'] as const;
