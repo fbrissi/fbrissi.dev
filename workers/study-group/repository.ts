@@ -763,6 +763,13 @@ export function createRepository(db: D1Like) {
       return { requeue: queued([rows]), failedLastDay: failed.results[0].count };
     },
 
+    /** Reminders still pending whose send time is in (from, to]: written by an earlier scan whose queue send was lost. */
+    async listPendingReminders(from: string, to: string): Promise<QueuedNotification[]> {
+      return queued([await db.prepare(
+        "SELECT id, send_after FROM notifications WHERE kind = 'meeting_reminder' AND status = 'pending' AND send_after > ? AND send_after <= ? ORDER BY id"
+      ).bind(from, to).all()]);
+    },
+
     /** One page of the groups with meeting reminders on, after `afterId` in id order (keyset paging). */
     async listReminderGroups(afterId: string, limit: number): Promise<ReminderGroup[]> {
       return many<ReminderGroup>(

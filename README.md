@@ -387,7 +387,9 @@ notices use the contact form card (green header with the avatar) with the orange
 - Meeting reminders (E5): the hourly cron reads the groups with reminders on in id order, 50 at a time, and, for a
   meeting whose reminder is due within an hour either way (24 hours before, and 2 hours before, in the group's time
   zone), writes one outbox row per owner and member (`meeting_reminder:<lead>:<group>:<meeting>:<user>` dedupe key)
-  and queues it with a delay until its time. Users with emails off and banned users get no row. At send time the
+  and queues it with a delay until its time. A failed queue send leaves the rows pending, and the next run queues
+  again the reminders still pending 5 minutes to 2 hours after their time. Users with emails off and banned users get
+  no row. At send time the
   mailer drops the reminder if the owner turned reminders off, the recipient left the group or was banned, the
   schedule changed or the meeting already started. Groups saved before the weekday and time zone became selects get
   no reminders until the owner picks a valid day and zone.

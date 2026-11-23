@@ -48,7 +48,8 @@ describe('meeting reminder scan', () => {
     })));
     expect(notify).toHaveBeenCalledWith([{ id: 1, sendAfter: '2026-11-29T20:00:00.000Z' }, { id: 2, sendAfter: '2026-11-29T20:00:00.000Z' }]);
 
-    // The next hourly run sees the same reminder and writes nothing new.
+    // The mailer sent them; the next hourly run sees the same reminder and writes nothing new.
+    await db.prepare("UPDATE notifications SET status = 'sent'").run();
     expect(await run('2026-11-29T21:07:00.000Z')).toBe(0);
     expect(notify).toHaveBeenCalledTimes(1);
     // Two hours later it is out of the window.
@@ -71,6 +72,27 @@ describe('meeting reminder scan', () => {
     expect(await scheduleMeetingReminders(repository, notify, new Date('2026-11-29T20:07:00.000Z'))).toBe(2 + REMINDER_PAGE_SIZE + 5);
     expect(list.mock.calls.map(([afterId]) => afterId)).toEqual(['', `page${String(REMINDER_PAGE_SIZE - 5).padStart(3, '0')}`]);
     expect(notify).toHaveBeenCalledTimes(2);
+  });
+
+  it('queues again the reminders a lost queue send left pending, and keeps scanning after a failed send', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    notify.mockRejectedValueOnce(new Error('Queue send failed')).mockRejectedValueOnce('offline');
+    expect(await run('2026-11-29T20:07:00.000Z')).toBe(0);
+    expect(error).toHaveBeenCalledWith('Unable to queue meeting reminders', 2, 'Queue send failed');
+    expect(await rows()).toHaveLength(2);
+
+    // The rows exist, so the dedupe key writes nothing new; the run queues the pending ones again instead.
+    expect(await run('2026-11-29T20:30:00.000Z')).toBe(0);
+    expect(error).toHaveBeenLastCalledWith('Unable to queue meeting reminders', 2, 'offline');
+    expect(await run('2026-11-29T21:07:00.000Z')).toBe(2);
+    expect(notify).toHaveBeenLastCalledWith([{ id: 1, sendAfter: '2026-11-29T20:00:00.000Z' }, { id: 2, sendAfter: '2026-11-29T20:00:00.000Z' }]);
+
+    // Not before its send time is 5 minutes past, nor once it is more than two hours late, nor after it was sent.
+    expect(await run('2026-11-29T20:04:00.000Z')).toBe(0);
+    expect(await run('2026-11-29T22:01:00.000Z')).toBe(0);
+    await db.prepare("UPDATE notifications SET status = 'sent'").run();
+    expect(await run('2026-11-29T20:30:00.000Z')).toBe(0);
+    error.mockRestore();
   });
 
   it('writes nothing when no group has a meeting due', async () => {
