@@ -67,6 +67,7 @@ async function groupProfile(context: GroupContext, group: GroupRecord): Promise<
     meetingUrl: group.meetingUrl,
     moderationMode: group.moderationMode,
     listed: group.listed,
+    meetingReminders: group.meetingReminders,
   };
 }
 

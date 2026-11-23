@@ -84,7 +84,8 @@ describe('email layout', () => {
       [contactEmailText(message, { isLocal: true }), contactEmailHtml(message, { isLocal: true })],
       [contactConfirmationEmailText(message, { isLocal: false, isSandbox: true }), contactConfirmationEmailHtml(message, { isLocal: false, isSandbox: true })],
       ...notificationKinds.map((kind): [string, string] => {
-        const input = { kind, groupId: 'g1', groupName: 'Go Talk', pendingCount: 2, reason: 'Some reason', appOrigin: 'https://fbrissi.dev', unsubscribeUrl: 'https://fbrissi.dev/u?t=1', environment: 'production' as const };
+        const meeting = { lead: 'day_before' as const, startsAt: '2026-11-30T23:00:00.000Z', start: '20:00', end: '21:00', timezone: 'America/Sao_Paulo', url: 'https://meet.example.com/abc' };
+        const input = { kind, groupId: 'g1', groupName: 'Go Talk', pendingCount: 2, reason: 'Some reason', meeting, appOrigin: 'https://fbrissi.dev', unsubscribeUrl: 'https://fbrissi.dev/u?t=1', environment: 'production' as const };
         return [studyGroupEmailText(input), studyGroupEmailHtml(input)];
       }),
     ];

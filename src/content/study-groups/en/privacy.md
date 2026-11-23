@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How fbrissi.dev, its contact form and the English study groups program collect, use and protect personal data under the Brazilian General Data Protection Law (LGPD).
-version: '2026-11-24'
+version: '2026-11-25'
 ---
 
 This policy explains how `fbrissi.dev` handles personal data under the Brazilian General Data Protection Law (Law 13,709/2018, "LGPD"): the contact form (section 2) and the English study groups program at `fbrissi.dev/study-groups` (sections 3 to 5, 7 and 11); section 6 covers both. Browsing the rest of the site doesn't require any personal data. Users in Brazil: the [Portuguese version](/pt-br/privacy) prevails.
@@ -35,13 +35,13 @@ The controller is **Filipe Bojikian Rissi**, an individual based in Brazil. For 
 | Purpose | Legal basis (LGPD art. 7) |
 |---|---|
 | Create and run your account, groups (including their icons), memberships, suggestions and votes | Performance of a contract: the Terms of Use (V) |
-| Send service emails about the join requests to your groups, the decision on your own requests, the deletion of your group or its icon by the platform admin, and a ban of your account or its lifting | Performance of a contract: the Terms of Use (V) |
+| Send service emails about the join requests to your groups, the decision on your own requests, the meetings of your groups, the deletion of your group or its icon by the platform admin, and a ban of your account or its lifting | Performance of a contract: the Terms of Use (V) |
 | Security, rate limiting, abuse prevention, moderation, bans and the audit log | Legitimate interest (IX) |
 | Defending rights in legal, administrative or arbitration proceedings | Regular exercise of rights (VI) |
 
 Consent is not the main legal basis. We record your acceptance of the Terms and this policy as evidence.
 
-**Service emails:** we send only emails about your use of the program, never marketing: to a group owner, at most one email per group every 6 hours saying how many join requests are waiting (without the requesters' names or messages); to a requester, whether the request was approved or not; and to an owner, when the platform admin deletes the group or removes its icon, with the reason. They are on by default. If your account is banned, you get one email saying so, with the reason and how to contest it, and when the ban is lifted, one short email saying your account was restored. Both are sent even if you turned service emails off, because a banned account can't sign in to see anything in the app. You can turn them off at any time on the account page or with the one-click unsubscribe link in every email; you will still see everything in the app. After a request is not approved, you can ask to join the same group again after 7 days.
+**Service emails:** we send only emails about your use of the program, never marketing: to a group owner, at most one email per group every 6 hours saying how many join requests are waiting (without the requesters' names or messages); to a requester, whether the request was approved or not; to an owner, when the platform admin deletes the group or removes its icon, with the reason; and to the owner and members of a group, a reminder of each meeting the day before (24 hours before) and on the day (2 hours before), with the time and the meeting link, unless the owner turned reminders off for the group. They are on by default. If your account is banned, you get one email saying so, with the reason and how to contest it, and when the ban is lifted, one short email saying your account was restored. Both are sent even if you turned service emails off, because a banned account can't sign in to see anything in the app. You can turn them off at any time on the account page or with the one-click unsubscribe link in every email; you will still see everything in the app. After a request is not approved, you can ask to join the same group again after 7 days.
 
 **Legitimate interest balancing:** keeping the service safe for everyone requires limited, proportionate processing (rate limits, a moderation log with a short label and reason, and, for an account banned for breaking the content policy, a ban record that stops the same Google account or email from signing up again). This processing is expected by users, uses the minimum data, keeps no content body, and does not override your rights.
 

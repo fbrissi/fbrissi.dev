@@ -269,7 +269,7 @@ describe('group icon removal and cleanup', () => {
     expect(bucket.objects.size).toBe(0);
 
     const owner = await signIn(h, { email: 'second@example.test', name: 'Second' });
-    const { group } = await expectJson(await call('POST', '/groups', owner, { name: 'Second Group', summary: 'Weekly English practice about other topics.', rules: [], meetingDay: 'Mon', meetingStart: '19:00', meetingEnd: '20:00', timezone: 'UTC', meetingUrl: null, moderationMode: 'free', listed: true, acceptContentPolicy: true }), 201);
+    const { group } = await expectJson(await call('POST', '/groups', owner, { name: 'Second Group', summary: 'Weekly English practice about other topics.', rules: [], meetingDay: 'Monday', meetingStart: '19:00', meetingEnd: '20:00', timezone: 'UTC', meetingUrl: null, moderationMode: 'free', listed: true, acceptContentPolicy: true }), 201);
     await expectJson(await upload(owner, png(8, 8), 'image/png', group.id), 200);
     expect((await call('DELETE', '/me', owner, { confirm: true })).status).toBe(204);
     expect(bucket.objects.size).toBe(0);

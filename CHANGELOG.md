@@ -3,6 +3,18 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.4.3
+
+### Added
+
+- Email meeting reminders to each study group's owner and members (E5): one the day before (24 hours before the meeting) and one on the day (2 hours before), in the group's time zone, with the meeting time, the meeting link and the group board. An hourly Cron Trigger (`7 * * * *`) reads the groups 50 at a time in id order (keyset paging) and writes one outbox row per recipient with a dedupe key, so overlapping runs send nothing twice. Users who turned service emails off or unsubscribed, and banned users, get none; the mailer checks again at send time and drops a reminder whose group turned reminders off, whose recipient left, whose schedule changed or whose meeting already started.
+- Let group owners turn meeting reminders off for the whole group in the group form (on by default, migration `0006`).
+
+### Changed
+
+- Choose the meeting day and the time zone from lists instead of typing them: the API accepts only a weekday and an IANA time zone, stored under its canonical name. Migration `0006` normalizes free-text days that name one weekday ("monday", "Mondays"); other saved values stay as they are, get no reminders, and ask the owner to pick a day and zone on the next save.
+- Mention meeting reminders in the Privacy Policy, the Terms (`2026-11-25`, a minor edit with no re-acceptance) and the account page.
+
 ## v0.4.2
 
 ### Added

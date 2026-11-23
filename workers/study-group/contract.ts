@@ -6,7 +6,7 @@ z.config({ jitless: true });
 export const STUDY_GROUP_API_PREFIX = '/api/study-group';
 
 /** Current versions (dates) of the program documents, shown on the pages and recorded when a user accepts them. */
-export const POLICY_VERSIONS = { terms: '2026-11-24', privacy: '2026-11-24' } as const;
+export const POLICY_VERSIONS = { terms: '2026-11-25', privacy: '2026-11-25' } as const;
 export type PolicyDocument = keyof typeof POLICY_VERSIONS;
 
 /**
@@ -14,7 +14,8 @@ export type PolicyDocument = keyof typeof POLICY_VERSIONS;
  * user obligations). Users must have accepted this version or a later one; a minor edit only moves POLICY_VERSIONS and
  * takes effect on publication without asking anyone again (Q18). The 2026-11-22 versions are material: they add
  * Amazon SES and Cloudflare R2, service emails, icons, bans and the transfer grounds. The 2026-11-23 versions only add
- * the groups@fbrissi.dev channel, and the 2026-11-24 versions show listed groups' icons on the public page (both minor).
+ * the groups@fbrissi.dev channel, the 2026-11-24 versions show listed groups' icons on the public page, and the 2026-11-25
+ * versions add meeting reminders to the service emails (all minor).
  */
 export const MATERIAL_POLICY_VERSIONS: Record<PolicyDocument, string> = { terms: '2026-11-22', privacy: '2026-11-22' };
 
@@ -56,6 +57,23 @@ export const NOTIFICATION_LIMITS = {
   claimTimeoutMinutes: 10,
 } as const;
 
+/** Days a group can meet on; the reminders find the next meeting from the day, start time and time zone. */
+export const meetingWeekdays = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+export type MeetingWeekday = (typeof meetingWeekdays)[number];
+
+/** Meeting reminders, in hours before the meeting starts: one the day before and one on the day. */
+export const MEETING_REMINDER_LEADS = { day_before: 24, same_day: 2 } as const;
+export type MeetingReminderLead = keyof typeof MEETING_REMINDER_LEADS;
+
+/** The canonical IANA name of a time zone, or null when the runtime doesn't know it. */
+export function canonicalTimeZone(value: string): string | null {
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone: value }).resolvedOptions().timeZone;
+  } catch {
+    return null;
+  }
+}
+
 /** Group icons (app pages only): stored privately in R2 and served through short-lived signed URLs. */
 export const ICON_LIMITS = {
   maxBytes: 256 * 1024,
@@ -66,7 +84,7 @@ export const ICON_LIMITS = {
 } as const;
 export type IconContentType = (typeof ICON_LIMITS.contentTypes)[number];
 
-export const notificationKinds = ['join_request', 'join_approved', 'join_rejected', 'group_deleted', 'icon_removed', 'account_banned', 'account_restored'] as const;
+export const notificationKinds = ['join_request', 'join_approved', 'join_rejected', 'group_deleted', 'icon_removed', 'account_banned', 'account_restored', 'meeting_reminder'] as const;
 export type NotificationKind = (typeof notificationKinds)[number];
 /** Notices about the account itself (ban and restore): sent even to users who turned service emails off. */
 export const accountNoticeKinds: readonly NotificationKind[] = ['account_banned', 'account_restored'];
@@ -159,13 +177,20 @@ export const groupProfileSchema = z.object({
   name: visibleText(LIMITS.groupName.min, LIMITS.groupName.max).refine((value) => !looksLikeLink(value), groupNameUrlMessage),
   summary: visibleText(LIMITS.groupSummary.min, LIMITS.groupSummary.max),
   rules: z.array(trimmed(1, 300)).max(30),
-  meetingDay: trimmed(1, 20),
+  meetingDay: z.enum(meetingWeekdays),
   meetingStart: time,
   meetingEnd: time,
-  timezone: trimmed(1, 64),
+  timezone: trimmed(1, 64).transform((value, context) => {
+    const zone = canonicalTimeZone(value);
+    if (zone) return zone;
+    context.addIssue({ code: 'custom', message: 'Unknown time zone' });
+    return z.NEVER;
+  }),
   meetingUrl: httpUrl.nullable(),
   moderationMode: z.enum(moderationModes),
   listed: z.boolean(),
+  /** Reminder emails to the members before each meeting. Optional so a page loaded before this field existed keeps the setting. */
+  meetingReminders: z.boolean().optional(),
 });
 
 export const createGroupSchema = groupProfileSchema.extend({
@@ -289,6 +314,7 @@ export interface GroupInfo extends GroupCard {
   meetingUrl: string | null;
   moderationMode: ModerationMode;
   listed: boolean;
+  meetingReminders: boolean;
 }
 
 export interface GroupSettings extends GroupInfo {

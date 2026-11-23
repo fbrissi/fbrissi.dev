@@ -56,7 +56,8 @@ export const group: GroupInfo = {
   timezone: 'America/Sao_Paulo',
   meetingUrl: 'https://meet.example.com/abc',
   moderationMode: 'free',
-  listed: true
+  listed: true,
+  meetingReminders: true
 };
 
 export function material(id: number, overrides: Partial<Material> = {}): Material {

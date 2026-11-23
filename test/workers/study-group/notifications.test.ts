@@ -116,7 +116,7 @@ describe('service email triggers', () => {
     const deleted = (await rows()).find((row) => row.kind === 'group_deleted')!;
     expect(deleted).toMatchObject({ user_id: ownerId, group_id: w.groupId, dedupe_key: `group_deleted:${w.groupId}`, payload: JSON.stringify({ groupName: 'Go Talk', reason }) });
 
-    const { group } = await expectJson(await call('POST', '/groups', w.owner, { name: 'Own Group', summary: 'Weekly English practice about our own topics.', rules: [], meetingDay: 'Mon', meetingStart: '19:00', meetingEnd: '20:00', timezone: 'UTC', meetingUrl: null, moderationMode: 'free', listed: true, acceptContentPolicy: true }), 201);
+    const { group } = await expectJson(await call('POST', '/groups', w.owner, { name: 'Own Group', summary: 'Weekly English practice about our own topics.', rules: [], meetingDay: 'Monday', meetingStart: '19:00', meetingEnd: '20:00', timezone: 'UTC', meetingUrl: null, moderationMode: 'free', listed: true, acceptContentPolicy: true }), 201);
     const before = (await rows()).length;
     expect((await call('DELETE', `/groups/${group.id}`, w.owner, { confirmName: 'Own Group' })).status).toBe(204);
     expect(await rows()).toHaveLength(before);

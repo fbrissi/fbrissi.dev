@@ -42,9 +42,9 @@ describe('api client', () => {
     await Promise.all([
       api.getMe(), api.updateMe({ displayName: 'A' }), api.deleteMe(), api.acceptPolicies({ acceptTerms: true, acceptPrivacy: true }), api.myGroups(), api.logout(),
       api.getSignup(), api.completeSignup({ acceptTerms: true, acceptPrivacy: true, confirmAge: true }), api.cancelSignup(),
-      api.listGroups(), api.listGroups('cur'), api.createGroup({ ...group, acceptContentPolicy: true }), api.previewGroup(id), api.joinGroup(id, { code: 'c' }),
+      api.listGroups(), api.listGroups('cur'), api.createGroup({ ...group, meetingDay: 'Monday', acceptContentPolicy: true }), api.previewGroup(id), api.joinGroup(id, { code: 'c' }),
       api.getGroup(id), api.deleteGroup(id, { confirmName: 'x' }), api.listMembers(id), api.removeMember(id, 'u 1'), api.leaveGroup(id), api.getSettings(id),
-      api.updateSettings(id, group), api.rotateAccessCode(id), api.listRequests(id), api.approveRequest(id, 1), api.rejectRequest(id, 1), api.deleteRequestMessage(id, 1, 'reason text'),
+      api.updateSettings(id, { ...group, meetingDay: 'Monday' }), api.rotateAccessCode(id), api.listRequests(id), api.approveRequest(id, 1), api.rejectRequest(id, 1), api.deleteRequestMessage(id, 1, 'reason text'),
       api.listMaterials(id), api.createMaterial(id, { type: 'video', title: 't' }), api.updateMaterial(id, 2, { status: 'open' }), api.approveMaterial(id, 2),
       api.deleteMaterial(id, 2), api.deleteMaterial(id, 2, 'because reasons'), api.deleteIcon(id), api.deleteIcon(id, 'off-topic image'), api.getCurrentRound(id),
       api.createRound(id, { mode: 'vote' }), api.castVote(id, 3, { materialId: 2 }), api.closeRound(id, 3), api.cancelRound(id, 3), api.adminGroups(), api.adminGroups('c'), api.moderationLog(), api.moderationLog('9'),

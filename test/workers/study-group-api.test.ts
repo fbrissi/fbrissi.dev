@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import studyGroupApi, { delaySeconds, environmentOrigins, type Env } from '@/workers/study-group-api';
+import studyGroupApi, { DAILY_CRON, delaySeconds, environmentOrigins, type Env } from '@/workers/study-group-api';
 import { openD1Sqlite } from '@/workers/local/d1-sqlite';
 import type { D1Like } from '@/workers/study-group/repository';
 import { createUnsubscribeToken } from '@/workers/study-group/unsubscribe';
@@ -158,7 +158,7 @@ describe('production study group Worker', () => {
 
   it('purges expired data in its database on the daily cron (Q6)', async () => {
     await production.prepare("INSERT INTO moderation_actions (action, target_type, target_id, label, reason, created_at) VALUES ('delete_group', 'group', 'g', 'G', 'Reason text here', '2020-01-01T00:00:00.000Z')").run();
-    await studyGroupApi.scheduled({}, env);
+    await studyGroupApi.scheduled({ cron: DAILY_CRON }, env);
     expect(await production.prepare('SELECT COUNT(*) AS count FROM moderation_actions').first()).toEqual({ count: 0 });
   });
 
@@ -177,15 +177,40 @@ describe('production study group Worker', () => {
       insert('exhausted', 'pending', ago(120), 6, ago(60)),
       insert('done', 'sent', ago(120), 1, ago(119)),
     ]);
-    await studyGroupApi.scheduled({}, env);
+    await studyGroupApi.scheduled({ cron: DAILY_CRON }, env);
     expect(env.STUDY_GROUP_NOTIFY_QUEUE.sendBatch).toHaveBeenCalledWith([{ body: { id: 1 }, delaySeconds: 0 }, { body: { id: 3 }, delaySeconds: 0 }]);
     expect(await production.prepare("SELECT dedupe_key AS key FROM notifications WHERE status = 'failed'").first()).toEqual({ key: 'exhausted' });
     expect(warn).toHaveBeenCalledWith('Study group notifications needing attention:', { requeued: 2, failedLastDay: 1 });
 
     const empty = createEnv(openD1Sqlite(':memory:', migrationsDir), 'production');
-    await studyGroupApi.scheduled({}, empty);
+    await studyGroupApi.scheduled({ cron: DAILY_CRON }, empty);
     expect(empty.STUDY_GROUP_NOTIFY_QUEUE.sendBatch).not.toHaveBeenCalled();
     expect(warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('queues meeting reminders on the hourly cron, at most 100 messages per batch, and nothing else', async () => {
+    vi.useFakeTimers({ now: new Date('2026-11-29T20:07:00.000Z'), toFake: ['Date'] });
+    const log = vi.spyOn(console, 'log').mockImplementation(() => undefined);
+    const members = Array.from({ length: 120 }, (_, index) => `member${String(index).padStart(3, '0')}`);
+    await production.batch([
+      ...['owner001', ...members].map((id) => production.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES (?, ?, ?, 'U', 'x', 'x')").bind(id, id, `${id}@example.test`)),
+      production.prepare("INSERT INTO groups (id, owner_id, name, summary, meeting_day, meeting_start, meeting_end, timezone, access_code, created_at, updated_at) VALUES ('gotalk', 'owner001', 'Go Talk', 'A summary text', 'Monday', '20:00', '21:00', 'UTC', 'c', 'x', 'x')"),
+      ...members.map((id) => production.prepare("INSERT INTO group_members (group_id, user_id, joined_at) VALUES ('gotalk', ?, 'x')").bind(id)),
+      production.prepare("INSERT INTO moderation_actions (action, target_type, target_id, label, reason, created_at) VALUES ('delete_group', 'group', 'g', 'G', 'Reason text here', '2020-01-01T00:00:00.000Z')"),
+    ]);
+    await studyGroupApi.scheduled({ cron: '7 * * * *' }, env);
+    const batches = vi.mocked(env.STUDY_GROUP_NOTIFY_QUEUE.sendBatch).mock.calls.map(([messages]) => messages);
+    expect(batches.map((messages) => messages.length)).toEqual([100, 21]);
+    expect(batches[0][0].delaySeconds).toBe(0);
+    expect(log).toHaveBeenCalledWith('Queued study group meeting reminders:', 121);
+    // The hourly run doesn't purge; the daily one does.
+    expect(await production.prepare('SELECT COUNT(*) AS count FROM moderation_actions').first()).toEqual({ count: 1 });
+
+    log.mockClear();
+    vi.setSystemTime(new Date('2026-12-02T12:07:00.000Z'));
+    await studyGroupApi.scheduled({ cron: '7 * * * *' }, env);
+    expect(log).not.toHaveBeenCalled();
+    vi.useRealTimers();
   });
 
   it('deletes orphaned icon objects on the daily cron', async () => {
@@ -195,7 +220,7 @@ describe('production study group Worker', () => {
     bucket.objects.set('groups/devtalk/abcdefghjkmnpqrs.png', { data: new Uint8Array(1), uploaded: old });
     bucket.objects.set('groups/devtalk/orphanorphan0001.png', { data: new Uint8Array(1), uploaded: old });
     await production.prepare("UPDATE groups SET icon_key = 'groups/devtalk/abcdefghjkmnpqrs.png', icon_content_type = 'image/png', icon_updated_at = 'x' WHERE id = 'devtalk'").run();
-    await studyGroupApi.scheduled({}, { ...env, STUDY_GROUP_ICONS: bucket });
+    await studyGroupApi.scheduled({ cron: DAILY_CRON }, { ...env, STUDY_GROUP_ICONS: bucket });
     expect([...bucket.objects.keys()]).toEqual(['groups/devtalk/abcdefghjkmnpqrs.png']);
     expect(warn).toHaveBeenCalledWith('Deleted orphaned study group icons:', 1);
   });
@@ -234,5 +259,10 @@ describe('production study group Worker', () => {
     expect(config).not.toMatch(/STUDY_GROUP_SES_/);
     const files = [...importGraph(path.join(workersDir, 'study-group-api.ts'))].map((file) => path.relative(workersDir, file));
     expect(files).not.toContain('study-group/ses.ts');
+  });
+
+  it('runs the daily cron it dispatches on, and an hourly one, in both environments', () => {
+    const config = readFileSync(path.join(workersDir, 'study-group-api/wrangler.toml'), 'utf8');
+    expect(config.match(/^crons = .*$/gm)).toEqual([`crons = ["${DAILY_CRON}", "7 * * * *"]`, `crons = ["${DAILY_CRON}", "7 * * * *"]`]);
   });
 });

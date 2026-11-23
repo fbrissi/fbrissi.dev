@@ -1,7 +1,7 @@
 ---
 title: Política de Privacidade
 description: Como o fbrissi.dev, o formulário de contato e o programa de grupos de estudo de inglês coletam, usam e protegem dados pessoais conforme a Lei Geral de Proteção de Dados (LGPD).
-version: '2026-11-24'
+version: '2026-11-25'
 ---
 
 Esta política explica como o `fbrissi.dev` trata dados pessoais conforme a Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018, "LGPD"): o formulário de contato (seção 2) e o programa de grupos de estudo de inglês em `fbrissi.dev/study-groups` (seções 3 a 5, 7 e 11); a seção 6 vale para os dois. Navegar pelo restante do site não exige nenhum dado pessoal. Para usuários no Brasil, esta versão em português prevalece sobre a [versão em inglês](/privacy).
@@ -35,13 +35,13 @@ O controlador é **Filipe Bojikian Rissi**, pessoa física residente no Brasil. 
 | Finalidade | Base legal (LGPD art. 7º) |
 |---|---|
 | Criar e manter a sua conta, grupos (inclusive os ícones), participações, sugestões e votos | Execução de contrato: os Termos de Uso (V) |
-| Enviar e-mails de serviço sobre os pedidos de entrada nos seus grupos, a decisão sobre os seus próprios pedidos, a exclusão do seu grupo ou do ícone dele pelo administrador da plataforma e o banimento da sua conta ou o fim dele | Execução de contrato: os Termos de Uso (V) |
+| Enviar e-mails de serviço sobre os pedidos de entrada nos seus grupos, a decisão sobre os seus próprios pedidos, os encontros dos seus grupos, a exclusão do seu grupo ou do ícone dele pelo administrador da plataforma e o banimento da sua conta ou o fim dele | Execução de contrato: os Termos de Uso (V) |
 | Segurança, limites de requisições, prevenção de abusos, moderação, banimentos e log de auditoria | Legítimo interesse (IX) |
 | Defesa de direitos em processos judiciais, administrativos ou arbitrais | Exercício regular de direitos (VI) |
 
 O consentimento não é a base legal principal. Registramos o seu aceite dos Termos e desta política como evidência.
 
-**E-mails de serviço:** enviamos apenas e-mails sobre o seu uso do programa, nunca marketing: para o dono de um grupo, no máximo um e-mail por grupo a cada 6 horas dizendo quantos pedidos de entrada estão aguardando (sem o nome nem a mensagem de quem pediu); para quem pediu, se o pedido foi aprovado ou não; e para o dono, quando o administrador da plataforma exclui o grupo ou remove o ícone dele, com o motivo. Eles vêm ligados por padrão. Se a sua conta for banida, você recebe um e-mail avisando, com o motivo e como contestar, e, quando o banimento for desfeito, um e-mail curto avisando que a sua conta foi restaurada. Os dois são enviados mesmo que você tenha desligado os e-mails de serviço, porque uma conta banida não pode entrar para ver nada no aplicativo. Você pode desligá-los a qualquer momento na página da conta ou pelo link de cancelamento com um clique presente em todo e-mail; você continua vendo tudo no aplicativo. Depois que um pedido não é aprovado, você pode pedir para entrar no mesmo grupo de novo após 7 dias.
+**E-mails de serviço:** enviamos apenas e-mails sobre o seu uso do programa, nunca marketing: para o dono de um grupo, no máximo um e-mail por grupo a cada 6 horas dizendo quantos pedidos de entrada estão aguardando (sem o nome nem a mensagem de quem pediu); para quem pediu, se o pedido foi aprovado ou não; para o dono, quando o administrador da plataforma exclui o grupo ou remove o ícone dele, com o motivo; e para o dono e os membros de um grupo, um lembrete de cada encontro na véspera (24 horas antes) e no dia (2 horas antes), com o horário e o link do encontro, a menos que o dono tenha desligado os lembretes do grupo. Eles vêm ligados por padrão. Se a sua conta for banida, você recebe um e-mail avisando, com o motivo e como contestar, e, quando o banimento for desfeito, um e-mail curto avisando que a sua conta foi restaurada. Os dois são enviados mesmo que você tenha desligado os e-mails de serviço, porque uma conta banida não pode entrar para ver nada no aplicativo. Você pode desligá-los a qualquer momento na página da conta ou pelo link de cancelamento com um clique presente em todo e-mail; você continua vendo tudo no aplicativo. Depois que um pedido não é aprovado, você pode pedir para entrar no mesmo grupo de novo após 7 dias.
 
 **Ponderação do legítimo interesse:** manter o serviço seguro para todos exige um tratamento limitado e proporcional (limites de requisições, um log de moderação com rótulo curto e motivo e, para uma conta banida por violar a política de conteúdo, um registro de banimento que impede a mesma conta Google ou o mesmo e-mail de se cadastrar de novo). Esse tratamento é esperado pelos usuários, usa o mínimo de dados, não guarda o conteúdo e não se sobrepõe aos seus direitos.
 

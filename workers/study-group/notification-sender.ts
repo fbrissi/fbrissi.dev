@@ -1,6 +1,7 @@
 import { studyGroupEmailHtml, studyGroupEmailSubject, studyGroupEmailText, type StudyGroupEmailInput } from '../templates/study-group-email';
-import { accountNoticeKinds, NOTIFICATION_LIMITS, type NotificationKind } from './contract';
+import { accountNoticeKinds, MEETING_REMINDER_LEADS, NOTIFICATION_LIMITS, type MeetingReminderLead, type NotificationKind } from './contract';
 import type { StudyGroupEnvironment } from './environment';
+import { isMeetingAt } from './meeting-schedule';
 import { BAN_IN_FORCE, type D1Like } from './repository';
 import { PermanentEmailError, type SendEmail } from './ses';
 import { createUnsubscribeToken, unsubscribeUrls } from './unsubscribe';
@@ -36,7 +37,24 @@ interface NotificationRow {
   email_enabled: number | null;
 }
 
-function parsePayload(value: string): { groupName?: string; reason?: string } {
+interface Payload {
+  groupName?: string;
+  reason?: string;
+  /** Meeting reminders: which reminder, and when the meeting starts. */
+  lead?: MeetingReminderLead;
+  meetingAt?: string;
+}
+
+interface ReminderGroupRow {
+  name: string;
+  meeting_day: string;
+  meeting_start: string;
+  meeting_end: string;
+  timezone: string;
+  meeting_url: string | null;
+}
+
+function parsePayload(value: string): Payload {
   try {
     const payload: unknown = JSON.parse(value);
     return payload && typeof payload === 'object' ? payload : {};
@@ -115,6 +133,23 @@ export function createNotificationSender(deps: NotificationSenderDeps) {
       if (!group || group.fresh === 0) return skip();
       input.groupName = group.name;
       input.pendingCount = group.pending;
+    }
+
+    // A meeting reminder (E5) reads the group now: it is dropped when the owner turned reminders off, the recipient left
+    // the group or was banned, the schedule changed, or the meeting already started.
+    if (row.kind === 'meeting_reminder') {
+      const { lead, meetingAt } = payload;
+      const group = await db.prepare(
+        `SELECT g.name, g.meeting_day, g.meeting_start, g.meeting_end, g.timezone, g.meeting_url FROM groups g
+         WHERE g.id = ? AND g.meeting_reminders = 1
+           AND (g.owner_id = ? OR EXISTS (SELECT 1 FROM group_members gm WHERE gm.group_id = g.id AND gm.user_id = ?))
+           AND NOT EXISTS (SELECT 1 FROM bans b WHERE b.user_id = ? AND ${BAN_IN_FORCE})`
+      ).bind(row.group_id, row.user_id, row.user_id, row.user_id).first<ReminderGroupRow>();
+      if (!group || !lead || !(lead in MEETING_REMINDER_LEADS) || !meetingAt || Date.parse(meetingAt) <= now.getTime()) return skip();
+      const schedule = { meetingDay: group.meeting_day, meetingStart: group.meeting_start, timezone: group.timezone };
+      if (!isMeetingAt(schedule, new Date(meetingAt))) return skip();
+      input.groupName = group.name;
+      input.meeting = { lead, startsAt: meetingAt, start: group.meeting_start, end: group.meeting_end, timezone: group.timezone, url: group.meeting_url || null };
     }
 
     const urls = unsubscribeUrls(deps.appOrigin, await createUnsubscribeToken(row.user_id, deps.environment, deps.unsubscribeSecret, now));

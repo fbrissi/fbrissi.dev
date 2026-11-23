@@ -50,7 +50,7 @@ describe('materials', () => {
   });
 
   it('keeps members’ suggestions pending in review mode; the owner’s skip review (4.2, Q15)', async () => {
-    await call('PUT', '/settings', w.owner, { name: 'Go Talk', summary: 'Weekly English practice about Go and cloud tools.', rules: [], meetingDay: 'Mon', meetingStart: '20:00', meetingEnd: '21:00', timezone: 'UTC', meetingUrl: null, moderationMode: 'review', listed: true });
+    await call('PUT', '/settings', w.owner, { name: 'Go Talk', summary: 'Weekly English practice about Go and cloud tools.', rules: [], meetingDay: 'Monday', meetingStart: '20:00', meetingEnd: '21:00', timezone: 'UTC', meetingUrl: null, moderationMode: 'review', listed: true });
     const pending = await suggest(w.member, 'Pending talk', { url: 'https://example.com/p' });
     expect(pending.status).toBe('pending');
     expect((await suggest(w.owner, 'Owner talk')).status).toBe('open');

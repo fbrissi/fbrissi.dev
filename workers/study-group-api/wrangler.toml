@@ -10,9 +10,10 @@ routes = [
   { pattern = "www.fbrissi.dev/api/study-group/*", zone_name = "fbrissi.dev" }
 ]
 
-# Daily retention purge (deleted groups and content after 30 days, audit log after 12 months, expired sessions).
+# Daily retention purge (deleted groups and content after 30 days, audit log after 12 months, expired sessions), and
+# the hourly meeting reminder scan. The daily expression must match DAILY_CRON in workers/study-group-api.ts.
 [triggers]
-crons = ["17 3 * * *"]
+crons = ["17 3 * * *", "7 * * * *"]
 
 [vars]
 STUDY_GROUP_ENVIRONMENT = "production"
@@ -89,7 +90,7 @@ routes = [
 ]
 
 [env.sandbox.triggers]
-crons = ["17 3 * * *"]
+crons = ["17 3 * * *", "7 * * * *"]
 
 [env.sandbox.vars]
 STUDY_GROUP_ENVIRONMENT = "sandbox"
