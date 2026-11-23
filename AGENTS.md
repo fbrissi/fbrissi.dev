@@ -82,7 +82,7 @@ Supported locales are `en` and `pt-BR`.
 - `NEXT_PUBLIC_SITE_URL`: optional canonical site URL override
 - `STUDY_GROUP_API_PROXY_URL`: study group API that `next dev` proxies `/api/study-group/*` to
 - `STUDY_GROUP_SLUG`: build-time slug of the retired `/study-group/<slug>` board, turned into a 301 in the generated `public/_redirects`; never commit it
-- Worker secrets pushed by the deploy workflows: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `STUDY_GROUP_PLATFORM_ADMIN_EMAILS`, `STUDY_GROUP_SESSION_SECRET`, `STUDY_GROUP_UNSUBSCRIBE_SECRET`, and the Terraform-published `STUDY_GROUP_SES_ACCESS_KEY_ID` and `STUDY_GROUP_SES_SECRET_ACCESS_KEY` (mailer only); the sandbox, when enabled, also uses `STUDY_GROUP_EMAIL_ALLOWLIST` and its own `STUDY_GROUP_SANDBOX_SES_*` key. The Google OAuth client is created by hand (README, Study Groups)
+- Worker secrets pushed by the deploy workflows: `GOOGLE_OAUTH_CLIENT_ID`, `GOOGLE_OAUTH_CLIENT_SECRET`, `STUDY_GROUP_PLATFORM_ADMIN_EMAILS`, `STUDY_GROUP_SESSION_SECRET`, `STUDY_GROUP_UNSUBSCRIBE_SECRET`; Terraform publishes the Google, admin and unsubscribe ones (the first three from Terraform Cloud variables, the unsubscribe one from `random_password`), plus the Terraform-published `STUDY_GROUP_SES_ACCESS_KEY_ID` and `STUDY_GROUP_SES_SECRET_ACCESS_KEY` (mailer only); the sandbox, when enabled, also uses `STUDY_GROUP_EMAIL_ALLOWLIST` and its own `STUDY_GROUP_SANDBOX_SES_*` key. The Google OAuth client is created by hand (README, Study Groups)
 
 ## Releases
 

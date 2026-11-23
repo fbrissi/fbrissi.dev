@@ -50,3 +50,35 @@ resource "github_actions_secret" "study_group_sandbox_ses_secret_access_key" {
   secret_name = "STUDY_GROUP_SANDBOX_SES_SECRET_ACCESS_KEY"
   value       = aws_iam_access_key.study_group_mailer_sandbox[0].secret
 }
+
+# Study group API Worker secrets, pushed to it by the Deploy and Deploy Sandbox workflows.
+resource "github_actions_secret" "google_oauth_client_id" {
+  repository  = local.github_repository
+  secret_name = "GOOGLE_OAUTH_CLIENT_ID"
+  value       = var.GOOGLE_OAUTH_CLIENT_ID
+}
+
+resource "github_actions_secret" "google_oauth_client_secret" {
+  repository  = local.github_repository
+  secret_name = "GOOGLE_OAUTH_CLIENT_SECRET"
+  value       = var.GOOGLE_OAUTH_CLIENT_SECRET
+}
+
+resource "github_actions_secret" "study_group_platform_admin_emails" {
+  repository  = local.github_repository
+  secret_name = "STUDY_GROUP_PLATFORM_ADMIN_EMAILS"
+  value       = var.STUDY_GROUP_PLATFORM_ADMIN_EMAILS
+}
+
+# Signs the one-click unsubscribe links in notification emails. Generated once and not rotated: the links in emails
+# already sent stay valid for a year, and a new value would break them.
+resource "random_password" "study_group_unsubscribe_secret" {
+  length  = 64
+  special = false
+}
+
+resource "github_actions_secret" "study_group_unsubscribe_secret" {
+  repository  = local.github_repository
+  secret_name = "STUDY_GROUP_UNSUBSCRIBE_SECRET"
+  value       = random_password.study_group_unsubscribe_secret.result
+}
