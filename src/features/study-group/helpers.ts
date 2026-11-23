@@ -1,9 +1,7 @@
 import type { GroupInfo, Material, MaterialType, Round, TallyEntry } from '@/workers/study-group/contract';
 
-const nameStorageKey = 'study-group:name';
-export const accessCodeStorageKey = 'study-group:code';
-export const adminTokenStorageKey = 'study-group:admin-token';
 const dateFormat = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric' });
+const yearDateFormat = new Intl.DateTimeFormat('en', { dateStyle: 'medium' });
 
 type StorageArea = 'localStorage' | 'sessionStorage';
 
@@ -25,27 +23,13 @@ export function writeStorage(area: StorageArea, key: string, value: string | nul
   }
 }
 
-export function readStoredName(): string {
-  return readStorage('localStorage', nameStorageKey);
-}
-
-export function storeName(name: string): void {
-  writeStorage('localStorage', nameStorageKey, name);
-}
-
-const accessCodeAlphabet = 'abcdefghjkmnpqrstuvwxyz23456789';
-
-export function generateAccessCode(length = 10): string {
-  const values = crypto.getRandomValues(new Uint32Array(length));
-  return Array.from(values, (value) => accessCodeAlphabet[value % accessCodeAlphabet.length]).join('');
-}
-
-export function normalizeName(name: string): string {
-  return name.trim().toLowerCase();
-}
-
 export function formatDate(iso: string | null): string {
   return iso ? dateFormat.format(new Date(iso)) : '';
+}
+
+/** A date with its year, for dates that can be years away (a ban's expiry). */
+export function formatYearDate(iso: string): string {
+  return yearDateFormat.format(new Date(iso));
 }
 
 export function linkDomain(url: string): string {
@@ -72,16 +56,12 @@ export function totalVotes(tally: TallyEntry[]): number {
   return tally.reduce((sum, entry) => sum + entry.votes, 0);
 }
 
-export function findVote(tally: TallyEntry[], voterName: string): number | undefined {
-  const key = normalizeName(voterName);
-  if (!key) return undefined;
-  return tally.find((entry) => entry.voters.some((voter) => normalizeName(voter) === key))?.materialId;
-}
-
-export function applyVote(tally: TallyEntry[], materialId: number, voterName: string): TallyEntry[] {
-  const key = normalizeName(voterName);
+/** Optimistically moves the caller's vote, shown under their display name. */
+export function applyVote(tally: TallyEntry[], previous: number | null, materialId: number, voterName: string): TallyEntry[] {
   const next = tally.map((entry) => {
-    const voters = entry.voters.filter((voter) => normalizeName(voter) !== key);
+    if (entry.materialId !== previous) return entry;
+    const index = entry.voters.indexOf(voterName);
+    const voters = index === -1 ? entry.voters : entry.voters.filter((_voter, position) => position !== index);
     return { ...entry, voters, votes: voters.length };
   });
   const target = next.find((entry) => entry.materialId === materialId);
@@ -91,6 +71,11 @@ export function applyVote(tally: TallyEntry[], materialId: number, voterName: st
   target.voters = [...target.voters, voterName];
   target.votes = target.voters.length;
   return next;
+}
+
+/** Group pages share one static shell at /study-groups/g/<id>; the ID is read from the URL on the client. */
+export function groupIdFromPath(pathname: string): string | null {
+  return /^\/study-groups\/g\/([a-z0-9]{3,32})(?:\/|$)/.exec(pathname)?.[1] ?? null;
 }
 
 export function winnerNote(round: Round, tally: TallyEntry[]): string {
@@ -117,4 +102,33 @@ export function formatTime(time: string): string {
 
 export function formatMeeting(group: GroupInfo): string {
   return `${group.meetingDay} ${formatTime(group.meetingStart)} - ${formatTime(group.meetingEnd)} (${timezoneLabels[group.timezone] ?? group.timezone})`;
+}
+
+/** Readable names of the moderation log actions; an unknown code is shown as is. */
+const moderationActionLabels: Record<string, string> = {
+  delete_group: 'Group deleted',
+  delete_material: 'Material deleted',
+  delete_join_message: 'Join request message deleted',
+  delete_icon: 'Group icon removed',
+  ban_user: 'Account banned',
+  renew_ban: 'Ban renewed',
+  unban_user: 'Ban lifted',
+};
+
+export function moderationActionLabel(action: string): string {
+  return moderationActionLabels[action] ?? action;
+}
+
+const flashKey = 'study-groups:flash';
+
+/** A one-time status message for the next page, after an action that navigates away (a group deletion). */
+export function setFlash(text: string): void {
+  writeStorage('sessionStorage', flashKey, text);
+}
+
+/** Reads and clears the one-time status message, or '' when there is none. */
+export function takeFlash(): string {
+  const text = readStorage('sessionStorage', flashKey);
+  writeStorage('sessionStorage', flashKey, null);
+  return text;
 }

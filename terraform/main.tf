@@ -5,6 +5,7 @@ resource "cloudflare_pages_project" "site" {
 }
 
 resource "cloudflare_pages_project" "sandbox" {
+  count             = local.sandbox_count
   account_id        = local.cloudflare_account_id
   name              = "${local.project_name}-sandbox"
   production_branch = local.sandbox_branch
@@ -32,17 +33,19 @@ resource "cloudflare_dns_record" "site" {
 }
 
 resource "cloudflare_pages_domain" "sandbox" {
+  count        = local.sandbox_count
   account_id   = local.cloudflare_account_id
-  project_name = cloudflare_pages_project.sandbox.name
+  project_name = cloudflare_pages_project.sandbox[0].name
   name         = local.sandbox_domain
 
   depends_on = [cloudflare_dns_record.sandbox]
 }
 
 resource "cloudflare_dns_record" "sandbox" {
+  count   = local.sandbox_count
   zone_id = local.cloudflare_zone_id
   name    = local.sandbox_domain
-  content = cloudflare_pages_project.sandbox.subdomain
+  content = cloudflare_pages_project.sandbox[0].subdomain
   type    = "CNAME"
   proxied = true
   ttl     = 1

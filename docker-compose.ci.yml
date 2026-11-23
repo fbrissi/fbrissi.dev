@@ -1,0 +1,22 @@
+# Overrides for the E2E job in .github/workflows/quality-checks.yml (no kool in CI):
+#   docker compose -f docker-compose.yml -f docker-compose.ci.yml up -d
+# Nothing is published on the host, so the stack also runs next to a local `kool start` (with its own project name),
+# and the external kool_global network is not needed. Playwright joins the app container's network (e2e/run.sh).
+services:
+  app:
+    ports: !reset []
+    networks: !override
+      - kool_local
+  contact-api:
+    ports: !reset []
+  study-group-api:
+    ports: !reset []
+  fake-idp:
+    ports: !reset []
+  localstack:
+    ports: !reset []
+  mailpit:
+    ports: !reset []
+
+networks:
+  kool_global: !reset {}

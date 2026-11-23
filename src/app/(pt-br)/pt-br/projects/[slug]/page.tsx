@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const project = getProject('pt-BR', slug);
   if (!project) return {};
   const messages = getMessages('pt-BR');
-  return createNextMetadata({ locale: 'pt-BR', pathname: `/projects/${slug}`, title: `${project.title} | ${messages.site.name}`, description: project.description, keywords: project.stack });
+  return createNextMetadata({ locale: 'pt-BR', pathname: `/projects/${slug}`, title: `${project.title} | ${messages.site.name}`, description: project.description });
 }
 
 export default async function Page({ params }: { params: Promise<{ slug: string }> }) {

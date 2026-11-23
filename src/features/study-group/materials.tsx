@@ -1,4 +1,4 @@
-import type { Material, MaterialStatus } from '@/workers/study-group/contract';
+import type { Material } from '@/workers/study-group/contract';
 
 import { formatDate, linkDomain, pluralize, typeLabel } from './helpers';
 import { buttonClass, cardClass, ExternalLink, hintClass, TypeBadge } from './ui';
@@ -7,43 +7,59 @@ export type VoteInfo = {
   eligible: boolean;
   voters: string[];
   mine: boolean;
-  onVote: () => void;
+  /** Absent when the viewer can't vote here (a platform admin outside the group). */
+  onVote?: () => void;
 };
 
 type MaterialCardProps = {
   material: Material;
   highlighted: boolean;
   busy: boolean;
+  /** Owner and platform admin actions; members never see them (D6). */
+  canModerate: boolean;
   vote?: VoteInfo;
-  onSetStatus: (material: Material, status: MaterialStatus) => void;
+  onSetStatus: (material: Material, status: 'open' | 'discussed') => void;
+  onApprove: (material: Material) => void;
   onDelete: (material: Material) => void;
 };
 
 const titleLinkClass = 'text-text transition-colors duration-250 hover:text-accent';
 
-export function MaterialCard({ material, highlighted, busy, vote, onSetStatus, onDelete }: MaterialCardProps) {
+export function MaterialCard({ material, highlighted, busy, canModerate, vote, onSetStatus, onApprove, onDelete }: MaterialCardProps) {
   const ringClass = highlighted ? 'border-green-500 animate-slideInFromTop motion-reduce:animate-none' : vote?.mine ? 'border-accent ring-1 ring-accent' : 'hover:border-line-bright';
+  const pending = material.status === 'pending';
 
   return (
-    <article className={`${cardClass} flex min-w-0 flex-col gap-3 p-5 transition-all duration-250 sm:p-6 ${ringClass}`}>
+    <article className={`${cardClass} flex min-w-0 flex-col gap-3 p-5 transition-all duration-250 sm:p-6 ${ringClass} ${pending ? 'border-dashed' : ''}`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <TypeBadge type={material.type} />
-        <div className="flex items-center gap-1">
-          <button type="button" className={buttonClass.ghost} disabled={busy} onClick={() => onSetStatus(material, 'discussed')}>
-            Mark discussed
-          </button>
-          <button
-            type="button"
-            className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-text-muted transition-colors duration-250 hover:bg-red-500/10 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-            aria-label={`Delete “${material.title}”`}
-            disabled={busy}
-            onClick={() => onDelete(material)}
-          >
-            <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-              <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
-            </svg>
-          </button>
-        </div>
+        <span className="flex flex-wrap items-center gap-2">
+          <TypeBadge type={material.type} />
+          {pending ? <span className="rounded-md border border-line px-2.5 py-1 text-xs text-text-muted">Pending review</span> : null}
+        </span>
+        {canModerate ? (
+          <div className="flex items-center gap-1">
+            {pending ? (
+              <button type="button" className={buttonClass.ghost} disabled={busy} onClick={() => onApprove(material)}>
+                Approve
+              </button>
+            ) : (
+              <button type="button" className={buttonClass.ghost} disabled={busy} onClick={() => onSetStatus(material, 'discussed')}>
+                Mark discussed
+              </button>
+            )}
+            <button
+              type="button"
+              className="inline-flex min-h-10 min-w-10 items-center justify-center rounded-md text-text-muted transition-colors duration-250 hover:bg-red-500/10 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
+              aria-label={`Delete “${material.title}”`}
+              disabled={busy}
+              onClick={() => onDelete(material)}
+            >
+              <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+                <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v6M14 11v6" />
+              </svg>
+            </button>
+          </div>
+        ) : null}
       </div>
       <h3 className="text-[19px] font-normal leading-snug tracking-tight wrap-anywhere">
         {material.url ? <ExternalLink href={material.url} className={titleLinkClass}>{material.title}</ExternalLink> : material.title}
@@ -68,7 +84,7 @@ function VoteFooter({ title, vote }: { title: string; vote: VoteInfo }) {
       <span className="min-w-0 text-[13px] text-text-muted">
         {count ? <>Voted: <b className="font-normal text-text-secondary">{vote.voters.join(', ')}</b></> : 'No votes yet'}
       </span>
-      {vote.eligible ? (
+      {!vote.onVote ? null : vote.eligible ? (
         <button
           type="button"
           aria-pressed={vote.mine}
@@ -106,7 +122,7 @@ export function MaterialListSkeleton() {
   );
 }
 
-export function DiscussedList({ materials, busy, onSetStatus }: { materials: Material[]; busy: boolean; onSetStatus: (material: Material, status: MaterialStatus) => void }) {
+export function DiscussedList({ materials, busy, canModerate, onSetStatus }: { materials: Material[]; busy: boolean; canModerate: boolean; onSetStatus: (material: Material, status: 'open' | 'discussed') => void }) {
   return (
     <section className="mb-12" aria-label="Already discussed">
       <details className={`${cardClass} group`}>
@@ -121,11 +137,13 @@ export function DiscussedList({ materials, busy, onSetStatus }: { materials: Mat
                 {material.url ? <ExternalLink href={material.url} className="hover:text-accent">{material.title}</ExternalLink> : material.title}
               </span>
               <span className="col-start-1 text-xs text-text-muted">{typeLabel(material.type)} · by {material.suggestedBy} · discussed {formatDate(material.discussedAt)}</span>
-              <span className="col-start-2 row-span-2 row-start-1">
-                <button type="button" className={buttonClass.ghost} disabled={busy} aria-label={`Revert “${material.title}” to open`} onClick={() => onSetStatus(material, 'open')}>
-                  Revert
-                </button>
-              </span>
+              {canModerate ? (
+                <span className="col-start-2 row-span-2 row-start-1">
+                  <button type="button" className={buttonClass.ghost} disabled={busy} aria-label={`Revert “${material.title}” to open`} onClick={() => onSetStatus(material, 'open')}>
+                    Revert
+                  </button>
+                </span>
+              ) : null}
             </li>
           ))}
         </ul>

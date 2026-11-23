@@ -14,8 +14,8 @@ describe('site data', () => {
     expect(getProfile('en')).toBe(profiles.en);
     expect(getProfile('pt-BR')).toBe(profiles['pt-BR']);
     expect(getProfile('en')).toMatchObject({
-      headline: 'Staff Software Engineer • Distributed Systems • Cloud Architecture • AWS • Kubernetes • Microservices',
-      summary: expect.stringContaining('15+ years'),
+      headline: 'Backend & Cloud Engineer',
+      summary: expect.stringContaining('since 2009'),
       about: expect.stringContaining('## Cloud-native engineering')
     });
     expect(getProfile('pt-BR').about).toContain('## Engenharia cloud-native');

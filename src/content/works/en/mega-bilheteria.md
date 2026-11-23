@@ -1,5 +1,5 @@
 ---
-company: "MEGA BILHETERIA"
+company: "Mega Bilheteria"
 title: "Software Engineering Specialist"
 dateRange: "Sep 2019 - Present"
 summary: "Modernizing a legacy ticketing platform through an incremental cloud-native migration using Kubernetes, AWS, Go, and automated testing."

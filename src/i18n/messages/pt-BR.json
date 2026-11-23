@@ -1,22 +1,27 @@
 {
   "site": {
     "name": "Filipe Bojikian Rissi",
-    "description": "Portfólio bilíngue moderno para um staff software engineer focado em backend, arquitetura em cloud e experiências web simples e prontas para produção.",
-    "tagline": "Staff Software Engineer construindo sistemas práticos, fáceis de operar e evoluir."
+    "jobTitle": "Engenheiro Backend e Cloud",
+    "description": "Portfólio, experiência e textos de Filipe Bojikian Rissi, engenheiro backend e cloud no Brasil."
   },
   "nav": {
     "primary": "Navegação principal",
     "home": "Início",
-    "aboutMe": "Sobre mim",
+    "aboutMe": "Sobre",
+    "works": "Experiência",
     "projects": "Projetos",
-    "openSource": "Open Source",
-    "works": "Trabalhos",
+    "englishGroups": "Grupos de inglês",
     "articles": "Artigos",
     "contact": "Contato",
-    "resume": "Currículo"
+    "resume": "Currículo",
+    "menu": "Menu",
+    "closeMenu": "Fechar menu",
+    "skipToContent": "Pular para o conteúdo"
   },
   "footer": {
-    "copy": "Construído com Vite, React, TypeScript, Cloudflare Pages, Terraform, GitHub Actions e Kool.dev."
+    "copy": "Construído com Next.js, React, TypeScript, Tailwind CSS, Cloudflare Pages, Terraform e GitHub Actions.",
+    "links": "Links do site",
+    "privacy": "Política de Privacidade"
   },
   "labels": {
     "featuredProjects": "Projetos em destaque",
@@ -26,7 +31,7 @@
     "articlesPreview": "Últimos Artigos",
     "latestPosts": "Artigos recentes",
     "publishedOn": "Publicado em",
-    "readTime": "de leitura",
+    "readTime": "min de leitura",
     "contact": "Contato",
     "experience": "Experiência",
     "languages": "Idiomas",
@@ -34,26 +39,54 @@
     "openProject": "Abrir projeto",
     "readProject": "Ler projeto",
     "backToProjects": "Voltar aos projetos",
-    "readWork": "Ler trabalho",
-    "backToWorks": "Voltar aos trabalhos",
+    "readWork": "Ver detalhes",
+    "backToWorks": "Voltar para experiência",
     "readArticle": "Ler artigo",
     "viewProfile": "Ver perfil",
-    "copyNote": "O conteúdo editável vive em arquivos JSON e Markdown, não em componentes React.",
     "backToArticles": "Voltar aos artigos",
     "readContribution": "Ver contribuição",
     "backToContributions": "Voltar para open source",
     "openRepository": "Abrir repositório",
     "viewAllProjects": "Ver todos os projetos",
-    "viewAllWorks": "Ver todos os trabalhos",
+    "viewAllWorks": "Ver experiência completa",
     "viewAllArticles": "Ver todos os artigos",
     "viewAllContributions": "Ver todas as contribuições",
-    "downloadResume": "Baixar currículo"
+    "downloadResume": "Baixar currículo",
+    "roles": "Cargos",
+    "credentials": "Certificações e palestras"
   },
   "home": {
-    "eyebrow": "Portfólio público",
-    "intro": "Um portfólio bilíngue enxuto com artigos e deploy estático para Cloudflare Pages.",
-    "ctaPrimary": "Ver projetos",
-    "ctaSecondary": "Entrar em contato",
+    "title": "Construo e opero sistemas backend na AWS e no Kubernetes.",
+    "description": "Engenheiro backend e cloud desde 2009: Java, Kotlin, Go, AWS e Kubernetes. Autenticação de Open Finance no PagBank; contribuidor do Keycloak.",
+    "subhead": "Filipe Bojikian Rissi. Java, Kotlin, Go e PHP desde 2009, de ERPs e integrações de NF-e à autenticação de Open Finance no PagBank. Moro em Bauru (SP, UTC-3).",
+    "ctaPrimary": "Ver minha experiência",
+    "ctaSecondary": "Fale comigo",
+    "ctaResume": "Baixar currículo (PDF)",
+    "aboutLink": "Mais sobre mim",
+    "proofTitle": "Trabalhos em destaque",
+    "proofPoints": [
+      {
+        "text": "Autenticação de Open Finance no PagBank e um pipeline de entrega compartilhado por mais de 20 equipes.",
+        "path": "/works/pagbank"
+      },
+      {
+        "text": "Contribuidor do Keycloak: chaves de criptografia RSA importadas para RSA1_5, RSA-OAEP e RSA-OAEP-256 (PR #8553).",
+        "path": "/open-source/keycloak"
+      },
+      {
+        "text": "Contribuidor do Kool Dev: presets de Java e Spring Boot com ações de automação via API no CLI do Kool (PR #542).",
+        "path": "/open-source/kool-dev"
+      },
+      {
+        "text": "Tech lead de microsserviços Java que processavam milhões de mensagens de automação jurídica na Finch.",
+        "path": "/works/finch"
+      }
+    ],
+    "studyGroups": {
+      "title": "Grupos de estudo de inglês para desenvolvedores",
+      "text": "Um programa gratuito que mantenho neste site: crie um grupo pequeno, sugira materiais, escolha o tema da semana e pratique a conversação em inglês.",
+      "cta": "Entre em um grupo de estudo de inglês grátis"
+    },
     "aboutTitle": "Sobre",
     "aboutDescription": "Foco em backend, arquitetura de cloud e entrega pragmática de produto.",
     "skillsTitle": "Competências",
@@ -61,22 +94,27 @@
     "highlightsTitle": "Destaques de carreira",
     "articlesTitle": "Últimos textos",
     "contactTitle": "Contato",
-    "contactDescription": "Links públicos e um e-mail editável como placeholder para contato direto.",
     "aboutCta": "Saiba mais",
     "findMeOn": "Encontre-me no",
-    "linkConjunction": "e no"
+    "linkConjunction": "e no",
+    "featuredProduct": {
+      "eyebrow": "Produto que lancei",
+      "title": "Nota Profile",
+      "pitch": "Emita NFS-e Nacional a partir de modelos salvos: configure cada empresa uma vez e emita todo mês, nota a nota ou em lote. Feito para escritórios de contabilidade, MEI e prestadores de serviço, e gratuito durante o beta.",
+      "cta": "Crie sua conta grátis",
+      "details": "Saiba mais sobre o projeto"
+    }
   },
   "pages": {
     "about": {
       "title": "Sobre",
-      "description": "Histórico, foco, experiência e estilo de trabalho."
+      "description": "Como trabalho e o que construí desde 2009, com as tecnologias por trás: Java, Kotlin, Go, PHP, AWS, Kubernetes e Terraform."
     },
     "projects": {
       "title": "Projetos",
-      "description": "Trabalhos públicos selecionados e repositórios representativos."
+      "description": "Projetos que desenhei e mantenho de ponta a ponta, com as decisões de arquitetura, infraestrutura e entrega por trás de cada um."
     },
     "openSource": {
-      "eyebrow": "Trabalho no upstream",
       "title": "Contribuições Open Source",
       "description": "Correções e funcionalidades que contribuí para projetos open source consolidados, com links para os pull requests e commits no upstream."
     },
@@ -86,17 +124,104 @@
     },
     "articles": {
       "title": "Artigos",
-      "description": "Notas curtas e fáceis de manter em Markdown."
+      "description": "Textos sobre engenharia backend, segurança e infraestrutura, começando pelo meu TCC de 2010 sobre certificação digital."
     },
     "contact": {
       "title": "Contato",
-      "description": "Links públicos e formas de falar comigo.",
+      "description": "Fale comigo sobre uma vaga, um projeto ou uma palestra. O formulário, o e-mail e o WhatsApp chegam direto a mim.",
       "formTitle": "Envie uma mensagem",
-      "alternativeTitle": "Outras formas de falar comigo"
+      "alternativeTitle": "Outras formas de falar comigo",
+      "privacyNotice": "Uso seu nome e e-mail só para responder a esta mensagem. Eles são tratados pelos fornecedores listados na",
+      "privacyLink": "Política de Privacidade",
+      "emailTransferNotice": "Os e-mails para este endereço são tratados pelos fornecedores listados na",
+      "transferNoticeEnd": ", alguns deles fora do Brasil."
     }
   },
   "articles": {
     "title": "Artigos",
-    "description": "Textos curtos em Markdown, fáceis de manter."
+    "description": "Textos sobre engenharia backend, segurança e infraestrutura, começando pelo meu TCC de 2010 sobre certificação digital."
+  },
+  "studyGroups": {
+    "title": "Grupos de estudo de inglês para desenvolvedores",
+    "seoTitle": "Grupos de Estudo de Inglês para Devs",
+    "seoDescription": "Pratique inglês com outros desenvolvedores em grupos pequenos e gratuitos. Entre ou crie um grupo, escolha o tema técnico da semana e converse em inglês.",
+    "intro": "A maior parte da documentação, das discussões de open source, das palestras e das vagas remotas em software acontece em inglês. Ler já é um começo; falar com confiança exige prática. Este programa gratuito ajuda desenvolvedores a praticar juntos, em grupos de conversação pequenos e acolhedores.",
+    "appLanguageNote": "Esta página está em inglês de propósito. O objetivo do programa é incentivar você a praticar inglês, e a prática começa pela leitura: o cadastro, os quadros dos grupos e os encontros também são todos em inglês.",
+    "signIn": "Entrar com o Google",
+    "createGroup": "Criar um grupo",
+    "myGroups": "Meus grupos",
+    "joinCta": "Entre em um grupo de estudo de inglês grátis",
+    "signInNote": "Você entra com a sua conta Google",
+    "whyTitle": "Por que praticar inglês em grupo",
+    "whyIntro": "Ler documentação em inglês é uma habilidade. Explicar um trade-off em voz alta num code review ou numa entrevista é outra, e ela só melhora quando você fala. Estudar sozinho com um aplicativo raramente leva até lá. Um grupo pequeno, que se encontra toda semana para conversar sobre um tema técnico que todos prepararam, e onde dá para errar na frente de colegas, leva.",
+    "why": [
+      "Documentação, notas de versão, RFCs e a maioria das respostas para problemas difíceis são escritas primeiro em inglês.",
+      "Projetos open source, issues e code reviews acontecem em inglês, então você consegue contribuir e ser entendido.",
+      "Times internacionais e remotos contratam quem sabe explicar trade-offs, fazer perguntas e conduzir reuniões em inglês.",
+      "Conversar toda semana sobre temas técnicos reais aumenta o vocabulário e a confiança mais rápido do que estudar sozinho."
+    ],
+    "howTitle": "Como funciona",
+    "how": [
+      "Entre com o Google e aceite os Termos de Uso e a Política de Privacidade.",
+      "Crie um grupo com nome, um resumo público curto, regras e horário dos encontros, ou peça para entrar em um grupo existente com o código de acesso dele.",
+      "O dono do grupo aprova cada pedido, então só membros aprovados abrem o quadro.",
+      "Os membros sugerem vídeos, artigos, livros ou podcasts; o dono escolhe o tema da semana por sorteio ou votação.",
+      "Encontrem-se na chamada de vocês e conversem sobre o tema em inglês. Errar faz parte da prática."
+    ],
+    "startTitle": "Monte o seu grupo",
+    "startText": "Você não precisa ser professor para montar um grupo. Precisa de alguns colegas, um horário fixo e um tema. Crie o grupo aqui, escreva um resumo público curto e as regras, e compartilhe o código de acesso com quem você quer convidar: seu time, sua turma da faculdade ou uma comunidade de que você já participa. Durante a semana os membros sugerem vídeos, artigos ou palestras, e o quadro escolhe o próximo tema por sorteio ou votação. Os encontros acontecem na ferramenta de chamada que vocês já usam.",
+    "groupsTitle": "Grupos abertos para participar",
+    "groupsIntro": "Cada cartão mostra o nome e o resumo escritos por quem criou o grupo. Peça o código de acesso ao grupo antes de solicitar a entrada, ou monte o seu se nenhum combinar com o seu horário.",
+    "groupsNoScript": "Ative o JavaScript para ver os grupos abertos.",
+    "groupsEmpty": "Ainda não há grupos listados. Seja o primeiro a criar um.",
+    "groupsError": "Não foi possível carregar os grupos. Tente novamente mais tarde.",
+    "loading": "Carregando grupos…",
+    "loadMore": "Carregar mais grupos",
+    "openGroup": "Abrir grupo",
+    "signInToJoin": "Entre para participar",
+    "signInFailed": "Não foi possível entrar. Tente novamente.",
+    "signInBanned": "Esta conta Google está banida dos grupos de estudo por violar a política de conteúdo. Se você acha que é um engano, escreva para groups@fbrissi.dev.",
+    "faqTitle": "Perguntas frequentes",
+    "faq": [
+      {
+        "q": "É gratuito mesmo?",
+        "a": "Sim. Filipe Bojikian Rissi mantém o programa no próprio site e não cobra nada para criar ou entrar em um grupo."
+      },
+      {
+        "q": "Que nível de inglês eu preciso ter?",
+        "a": "O suficiente para acompanhar um vídeo ou artigo técnico curto. Cada grupo define o nível e as regras no resumo, então leia antes de pedir para entrar."
+      },
+      {
+        "q": "Os grupos têm professor ou nativo?",
+        "a": "Normalmente não. São desenvolvedores praticando entre si. A ideia é falar com frequência, com colegas, sobre assuntos que você já domina."
+      },
+      {
+        "q": "Onde e quando os grupos se encontram?",
+        "a": "Na chamada do próprio grupo (Google Meet, Zoom, Discord ou parecido), no horário que o dono definir. O horário faz parte das regras de cada grupo."
+      },
+      {
+        "q": "Posso criar um grupo fechado para o meu time ou comunidade?",
+        "a": "Pode. Só quem tem o código de acesso consegue pedir para entrar, e o dono aprova cada pedido."
+      },
+      {
+        "q": "Por que o aplicativo dos grupos é em inglês?",
+        "a": "Porque a prática é em inglês. Esta página, os Termos de Uso e a Política de Privacidade também estão em português."
+      },
+      {
+        "q": "Quais dados são guardados?",
+        "a": "Do Google, o identificador da sua conta, o seu e-mail, se ele é verificado e o seu nome; nunca a sua foto de perfil. Depois, o que você adiciona: o seu nome de exibição, os grupos que você cria e os ícones deles (guardados de forma privada, sem metadados de foto, e mostrados apenas aos membros), os seus pedidos de entrada, participações, sugestões e votos, e o seu aceite dos Termos e da Política de Privacidade. Excluir é definitivo e imediato. Para manter você conectado, guardamos apenas um hash do token da sua sessão, e quando o administrador da plataforma exclui algo ou bane uma conta, um log de moderação guarda um rótulo curto, o motivo e a data, nunca o conteúdo completo; um banimento também guarda o ID Google e o e-mail da conta enquanto durar. O seu e-mail é usado apenas para enviar e-mails de serviço sobre os seus grupos e pedidos (nunca marketing, e você pode desligá-los), enviados pelo Amazon SES, com um registro de cada e-mail guardado por 30 dias. O seu e-mail nunca é mostrado a outros membros nem aos donos dos grupos. A Política de Privacidade explica por quanto tempo cada dado é guardado e como baixar os seus dados ou excluir a sua conta. Dúvidas sobre o programa, denúncias de abuso e solicitações de dados vão para groups@fbrissi.dev."
+      }
+    ],
+    "policiesTitle": "Regras e privacidade",
+    "policiesText": "O programa é gratuito e mantido por Filipe Bojikian Rissi. Leia as regras antes de criar ou entrar em um grupo.",
+    "terms": "Termos de Uso",
+    "contentPolicy": "Política de conteúdo",
+    "privacy": "Política de Privacidade",
+    "contact": "Denunciar abuso ou fazer uma solicitação de dados: groups@fbrissi.dev",
+    "policyVersion": "Versão",
+    "backToProgram": "Voltar aos grupos de estudo",
+    "cookieNotice": "Usamos apenas cookies e armazenamento local estritamente necessários: a sessão de login, uma verificação temporária durante o login e suas preferências de idioma e de aviso. Sem analytics nem anúncios.",
+    "cookieNoticeLink": "Saiba mais na Política de Privacidade",
+    "cookieNoticeDismiss": "OK"
   }
 }

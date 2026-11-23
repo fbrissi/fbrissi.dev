@@ -8,7 +8,7 @@ import {
 
 describe('markdown collections', () => {
   it('loads known collection slugs through Vite', () => {
-    expect(getMarkdownCollectionSlugs('projects', 'en')).toEqual(['fbrissi-dev']);
+    expect(getMarkdownCollectionSlugs('projects', 'en')).toEqual(['ai-skills', 'english-study-groups', 'fbrissi-dev', 'github-actions', 'notaprofile']);
     expect(getMarkdownCollectionSlugs('contributions', 'en')).toEqual([
       'apache-commons-net',
       'infinispan',

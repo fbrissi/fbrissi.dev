@@ -1,22 +1,27 @@
 {
   "site": {
     "name": "Filipe Bojikian Rissi",
-    "description": "Modern bilingual portfolio for a staff software engineer focused on backend systems, cloud architecture, and simple production-ready web experiences.",
-    "tagline": "Staff Software Engineer building practical systems that are easy to operate and evolve."
+    "jobTitle": "Backend & Cloud Engineer",
+    "description": "Portfolio, experience and writing of Filipe Bojikian Rissi, a backend and cloud engineer based in Brazil."
   },
   "nav": {
     "primary": "Primary navigation",
     "home": "Home",
-    "aboutMe": "About me",
+    "aboutMe": "About",
+    "works": "Experience",
     "projects": "Projects",
-    "openSource": "Open Source",
-    "works": "Works",
+    "englishGroups": "English groups",
     "articles": "Articles",
     "contact": "Contact",
-    "resume": "Resume"
+    "resume": "Resume",
+    "menu": "Menu",
+    "closeMenu": "Close menu",
+    "skipToContent": "Skip to content"
   },
   "footer": {
-    "copy": "Built with Vite, React, TypeScript, Cloudflare Pages, Terraform, GitHub Actions, and Kool.dev."
+    "copy": "Built with Next.js, React, TypeScript, Tailwind CSS, Cloudflare Pages, Terraform and GitHub Actions.",
+    "links": "Site links",
+    "privacy": "Privacy Policy"
   },
   "labels": {
     "featuredProjects": "Featured Projects",
@@ -26,7 +31,7 @@
     "articlesPreview": "Latest Articles",
     "latestPosts": "Latest articles",
     "publishedOn": "Published on",
-    "readTime": "read",
+    "readTime": "min read",
     "contact": "Contact",
     "experience": "Experience",
     "languages": "Languages",
@@ -34,26 +39,54 @@
     "openProject": "Open project",
     "readProject": "Read project",
     "backToProjects": "Back to projects",
-    "readWork": "Read work",
-    "backToWorks": "Back to works",
+    "readWork": "View role",
+    "backToWorks": "Back to experience",
     "readArticle": "Read article",
     "viewProfile": "View profile",
-    "copyNote": "Editable content lives in JSON and Markdown files, not in React components.",
     "backToArticles": "Back to articles",
     "readContribution": "Read contribution",
     "backToContributions": "Back to open source",
     "openRepository": "Open repository",
     "viewAllProjects": "View all projects",
-    "viewAllWorks": "View all works",
+    "viewAllWorks": "See full experience",
     "viewAllArticles": "View all articles",
     "viewAllContributions": "View all contributions",
-    "downloadResume": "Download resume"
+    "downloadResume": "Download resume",
+    "roles": "Roles",
+    "credentials": "Credentials"
   },
   "home": {
-    "eyebrow": "Public portfolio",
-    "intro": "A clean, bilingual portfolio with articles and a static Cloudflare Pages deployment path.",
-    "ctaPrimary": "View projects",
+    "title": "I build and run backend systems on AWS and Kubernetes.",
+    "description": "Backend and cloud engineer since 2009: Java, Kotlin, Go, AWS and Kubernetes. Built Open Finance auth at PagBank; Keycloak contributor.",
+    "subhead": "Filipe Bojikian Rissi. Java, Kotlin, Go and PHP since 2009, from ERP and NF-e integrations to Open Finance authentication at PagBank. Based in Bauru, Brazil (UTC-3).",
+    "ctaPrimary": "See my experience",
     "ctaSecondary": "Contact me",
+    "ctaResume": "Download resume (PDF)",
+    "aboutLink": "Read more about me",
+    "proofTitle": "Selected work",
+    "proofPoints": [
+      {
+        "text": "Open Finance authentication at PagBank, and a shared delivery pipeline used by more than 20 teams.",
+        "path": "/works/pagbank"
+      },
+      {
+        "text": "Keycloak contributor: imported RSA encryption keys for RSA1_5, RSA-OAEP and RSA-OAEP-256 (PR #8553).",
+        "path": "/open-source/keycloak"
+      },
+      {
+        "text": "Kool Dev contributor: added Java and Spring Boot presets with API-driven automation actions to the Kool CLI (PR #542).",
+        "path": "/open-source/kool-dev"
+      },
+      {
+        "text": "Tech lead of Java microservices that processed millions of legal-automation messages at Finch.",
+        "path": "/works/finch"
+      }
+    ],
+    "studyGroups": {
+      "title": "English study groups for developers",
+      "text": "A free program I run on this site: create a small group, suggest material, pick a weekly topic and practice speaking English together.",
+      "cta": "Join a free English study group"
+    },
     "aboutTitle": "About",
     "aboutDescription": "Focused on backend systems, cloud architecture, and pragmatic product delivery.",
     "skillsTitle": "Skills",
@@ -61,22 +94,27 @@
     "highlightsTitle": "Career highlights",
     "articlesTitle": "Latest writing",
     "contactTitle": "Contact",
-    "contactDescription": "Public links and an editable email placeholder for direct contact.",
     "aboutCta": "Learn more",
     "findMeOn": "Find me on",
-    "linkConjunction": "and"
+    "linkConjunction": "and",
+    "featuredProduct": {
+      "eyebrow": "Product I launched",
+      "title": "Nota Profile",
+      "pitch": "Issue Brazilian service invoices (NFS-e Nacional) from saved templates: set up each company once, then issue every month, one invoice at a time or in batches. Built for accounting firms, MEIs and service providers, and free during the beta.",
+      "cta": "Create your free account",
+      "details": "Read about the project"
+    }
   },
   "pages": {
     "about": {
       "title": "About",
-      "description": "Background, focus areas, experience, and working style."
+      "description": "How I work and what I've built since 2009, with the stack behind it: Java, Kotlin, Go, PHP, AWS, Kubernetes and Terraform."
     },
     "projects": {
       "title": "Projects",
-      "description": "Selected public works and representative repositories."
+      "description": "Projects I designed and run end to end, with the architecture, infrastructure and delivery decisions behind each one."
     },
     "openSource": {
-      "eyebrow": "Upstream work",
       "title": "Open Source Contributions",
       "description": "Selected fixes and features contributed to established open-source projects, with links to the upstream pull requests and commits."
     },
@@ -86,17 +124,104 @@
     },
     "articles": {
       "title": "Articles",
-      "description": "Notes on software engineering, content, and deployment."
+      "description": "Long-form writing on backend engineering, security and infrastructure, starting with my 2010 thesis on digital certificates."
     },
     "contact": {
       "title": "Contact",
-      "description": "Public links and ways to get in touch.",
+      "description": "Write to me about a role, a project or a talk. The form, email and WhatsApp all reach me directly.",
       "formTitle": "Send me a message",
-      "alternativeTitle": "Other ways to reach me"
+      "alternativeTitle": "Other ways to reach me",
+      "privacyNotice": "I use your name and email only to reply to this message. They are processed by the providers listed in the",
+      "privacyLink": "Privacy Policy",
+      "emailTransferNotice": "Emails to this address are processed by the providers listed in the",
+      "transferNoticeEnd": ", some of them outside Brazil."
     }
   },
   "articles": {
     "title": "Articles",
-    "description": "Short, maintainable posts in Markdown."
+    "description": "Long-form writing on backend engineering, security and infrastructure, starting with my 2010 thesis on digital certificates."
+  },
+  "studyGroups": {
+    "title": "Free English study groups for developers",
+    "seoTitle": "Free English Study Groups for Devs",
+    "seoDescription": "Practice English with other developers in small, free study groups. Join or start a group, pick a weekly tech topic and talk it through together.",
+    "intro": "Most documentation, open-source discussion, conference talks and remote jobs in software happen in English. Reading it is a start; speaking it with confidence takes practice. This program helps developers practice together in small, friendly study groups.",
+    "appLanguageNote": "",
+    "signIn": "Sign in with Google",
+    "createGroup": "Create a group",
+    "myGroups": "My groups",
+    "joinCta": "Join a free English study group",
+    "signInNote": "You'll sign in with Google",
+    "whyTitle": "Why developers practice English in groups",
+    "whyIntro": "Reading docs in English is one skill. Explaining a trade-off out loud in a code review or an interview is another, and it only improves when you speak. Studying alone with an app rarely gets you there. A small group that meets every week, talks about a technical topic everyone prepared, and lets each person make mistakes in front of friendly peers does.",
+    "why": [
+      "Docs, release notes, RFCs and most answers to hard problems are written in English first.",
+      "Open-source projects, issue trackers and code reviews happen in English, so you can contribute and be understood.",
+      "International and remote teams hire people who can explain trade-offs, ask questions and run meetings in English.",
+      "Talking about real technical topics every week builds vocabulary and confidence faster than studying alone."
+    ],
+    "howTitle": "How it works",
+    "how": [
+      "Sign in with Google and accept the Terms of Use and the Privacy Policy.",
+      "Create a group with a name, a short public summary, rules and a meeting schedule, or ask to join an existing one with its access code.",
+      "The group owner approves each request, so only approved members open the board.",
+      "Members suggest videos, articles, books or podcasts; the owner picks the weekly topic by a random draw or a vote.",
+      "Meet on your own call and talk about it in English. Mistakes are part of the practice."
+    ],
+    "startTitle": "Start your own group",
+    "startText": "You don't need to be a teacher to start a group. You need a few colleagues, a fixed time and a topic. Create the group here, write a short public summary and your rules, then share the access code with the people you want to invite: your team, your university class, or a community you already belong to. Members suggest videos, articles or talks during the week, and the board picks the next topic by a random draw or a vote. Meet on whatever call tool you already use.",
+    "groupsTitle": "Open groups you can join",
+    "groupsIntro": "Each card shows the group's name and the summary its creator wrote. Ask the group for its access code before you request to join, or start your own group if none fits your schedule.",
+    "groupsNoScript": "Turn on JavaScript to see the open groups.",
+    "groupsEmpty": "No groups are listed yet. Be the first to create one.",
+    "groupsError": "Couldn't load the groups. Please try again later.",
+    "loading": "Loading groups…",
+    "loadMore": "Load more groups",
+    "openGroup": "Open group",
+    "signInToJoin": "Sign in to join",
+    "signInFailed": "Sign-in didn't work. Please try again.",
+    "signInBanned": "This Google account is banned from the study groups for breaking the content policy. If you think this is a mistake, write to groups@fbrissi.dev.",
+    "faqTitle": "Frequently asked questions",
+    "faq": [
+      {
+        "q": "Is it really free?",
+        "a": "Yes. Filipe Bojikian Rissi runs the program on his own site and charges nothing to create or join a group."
+      },
+      {
+        "q": "What level of English do I need?",
+        "a": "Enough to follow a short technical video or article. Each group sets its own level and rules in its summary, so read it before you ask to join."
+      },
+      {
+        "q": "Do groups have a teacher or a native speaker?",
+        "a": "Usually not. Groups are developers practicing with each other. Speaking regularly with peers on topics you know is the point."
+      },
+      {
+        "q": "Where and when do groups meet?",
+        "a": "On the group's own call (Google Meet, Zoom, Discord or similar), at the time the owner sets. The schedule is part of each group's rules."
+      },
+      {
+        "q": "Can I create a private group for my team or community?",
+        "a": "Yes. Only people with the access code can ask to join, and the owner approves each request."
+      },
+      {
+        "q": "Why is the group app in English?",
+        "a": "Because the practice is in English. This page, the Terms of Use and the Privacy Policy are also available in Portuguese."
+      },
+      {
+        "q": "What data do you keep?",
+        "a": "From Google, your account identifier, your email address, whether it is verified and your name; never your profile picture. Then what you add: your display name, the groups you create and their icons (stored privately, without photo metadata, and shown only to members), your join requests, memberships, suggestions and votes, and your acceptance of the Terms and the Privacy Policy. Deleting is permanent and immediate. To keep you signed in we store only a hash of your session token, and when the platform admin deletes something or bans an account, a moderation log keeps a short label, the reason and the date, never the full content; a ban also keeps the account's Google ID and email while it lasts. Your email address is used only to send you service emails about your groups and requests (no marketing, and you can turn them off), sent through Amazon SES, with a record of each email kept for 30 days. Your email is never shown to other members or group owners. The Privacy Policy explains how long each item is kept and how to download your data or delete your account. Questions about the program, abuse reports and data requests go to groups@fbrissi.dev."
+      }
+    ],
+    "policiesTitle": "Rules and privacy",
+    "policiesText": "The program is free and run by Filipe Bojikian Rissi. Read the rules before you create or join a group.",
+    "terms": "Terms of Use",
+    "contentPolicy": "Content policy",
+    "privacy": "Privacy Policy",
+    "contact": "Report abuse or send a data request: groups@fbrissi.dev",
+    "policyVersion": "Version",
+    "backToProgram": "Back to study groups",
+    "cookieNotice": "We only use strictly necessary cookies and local storage: a sign-in session, a short-lived sign-in check and your language and notice preferences. No analytics or ads.",
+    "cookieNoticeLink": "Learn more in the Privacy Policy",
+    "cookieNoticeDismiss": "OK"
   }
 }

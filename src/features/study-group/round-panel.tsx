@@ -1,20 +1,19 @@
-import type { Material, MaterialStatus, Round, RoundMode, TallyEntry } from '@/workers/study-group/contract';
+import type { Material, Round, RoundMode, TallyEntry } from '@/workers/study-group/contract';
 
 import { formatDate, pluralize, totalVotes, winnerNote } from './helpers';
-import { buttonClass, cardClass, ExternalLink, eyebrowClass, hintClass, inputClass, TypeBadge } from './ui';
+import { buttonClass, cardClass, ExternalLink, eyebrowClass, hintClass, TypeBadge } from './ui';
 
 type RoundPanelProps = {
   round: Round | null;
   tally: TallyEntry[];
   materials: Material[];
-  name: string;
-  voterError: string;
   busy: boolean;
-  onNameChange: (name: string) => void;
+  /** Only the owner (or the platform admin) runs draws and votes (D6). */
+  canModerate: boolean;
   onStart: (mode: RoundMode) => void;
   onClose: () => void;
   onCancel: () => void;
-  onSetStatus: (material: Material, status: MaterialStatus) => void;
+  onSetStatus: (material: Material, status: 'open' | 'discussed') => void;
 };
 
 const controlsClass = 'mt-6 flex flex-wrap items-center gap-3 border-t border-dashed border-line-bright pt-5';
@@ -32,7 +31,8 @@ export function RoundPanel(props: RoundPanelProps) {
   );
 }
 
-function StartControls({ materials, busy, onStart }: Pick<RoundPanelProps, 'materials' | 'busy' | 'onStart'>) {
+function StartControls({ materials, busy, canModerate, onStart }: Pick<RoundPanelProps, 'materials' | 'busy' | 'canModerate' | 'onStart'>) {
+  if (!canModerate) return null;
   const openCount = materials.filter((material) => material.status === 'open').length;
   const hint = openCount === 0 ? 'Add a suggestion first: there are no open items to pick from.' : openCount === 1 ? '1 open item is eligible. A vote needs at least 2.' : `${openCount} open items are eligible.`;
 
@@ -55,13 +55,13 @@ function NoRound(props: RoundPanelProps) {
     <>
       <p className={eyebrowClass}><span className="mr-1.5 inline-block h-2 w-2 rounded-full bg-text-muted align-middle" aria-hidden="true" />No round in progress</p>
       <h2 id="round-title" className={titleClass}>This week&apos;s topic hasn&apos;t been picked yet</h2>
-      <p className={ledeClass}>Start a random draw or a vote when the group meets. Meanwhile, add your suggestions below.</p>
+      <p className={ledeClass}>The owner starts a random draw or a vote when the group meets. Meanwhile, add your suggestions below.</p>
       <StartControls {...props} />
     </>
   );
 }
 
-function VotingRound({ round, tally, materials, name, voterError, busy, onNameChange, onClose, onCancel }: RoundPanelProps & { round: Round }) {
+function VotingRound({ round, tally, materials, busy, canModerate, onClose, onCancel }: RoundPanelProps & { round: Round }) {
   const total = totalVotes(tally);
   const rows = tally
     .flatMap((entry) => {
@@ -80,26 +80,9 @@ function VotingRound({ round, tally, materials, name, voterError, busy, onNameCh
             Vote open · started {formatDate(round.createdAt)}
           </p>
           <h2 id="round-title" className={titleClass}>Vote for this week&apos;s topic</h2>
-          <p className={ledeClass}>Pick one item below. You can change your vote until the vote is closed. Votes and names are visible to everyone.</p>
+          <p className={ledeClass}>Pick one item below. You can change your vote until the vote is closed. Votes and names are visible to the group.</p>
         </div>
         <span className="whitespace-nowrap rounded-full border border-line px-3 py-1 text-xs text-text-muted">{pluralize(total, 'vote')} so far</span>
-      </div>
-
-      <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <label htmlFor="voter-name" className="text-sm text-text-secondary">Voting as</label>
-        <input
-          id="voter-name"
-          className={`${inputClass} max-w-[220px] flex-[1_1_160px]`}
-          value={name}
-          maxLength={60}
-          autoComplete="name"
-          placeholder="Your name"
-          aria-invalid={Boolean(voterError)}
-          aria-describedby={voterError ? 'voter-name-error' : 'voter-name-hint'}
-          onChange={(event) => onNameChange(event.target.value)}
-        />
-        <span id="voter-name-hint" className={hintClass}>Remembered on this device.</span>
-        {voterError ? <p id="voter-name-error" role="alert" className="w-full text-sm text-red-500">{voterError}</p> : null}
       </div>
 
       <div className="mt-5 grid gap-2.5" aria-label="Live results" role="group">
@@ -114,17 +97,19 @@ function VotingRound({ round, tally, materials, name, voterError, busy, onNameCh
         )) : <p className={hintClass}>No votes yet. Be the first!</p>}
       </div>
 
-      <div className={controlsClass}>
-        <button type="button" className={buttonClass.primarySmall} disabled={busy} onClick={onClose}>Close vote</button>
-        <button type="button" className={buttonClass.dangerGhost} disabled={busy} onClick={onCancel}>Cancel round</button>
-        <span className={hintClass}>Draw and Start vote are disabled while a vote is open. Ties are broken by draw.</span>
-      </div>
+      {canModerate ? (
+        <div className={controlsClass}>
+          <button type="button" className={buttonClass.primarySmall} disabled={busy} onClick={onClose}>Close vote</button>
+          <button type="button" className={buttonClass.dangerGhost} disabled={busy} onClick={onCancel}>Cancel round</button>
+          <span className={hintClass}>Draw and Start vote are disabled while a vote is open. Ties are broken by draw.</span>
+        </div>
+      ) : null}
     </>
   );
 }
 
 function ClosedRound(props: RoundPanelProps & { round: Round; winnerId: number }) {
-  const { round, winnerId, tally, materials, busy, onSetStatus } = props;
+  const { round, winnerId, tally, materials, busy, canModerate, onSetStatus } = props;
   const winner = materials.find((material) => material.id === winnerId);
   const voters = tally.find((entry) => entry.materialId === winnerId)?.voters ?? [];
 
@@ -146,19 +131,21 @@ function ClosedRound(props: RoundPanelProps & { round: Round; winnerId: number }
             {voters.length ? <span>Voted by {voters.join(', ')}</span> : null}
             {winner.status === 'discussed' ? <span className="text-green-500">Discussed {formatDate(winner.discussedAt)}</span> : null}
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            {winner.status === 'open' ? (
-              <>
-                <button type="button" className={buttonClass.secondarySmall} disabled={busy} onClick={() => onSetStatus(winner, 'discussed')}>Mark discussed</button>
-                <span className={hintClass}>Mark it once the group has talked about it.</span>
-              </>
-            ) : (
-              <>
-                <button type="button" className={buttonClass.secondarySmall} disabled={busy} onClick={() => onSetStatus(winner, 'open')}>Revert to open</button>
-                <span className={hintClass}>Use if the session was skipped. Then you can draw or vote again.</span>
-              </>
-            )}
-          </div>
+          {canModerate ? (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {winner.status === 'open' ? (
+                <>
+                  <button type="button" className={buttonClass.secondarySmall} disabled={busy} onClick={() => onSetStatus(winner, 'discussed')}>Mark discussed</button>
+                  <span className={hintClass}>Mark it once the group has talked about it.</span>
+                </>
+              ) : (
+                <>
+                  <button type="button" className={buttonClass.secondarySmall} disabled={busy} onClick={() => onSetStatus(winner, 'open')}>Revert to open</button>
+                  <span className={hintClass}>Use if the session was skipped. Then you can draw or vote again.</span>
+                </>
+              )}
+            </div>
+          ) : null}
         </div>
       ) : (
         <p className={`${ledeClass} mt-2`}>The picked item was deleted. Start a new round below.</p>

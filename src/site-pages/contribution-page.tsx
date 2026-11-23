@@ -1,10 +1,12 @@
 import Link from 'next/link';
 
 import { Markdown } from '@/components/content/markdown';
+import { StructuredData } from '@/components/content/structured-data';
 import { SiteShell } from '@/components/layout/site-shell';
 import { getContribution } from '@/lib/contributions';
 import { localizedPath, type Locale } from '@/lib/i18n';
 import { getMessages } from '@/lib/site';
+import { breadcrumbList } from '@/lib/structured-data';
 
 export function ContributionPage({ locale, slug }: { locale: Locale; slug: string }) {
   const messages = getMessages(locale);
@@ -12,9 +14,10 @@ export function ContributionPage({ locale, slug }: { locale: Locale; slug: strin
   if (!contribution) return null;
 
   return (
-    <SiteShell locale={locale} activePage="openSource" pathname={`/open-source/${slug}`}>
+    <SiteShell locale={locale} activePage="projects" pathname={`/open-source/${slug}`}>
+      <StructuredData data={breadcrumbList(locale, [{ name: messages.pages.projects.title, path: '/projects' }, { name: contribution.title, path: `/open-source/${slug}` }])} />
       <section className="mb-12 max-w-4xl">
-        <Link className="mb-6 inline-flex text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" href={localizedPath(locale, '/open-source')}>
+        <Link className="mb-6 inline-flex text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" href={`${localizedPath(locale, '/projects')}#open-source`}>
           {messages.labels.backToContributions}
         </Link>
         <p className="mb-4 font-mono text-xs text-accent">{contribution.repository} · {contribution.period}</p>

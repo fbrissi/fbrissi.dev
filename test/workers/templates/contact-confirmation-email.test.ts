@@ -27,7 +27,8 @@ describe('contact confirmation email templates', () => {
     expect(text).toContain('I received your message about "Question & <idea>"');
     expect(text).toContain('Best regards,');
     expect(text).toContain('Filipe Bojikian Rissi');
-    expect(text).toContain('Staff Software Engineer');
+    expect(text).toContain('Backend & Cloud Engineer');
+    expect(text).not.toContain('Staff');
     expect(text).toContain('contact@fbrissi.dev');
     expect(text).toContain('https://fbrissi.dev/');
     expect(text).toContain('no-reply@fbrissi.dev');
@@ -72,7 +73,8 @@ describe('contact confirmation email templates', () => {
     expect(html).toContain('Question &amp; &lt;idea&gt;');
     expect(html).toContain('src="https://fbrissi.dev/images/avatar.png"');
     expect(html).toContain('Filipe Bojikian Rissi');
-    expect(html).toContain('Staff Software Engineer');
+    expect(html).toContain('Backend &amp; Cloud Engineer');
+    expect(html).not.toContain('Staff');
     expect(html).toContain('valign="middle"');
     expect(html).toContain('href="mailto:contact@fbrissi.dev"');
     expect(html).toContain('href="https://fbrissi.dev/"');
