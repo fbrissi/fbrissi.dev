@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { AdminConsoleView } from '@/features/study-group/admin-console';
 import { createStudyGroupApi } from '@/features/study-group/api';
-import { GroupIcon, IconSettings } from '@/features/study-group/group-icon';
+import { GroupIcon, groupInitial, IconSettings } from '@/features/study-group/group-icon';
 import { ProgramActions } from '@/features/study-group/program-landing';
 import { SessionProvider } from '@/features/study-group/session';
 import type { AdminUser } from '@/workers/study-group/contract';
@@ -19,7 +19,7 @@ function renderIcons(routes: Routes, isOwner = true, initial: string | null = nu
   const fetchMock = stubApi(routes);
   const onChange = vi.fn();
   const api = createStudyGroupApi();
-  render(<IconSettings api={api} groupId="gotalk1234" iconUrl={initial} isOwner={isOwner} onChange={onChange} />);
+  render(<IconSettings api={api} groupId="gotalk1234" groupName="Go Talk" iconUrl={initial} isOwner={isOwner} onChange={onChange} />);
   return { fetchMock, onChange };
 }
 
@@ -37,20 +37,36 @@ afterEach(() => {
 });
 
 describe('group icon', () => {
-  it('renders nothing without a URL and a sized image with one', () => {
-    const { container, rerender } = render(<GroupIcon url={null} />);
-    expect(container).toBeEmptyDOMElement();
-    rerender(<GroupIcon url={iconUrl} size={40} className="x" />);
+  it('renders a sized, decorative image, or the first-letter placeholder at the same size without a URL', () => {
+    const { container, rerender } = render(<GroupIcon url={null} name="  go talk" size={40} />);
+    const placeholder = container.querySelector('[data-placeholder]')!;
+    expect(placeholder).toHaveTextContent('G');
+    expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+    expect(placeholder).toHaveStyle({ width: '40px', height: '40px' });
+    expect(placeholder.className).toContain('bg-accent');
+    expect(placeholder.className).toContain('rounded-lg');
+    expect(container.querySelector('img')).toBeNull();
+    rerender(<GroupIcon url={iconUrl} name="Go Talk" size={40} className="x" />);
     const image = container.querySelector('img')!;
     expect(image).toHaveAttribute('src', iconUrl);
     expect(image).toHaveAttribute('width', '40');
     expect(image).toHaveAttribute('alt', '');
+    expect(container.querySelector('[data-placeholder]')).toBeNull();
+  });
+
+  it('takes the first letter or digit of any script, else the first character', () => {
+    expect(groupInitial('.NET devs')).toBe('N');
+    expect(groupInitial('élan')).toBe('É');
+    expect(groupInitial('日本語')).toBe('日');
+    expect(groupInitial('3D club')).toBe('3');
+    expect(groupInitial('🚀🚀')).toBe('🚀');
+    expect(groupInitial('   ')).toBe('?');
   });
 
   it('uploads a checked file as the request body, with client-side type and size checks', async () => {
     const { fetchMock, onChange } = renderIcons({ 'PUT /groups/gotalk1234/icon': apiError(422, 'Use an image of at most 512 × 512 pixels.') });
     const section = screen.getByRole('region', { name: 'Group icon' });
-    expect(within(section).getByText('No icon yet.')).toBeInTheDocument();
+    expect(within(section).getByText('No icon yet. Members see the first letter of the group name instead.')).toBeInTheDocument();
     expect(within(section).getByText(/Offensive or political images are removed/)).toBeInTheDocument();
     const input = section.querySelector('input[type="file"]') as HTMLInputElement;
     expect(input).toHaveAttribute('accept', 'image/png,image/jpeg,image/webp');

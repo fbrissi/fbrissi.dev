@@ -88,7 +88,7 @@ function SettingsLoader({ api, groupId, isPlatformAdmin }: { api: StudyGroupApi;
       {isAdminActor ? <Banner tone="error" title="You are moderating this group as the platform admin. Deletions need a reason and are logged." /> : null}
       <Notices notices={ready.notices} />
       <ProfileForm api={api} settings={ready.settings} onSaved={(settings) => update({ settings })} />
-      <IconSettings api={api} groupId={groupId} iconUrl={ready.settings.iconUrl} isOwner={ready.role === 'owner'} onChange={(iconUrl) => update({ settings: { ...ready.settings, iconUrl } })} />
+      <IconSettings api={api} groupId={groupId} groupName={ready.settings.name} iconUrl={ready.settings.iconUrl} isOwner={ready.role === 'owner'} onChange={(iconUrl) => update({ settings: { ...ready.settings, iconUrl } })} />
       <AccessCode api={api} settings={ready.settings} onRotated={(settings) => update({ settings })} />
       <Requests api={api} groupId={groupId} requests={ready.requests} canDeleteMessages={isPlatformAdmin} onChange={(requests, members) => update(members ? { requests, members } : { requests })} />
       <Members api={api} groupId={groupId} members={ready.members} onRemoved={(userId) => update({ members: ready.members.filter((member) => member.userId !== userId) })} />

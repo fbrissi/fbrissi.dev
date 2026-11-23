@@ -49,7 +49,7 @@ function MyGroupsList() {
               <li key={group.id} className={`${cardClass} flex flex-col gap-2 p-5`}>
                 <span className={hintClass}>{group.role === 'owner' ? 'Owner' : 'Member'}</span>
                 <span className="flex items-center gap-3">
-                  <GroupIcon url={group.iconUrl} size={40} />
+                  <GroupIcon url={group.iconUrl} name={group.name} size={40} />
                   <a className="text-xl font-normal tracking-tight text-text hover:text-accent wrap-anywhere" href={groupPath(group.id)}>{group.name}</a>
                 </span>
                 <p className="text-sm text-text-secondary wrap-anywhere">{group.summary}</p>

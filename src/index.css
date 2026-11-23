@@ -83,6 +83,29 @@
   ::file-selector-button {
     border-color: var(--color-gray-200, currentcolor);
   }
+
+  /*
+    Tailwind CSS 4 resets buttons to the default cursor; everything clickable shows the pointer again (links already
+    do), and disabled controls show not-allowed. Labels count when they wrap a checkbox, radio or file input (every
+    such label in the app wraps its input).
+  */
+  button,
+  [role='button'],
+  summary,
+  label:has(input[type='checkbox'], input[type='radio'], input[type='file']),
+  input[type='checkbox'],
+  input[type='radio'],
+  input[type='file'],
+  input[type='submit'],
+  ::file-selector-button {
+    cursor: pointer;
+  }
+
+  :disabled,
+  [aria-disabled='true'],
+  label:has(input:disabled) {
+    cursor: not-allowed;
+  }
 }
 
 @utility site-header-shell {

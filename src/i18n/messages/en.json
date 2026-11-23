@@ -83,7 +83,7 @@
       }
     ],
     "studyGroups": {
-      "title": "English study groups for developers",
+      "title": "Free English study groups",
       "text": "A free program I run on this site: create a small group, suggest material, pick a weekly topic and practice speaking English together.",
       "cta": "Join a free English study group"
     },
@@ -142,23 +142,23 @@
     "description": "Long-form writing on backend engineering, security and infrastructure, starting with my 2010 thesis on digital certificates."
   },
   "studyGroups": {
-    "title": "Free English study groups for developers",
-    "seoTitle": "Free English Study Groups for Devs",
-    "seoDescription": "Practice English with other developers in small, free study groups. Join or start a group, pick a weekly tech topic and talk it through together.",
-    "intro": "Most documentation, open-source discussion, conference talks and remote jobs in software happen in English. Reading it is a start; speaking it with confidence takes practice. This program helps developers practice together in small, friendly study groups.",
+    "title": "Free English study groups",
+    "seoTitle": "Free English Study Groups Online",
+    "seoDescription": "Practice English online in a free study group. Join an English conversation group or start your own, pick a weekly topic and talk it through.",
+    "intro": "Reading English is a start. Speaking it with confidence takes practice, and practice is easier with a few people who show up every week. Here anyone can create or join a small, free study group, pick a topic together and talk it through in English. The program started among developers with DevTalk, and tech-focused groups are still welcome.",
     "appLanguageNote": "",
     "signIn": "Sign in with Google",
     "createGroup": "Create a group",
     "myGroups": "My groups",
     "joinCta": "Join a free English study group",
     "signInNote": "You'll sign in with Google",
-    "whyTitle": "Why developers practice English in groups",
-    "whyIntro": "Reading docs in English is one skill. Explaining a trade-off out loud in a code review or an interview is another, and it only improves when you speak. Studying alone with an app rarely gets you there. A small group that meets every week, talks about a technical topic everyone prepared, and lets each person make mistakes in front of friendly peers does.",
+    "whyTitle": "Why practice English in a group",
+    "whyIntro": "Reading and listening are one skill. Answering a question out loud is another, and it only improves when you speak. Studying alone with an app rarely gets you there. A small group that meets every week, talks about something everyone prepared, and lets each person make mistakes in front of friendly people does.",
     "why": [
-      "Docs, release notes, RFCs and most answers to hard problems are written in English first.",
-      "Open-source projects, issue trackers and code reviews happen in English, so you can contribute and be understood.",
-      "International and remote teams hire people who can explain trade-offs, ask questions and run meetings in English.",
-      "Talking about real technical topics every week builds vocabulary and confidence faster than studying alone."
+      "You speak every week with the same people, so you hear your own progress from one meeting to the next.",
+      "Everyone prepares the same video, article, book chapter or podcast, so the conversation has something to hold on to.",
+      "Mistakes are expected. Nobody grades you, and the next meeting is another try.",
+      "Each group picks its own topics: work, travel, books, tech or whatever its members care about."
     ],
     "howTitle": "How it works",
     "how": [
@@ -169,9 +169,9 @@
       "Meet on your own call and talk about it in English. Mistakes are part of the practice."
     ],
     "startTitle": "Start your own group",
-    "startText": "You don't need to be a teacher to start a group. You need a few colleagues, a fixed time and a topic. Create the group here, write a short public summary and your rules, then share the access code with the people you want to invite: your team, your university class, or a community you already belong to. Members suggest videos, articles or talks during the week, and the board picks the next topic by a random draw or a vote. Meet on whatever call tool you already use.",
+    "startText": "You don't need to be a teacher to start a group. You need a few people, a fixed time and a topic. Create the group here, write a short public summary and your rules, then share the access code with the people you want to invite: friends, coworkers, classmates or a community you already belong to. Members suggest videos, articles or talks during the week, and the board picks the next topic by a random draw or a vote. Meet on whatever call tool you already use.",
     "groupsTitle": "Open groups you can join",
-    "groupsIntro": "Each card shows the group's name and the summary its creator wrote. Ask the group for its access code before you request to join, or start your own group if none fits your schedule.",
+    "groupsIntro": "Each card shows the group's name, icon and the summary its creator wrote. Ask the group for its access code before you request to join, or start your own group if none fits your schedule.",
     "groupsNoScript": "Turn on JavaScript to see the open groups.",
     "groupsEmpty": "No groups are listed yet. Be the first to create one.",
     "groupsError": "Couldn't load the groups. Please try again later.",
@@ -189,11 +189,11 @@
       },
       {
         "q": "What level of English do I need?",
-        "a": "Enough to follow a short technical video or article. Each group sets its own level and rules in its summary, so read it before you ask to join."
+        "a": "Enough to follow a short video or article in English. Each group sets its own level and rules in its summary, so read it before you ask to join."
       },
       {
         "q": "Do groups have a teacher or a native speaker?",
-        "a": "Usually not. Groups are developers practicing with each other. Speaking regularly with peers on topics you know is the point."
+        "a": "Usually not. Groups are people practicing with each other. Speaking regularly with peers about topics you care about is the point."
       },
       {
         "q": "Where and when do groups meet?",
@@ -209,7 +209,7 @@
       },
       {
         "q": "What data do you keep?",
-        "a": "From Google, your account identifier, your email address, whether it is verified and your name; never your profile picture. Then what you add: your display name, the groups you create and their icons (stored privately, without photo metadata, and shown only to members), your join requests, memberships, suggestions and votes, and your acceptance of the Terms and the Privacy Policy. Deleting is permanent and immediate. To keep you signed in we store only a hash of your session token, and when the platform admin deletes something or bans an account, a moderation log keeps a short label, the reason and the date, never the full content; a ban also keeps the account's Google ID and email while it lasts. Your email address is used only to send you service emails about your groups and requests (no marketing, and you can turn them off), sent through Amazon SES, with a record of each email kept for 30 days. Your email is never shown to other members or group owners. The Privacy Policy explains how long each item is kept and how to download your data or delete your account. Questions about the program, abuse reports and data requests go to groups@fbrissi.dev."
+        "a": "From Google, your account identifier, your email address, whether it is verified and your name; never your profile picture. Then what you add: your display name, the groups you create and their icons (stored privately, without photo metadata, and shown on the public page only for listed groups), your join requests, memberships, suggestions and votes, and your acceptance of the Terms and the Privacy Policy. Deleting is permanent and immediate. To keep you signed in we store only a hash of your session token, and when the platform admin deletes something or bans an account, a moderation log keeps a short label, the reason and the date, never the full content; a ban also keeps the account's Google ID and email while it lasts. Your email address is used only to send you service emails about your groups and requests (no marketing, and you can turn them off), sent through Amazon SES, with a record of each email kept for 30 days. Your email is never shown to other members or group owners. The Privacy Policy explains how long each item is kept and how to download your data or delete your account. Questions about the program, abuse reports and data requests go to groups@fbrissi.dev."
       }
     ],
     "policiesTitle": "Rules and privacy",

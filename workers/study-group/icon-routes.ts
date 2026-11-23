@@ -1,6 +1,6 @@
 import { deleteSchema, ICON_LIMITS } from './contract';
 import { randomId } from './crypto';
-import { moderationEntry } from './group-routes';
+import { moderationEntry, purgePublicGroups } from './group-routes';
 import { IconError, readIcon } from './icon-image';
 import { iconKey, ICON_PREFIX, verifyIconUrl } from './icons';
 import { enqueueNotifications, HttpError, iconUrl, now, parseBody, readLimitedBody, removeIcons, type GroupContext, type RequestContext, type RouteResult } from './http';
@@ -40,6 +40,7 @@ export async function uploadIcon(context: GroupContext): Promise<RouteResult> {
   await bucket.put(icon.key, image.bytes, { httpMetadata: { contentType: image.contentType } });
   const previous = await app.repository.setGroupIcon(group.id, user.id, icon);
   await removeIcons(context, previous ? [previous] : []);
+  if (group.listed) await purgePublicGroups(context);
   return { status: 200, body: { iconUrl: await iconUrl(context, icon) } };
 }
 
@@ -60,6 +61,7 @@ export async function deleteIcon(context: GroupContext): Promise<RouteResult> {
     : undefined;
   const queued = await context.app.repository.clearGroupIcon(group.id, now(context), log, notice);
   await removeIcons(context, [group.icon.key]);
+  if (group.listed) await purgePublicGroups(context);
   await enqueueNotifications(context, queued);
   return null;
 }

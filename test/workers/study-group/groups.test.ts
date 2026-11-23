@@ -51,8 +51,8 @@ describe('groups', () => {
     const body = await expectJson(response, 200);
     expect(body.groups).toHaveLength(2);
     expect(body.groups).toEqual(expect.arrayContaining([
-      { id: w.groupId, name: 'Go Talk', summary: groupInput.summary },
-      { id: 'devtalk', name: 'DevTalk', summary: expect.stringContaining('improve our English') },
+      { id: w.groupId, name: 'Go Talk', summary: groupInput.summary, iconUrl: null },
+      { id: 'devtalk', name: 'DevTalk', summary: expect.stringContaining('improve our English'), iconUrl: null },
     ]));
     expect(body.nextCursor).toBeNull();
 

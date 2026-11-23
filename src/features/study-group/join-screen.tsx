@@ -54,7 +54,7 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
     <section className="mx-auto max-w-lg py-6">
       <p className={eyebrowClass}>Weekly English study group</p>
       <div className="mb-3 mt-2 flex items-center gap-4">
-        <GroupIcon url={preview.group.iconUrl} size={56} />
+        <GroupIcon url={preview.group.iconUrl} name={preview.group.name} size={56} />
         <h1 className="text-3xl font-normal tracking-tight wrap-anywhere sm:text-4xl">{preview.group.name}</h1>
       </div>
       <p className="mb-6 text-text-secondary wrap-anywhere">{preview.group.summary}</p>

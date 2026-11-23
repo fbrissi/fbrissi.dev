@@ -47,7 +47,7 @@ test.describe('group icons', () => {
     for (const page of [ownerPage, memberPage]) await page.context().close();
   });
 
-  test('the owner uploads an icon; members see it through a signed link, the public page never', async () => {
+  test('the owner uploads an icon; members and the public landing card of the listed group see it through a signed link', async ({ browser }) => {
     await ownerPage.goto(`/study-groups/g/${groupId}/settings`);
     const section = ownerPage.getByRole('region', { name: 'Group icon' });
     await section.locator('input[type="file"]').setInputFiles({ name: 'icon.gif', mimeType: 'image/gif', buffer: Buffer.from('GIF89a') });
@@ -67,8 +67,31 @@ test.describe('group icons', () => {
 
     await memberPage.goto('/study-groups/my');
     await iconSrc(memberPage);
-    const publicList = await memberPage.request.get('/api/study-group/groups');
-    expect(JSON.stringify(await publicList.json())).not.toMatch(/iconUrl|\/icons\//);
+    // A visitor sees the listed group's icon on its landing card, through the same kind of signed link.
+    const visitor = await (await browser.newContext()).newPage();
+    await visitor.goto('/study-groups');
+    const card = visitor.getByRole('listitem').filter({ hasText: input.name });
+    const cardIcon = card.locator(`img[src*="/api/study-group/icons/${groupId}/"]`);
+    await expect(cardIcon).toBeVisible();
+    expect(await cardIcon.getAttribute('src')).toMatch(/\?exp=\d+&sig=/);
+    expect((await visitor.request.get((await cardIcon.getAttribute('src'))!)).status()).toBe(200);
+    await visitor.context().close();
+  });
+
+  test('an unlisted group and its icon never appear on the public landing', async ({ browser }) => {
+    const hidden = await createGroupViaApi(ownerPage, groupInput('Hidden icon group', { listed: false }));
+    await ownerPage.goto(`/study-groups/g/${hidden.id}/settings`);
+    const section = ownerPage.getByRole('region', { name: 'Group icon' });
+    await section.locator('input[type="file"]').setInputFiles({ name: 'icon.png', mimeType: 'image/png', buffer: pngWithText });
+    await expect(section.getByText('Icon saved.')).toBeVisible();
+    const visitor = await (await browser.newContext()).newPage();
+    await visitor.goto('/study-groups');
+    await expect(visitor.getByRole('listitem').filter({ hasText: input.name })).toBeVisible();
+    await expect(visitor.locator(`img[src*="/icons/${hidden.id}/"]`)).toHaveCount(0);
+    const body = JSON.stringify(await (await visitor.request.get('/api/study-group/groups')).json());
+    expect(body).not.toContain(hidden.id);
+    await visitor.context().close();
+    expect((await api(ownerPage, 'DELETE', `/groups/${hidden.id}`, { confirmName: (await api<{ group: { name: string } }>(ownerPage, 'GET', `/groups/${hidden.id}`)).body.group.name })).status).toBe(204);
   });
 
   test('the platform admin removes the icon with a reason; the owner gets a notice and an email', async ({ browser }) => {
@@ -82,6 +105,32 @@ test.describe('group icons', () => {
     await ownerPage.goto('/study-groups/my');
     await expect(ownerPage.locator('section[aria-labelledby="notices-title"]')).toContainText('Group icon removed');
     await admin.context().close();
+  });
+
+  test('a group without an icon shows the first letter of its name wherever icons appear', async ({ browser }) => {
+    const initial = input.name[0].toUpperCase();
+    const expectPlaceholder = async (scope: ReturnType<Page['locator']>) => {
+      const placeholder = scope.locator('[data-placeholder]').first();
+      await expect(placeholder).toHaveText(initial);
+      await expect(placeholder).toHaveAttribute('aria-hidden', 'true');
+      await expect(placeholder).toHaveCSS('background-color', 'rgb(249, 115, 22)');
+      await expect(scope.locator('img[src*="/api/study-group/icons/"]')).toHaveCount(0);
+    };
+    const visitor = await (await browser.newContext()).newPage();
+    await visitor.goto('/study-groups');
+    await expectPlaceholder(visitor.getByRole('listitem').filter({ hasText: input.name }));
+    await visitor.context().close();
+    await memberPage.goto(`/study-groups/g/${groupId}`);
+    await expectPlaceholder(memberPage.getByRole('main'));
+    await ownerPage.goto(`/study-groups/g/${groupId}/settings`);
+    await expectPlaceholder(ownerPage.getByRole('region', { name: 'Group icon' }));
+    await memberPage.goto('/study-groups/my');
+    await expectPlaceholder(memberPage.getByRole('listitem').filter({ hasText: input.name }));
+    const outsider = await sessionFor(browser, freshUser('IconOutsider'));
+    await outsider.goto(`/study-groups/g/${groupId}`);
+    await expect(outsider.getByRole('heading', { name: 'Ask to join' })).toBeVisible();
+    await expectPlaceholder(outsider.getByRole('main'));
+    await outsider.context().close();
   });
 });
 

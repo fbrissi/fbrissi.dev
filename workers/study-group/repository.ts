@@ -365,7 +365,7 @@ export function createRepository(db: D1Like) {
 
     // Groups
 
-    async listPublicGroups(cursor: [string, string] | null, limit: number): Promise<Page<GroupCard>> {
+    async listPublicGroups(cursor: [string, string] | null, limit: number): Promise<Page<GroupCard & { icon: StoredIcon | null }>> {
       const rows = await many<GroupRow>(
         `SELECT * FROM groups WHERE listed = 1
            AND (? IS NULL OR created_at < ? OR (created_at = ? AND id < ?))
@@ -373,7 +373,7 @@ export function createRepository(db: D1Like) {
         cursor?.[0] ?? null, cursor?.[0] ?? null, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1
       );
       const result = page(rows, limit, (row) => encodeCursor(row.created_at, row.id));
-      return { items: result.items.map(toGroupCard), nextCursor: result.nextCursor };
+      return { items: result.items.map((row) => ({ ...toGroupCard(row), icon: storedIcon(row) })), nextCursor: result.nextCursor };
     },
 
     async listAllGroups(cursor: [string, string] | null, limit: number): Promise<Page<AdminGroup>> {

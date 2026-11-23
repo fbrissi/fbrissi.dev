@@ -30,6 +30,9 @@ function upload(cookie: string | undefined, data: Uint8Array<ArrayBuffer> | null
   }));
 }
 
+/** The editable profile fields of a settings response. */
+const profileOf = ({ settings }: { settings: Record<string, unknown> }) =>
+  Object.fromEntries(Object.entries(settings).filter(([key]) => !['id', 'accessCode', 'iconUrl'].includes(key)));
 const call = (method: string, path: string, cookie?: string, body?: unknown) => h.handler(request(method, path, { cookie, body }));
 const iconUrlOf = async (cookie: string) => (await (await call('GET', `/groups/${w.groupId}`, cookie)).json()).group.iconUrl as string | null;
 const fetchIcon = (url: string, handler = h.handler) => handler(new Request(`${appOrigin}${url}`));
@@ -43,13 +46,16 @@ describe('group icon upload', () => {
     expect(object.contentType).toBe('image/png');
     expect(String.fromCharCode(...object.data)).not.toContain('Secret');
 
-    // Members get the same signed URL in the board, the settings and their group list; the public list has none.
+    // Members get the same signed URL in the board, the settings and their group list, and so does the public list of
+    // listed groups.
     const url = await iconUrlOf(w.member);
     expect(url).toBe(uploaded.iconUrl);
     expect((await (await call('GET', `/groups/${w.groupId}/settings`, w.owner)).json()).settings.iconUrl).toBe(url);
     expect((await (await call('GET', '/me/groups', w.member)).json()).groups[0].iconUrl).toBe(url);
     expect((await (await call('GET', `/groups/${w.groupId}/preview`, w.outsider)).json()).group.iconUrl).toBe(url);
-    expect(JSON.stringify(await (await call('GET', '/groups')).json())).not.toContain('icon');
+    const listed = (await (await call('GET', '/groups')).json()).groups as { id: string; iconUrl: string | null }[];
+    expect(listed.find((item) => item.id === w.groupId)!.iconUrl).toBe(url);
+    expect(listed.find((item) => item.id === 'devtalk')!.iconUrl).toBeNull();
 
     const served = await fetchIcon(url!);
     expect(served.status).toBe(200);
@@ -58,6 +64,31 @@ describe('group icon upload', () => {
     expect(served.headers.get('X-Content-Type-Options')).toBe('nosniff');
     expect(served.headers.get('Content-Security-Policy')).toBe("default-src 'none'; sandbox");
     expect(new Uint8Array(await served.arrayBuffer())).toEqual(object.data);
+  });
+
+  it('never lists an unlisted group, icon or not, and refreshes the public list when a listed icon changes', async () => {
+    await expectJson(await upload(w.owner, png(8, 8)), 200);
+    await expectJson(await call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...profileOf(await (await call('GET', `/groups/${w.groupId}/settings`, w.owner)).json()), listed: false }), 200);
+    const body = JSON.stringify(await (await call('GET', '/groups')).json());
+    expect(body).not.toContain(w.groupId);
+    expect(body).not.toContain('/icons/');
+
+    const purged: string[] = [];
+    const cached = await createHarness({ icons: memoryBucket(), cache: { match: async () => undefined, put: async () => undefined, delete: async (key) => { purged.push(new URL(key.url).pathname); return true; } } });
+    const world = await createWorld(cached);
+    const put = () => cached.handler(new Request(`${base}/groups/${world.groupId}/icon`, { method: 'PUT', headers: { Origin: appOrigin, 'Content-Type': 'image/png', Cookie: world.owner }, body: png(8, 8) }));
+    expect((await put()).status).toBe(200);
+    expect(purged).toContain('/api/study-group/groups');
+    purged.length = 0;
+    expect((await cached.handler(request('DELETE', `/groups/${world.groupId}/icon`, { cookie: world.owner, body: {} }))).status).toBe(204);
+    expect(purged).toContain('/api/study-group/groups');
+    // An unlisted group's icon never touches the public list.
+    const current = await (await cached.handler(request('GET', `/groups/${world.groupId}/settings`, { cookie: world.owner }))).json();
+    await expectJson(await cached.handler(request('PUT', `/groups/${world.groupId}/settings`, { cookie: world.owner, body: { ...profileOf(current), listed: false } })), 200);
+    purged.length = 0;
+    expect((await put()).status).toBe(200);
+    expect((await cached.handler(request('DELETE', `/groups/${world.groupId}/icon`, { cookie: world.owner, body: {} }))).status).toBe(204);
+    expect(purged).not.toContain('/api/study-group/groups');
   });
 
   it('replaces the icon and deletes the old object right away', async () => {

@@ -3,6 +3,25 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.4.2
+
+### Added
+
+- Show group icons on the public landing cards (`/study-groups` and `/pt-br/grupos-de-estudo-de-ingles`): the public groups list returns a signed `iconUrl` for listed groups with an icon (unlisted groups never appear), and uploading or removing a listed group's icon refreshes the cached list. The Privacy Policy and the Terms (`2026-11-24`, a minor edit with no re-acceptance), the FAQ and the settings say so.
+- Show a placeholder for groups without an icon wherever icons appear (landing cards, board, settings, My groups, join screen): the first letter of the group name on the orange accent, at the icon's size and shape, decorative next to the name.
+
+### Changed
+
+- Open the English study groups program to anyone who wants to practice English, not only developers: new landing titles and descriptions for general searches ("Free English Study Groups Online" and "Grupo de Estudo de Inglês Grátis", with "English conversation group" and "praticar inglês online grátis" in the descriptions), a new H1 ("Free English study groups"), intro, "why practice in a group" section, "start your own group" and FAQ, and the same change on the home card, the About page, the project page, the Terms (`2026-11-24`, minor) and the structured data. The intro says once that the program started among developers with DevTalk and that tech-focused groups are welcome.
+
+### Fixed
+
+- Show the pointer cursor again on buttons, `[role="button"]`, `summary`, labels that wrap a checkbox, radio or file input, and those inputs, and `not-allowed` on disabled controls (Tailwind CSS 4 no longer sets it).
+
+### Removed
+
+- Delete the two sandbox contact queues: their Terraform count follows `local.sandbox_count` again (the v0.4.1 deploy unbound them from production), and the Deploy workflow no longer runs the "Unbind the sandbox contact queue" step.
+
 ## v0.4.1
 
 ### Fixed

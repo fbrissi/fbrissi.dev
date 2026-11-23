@@ -89,7 +89,9 @@ export async function listPublicGroups(context: RequestContext): Promise<RouteRe
   if (cached) return cached;
 
   const result = await app.repository.listPublicGroups(decodeCursor(url.searchParams.get('cursor')), PAGE_SIZE);
-  const body: GroupListResponse = { groups: result.items, nextCursor: result.nextCursor };
+  // Icons of listed groups are public (signed URLs valid 1 to 2 hours, so the 60-second cache never serves an expired one).
+  const groups = await Promise.all(result.items.map(async ({ icon, ...group }) => ({ ...group, iconUrl: await iconUrl(context, icon) })));
+  const body: GroupListResponse = { groups, nextCursor: result.nextCursor };
   const response = Response.json(body, {
     headers: { 'Cache-Control': `public, max-age=${publicCacheSeconds}`, 'X-Robots-Tag': 'noindex, nofollow' },
   });

@@ -313,7 +313,11 @@ is no restore. Migration `0004_hard_delete.sql` removed the rows earlier version
 `deleted_at` and `deleted_by_admin` columns stay unused, because dropping them in SQLite means rebuilding indexes or
 tables. Every delete in the UI says it is permanent and names what goes with it.
 
-**Group icons** (app pages only: board, settings, My groups and the join screen; never the public list):
+**Group icons** (board, settings, My groups, the join screen, and the public landing cards of listed groups; a group
+without an icon shows the first letter of its name on the orange accent, at the same size and shape):
+
+- The public list (`GET /api/study-group/groups`, cached 60 seconds) returns a signed `iconUrl` for each listed group
+  with an icon; unlisted groups never appear. Uploading or removing a listed group's icon purges the cached list.
 
 - Owners upload a PNG, JPEG or WebP (`PUT /api/study-group/groups/<id>/icon`, the file as the body). The Worker checks
   the magic bytes and the size in the image headers (at most 256 KB, refused before it is read in full, and
