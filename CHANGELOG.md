@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.4.1
+
+### Fixed
+
+- Unblock the v0.4.0 release, which stopped at the Terraform Cloud apply: Cloudflare refused to delete the sandbox contact queues because the production contact Workers deployed before this release still bind them. The two sandbox contact queues stay for this release, and the Deploy workflow removes the production email Worker's consumer from the sandbox queue before deploying the contact Workers, which drops the producer binding. A later release deletes the queues. The v0.4.0 tag was never created, so this release ships everything listed under v0.4.0.
+
 ## v0.4.0
 
 ### Added
