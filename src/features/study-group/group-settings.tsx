@@ -89,7 +89,7 @@ function SettingsLoader({ api, groupId, isPlatformAdmin }: { api: StudyGroupApi;
       <Notices notices={ready.notices} />
       <ProfileForm api={api} settings={ready.settings} onSaved={(settings) => update({ settings })} />
       <IconSettings api={api} groupId={groupId} groupName={ready.settings.name} iconUrl={ready.settings.iconUrl} isOwner={ready.role === 'owner'} onChange={(iconUrl) => update({ settings: { ...ready.settings, iconUrl } })} />
-      {ready.settings.requiresAccessCode ? <AccessCode api={api} settings={ready.settings} onRotated={(settings) => update({ settings })} /> : null}
+      {ready.settings.requiresAccessCode !== false ? <AccessCode api={api} settings={ready.settings} onRotated={(settings) => update({ settings })} /> : null}
       <Requests api={api} groupId={groupId} requests={ready.requests} canDeleteMessages={isPlatformAdmin} onChange={(requests, members) => update(members ? { requests, members } : { requests })} />
       <Members api={api} groupId={groupId} members={ready.members} onRemoved={(userId) => update({ members: ready.members.filter((member) => member.userId !== userId) })} />
       <DeleteGroup api={api} settings={ready.settings} needsReason={isAdminActor} />

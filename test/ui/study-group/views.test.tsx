@@ -336,7 +336,7 @@ describe('program landing (1.1, 1.2)', () => {
     renderWith({
       'GET /me': { user: null },
       'GET /groups': { groups: [{ id: 'aaa1234567', name: 'Go Talk', summary: 'About Go', requiresAccessCode: true, iconUrl: '/api/study-group/icons/aaa1234567/abcdefghjkmnpqrs.png?exp=1&sig=s' }], nextCursor: 'next' },
-      'GET /groups?cursor=next': { groups: [{ id: 'bbb1234567', name: 'Rust Talk', summary: 'About Rust', iconUrl: null }], nextCursor: null }
+      'GET /groups?cursor=next': { groups: [{ id: 'bbb1234567', name: 'Rust Talk', summary: 'About Rust', requiresAccessCode: false, iconUrl: null }], nextCursor: null }
     }, <><ProgramActions locale="en" /><GroupDirectory locale="en" /></>);
     expect(await screen.findByText("Sign-in didn't work. Please try again.")).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Join a free English study group' })).toHaveAttribute('href', '/api/study-group/auth/login?returnTo=%2Fstudy-groups%2Fmy');
@@ -361,6 +361,8 @@ describe('program landing (1.1, 1.2)', () => {
     expect(await screen.findByRole('link', { name: 'Meus grupos' })).toHaveAttribute('href', '/study-groups/my');
     expect(screen.getByRole('link', { name: 'Criar um grupo' })).toHaveAttribute('href', '/study-groups/new');
     expect(await screen.findByRole('link', { name: 'Abrir grupo: Go Talk' })).toHaveAttribute('href', '/study-groups/g/aaa1234567');
+    // A list that doesn't say whether the group requires a code shows the badge.
+    expect(screen.getByText('Código de acesso obrigatório')).toBeInTheDocument();
     expect(screen.queryByText('Não foi possível entrar. Tente novamente.')).not.toBeInTheDocument();
   });
 

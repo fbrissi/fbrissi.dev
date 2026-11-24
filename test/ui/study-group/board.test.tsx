@@ -108,6 +108,7 @@ describe('join screen (D5)', () => {
     expect(await screen.findByRole('heading', { name: 'Go Talk' })).toBeInTheDocument();
     expect(screen.getByText(group.summary)).toBeInTheDocument();
     expect(screen.getByText("This group only accepts requests with an access code, by its creator's choice. Ask the group for it.")).toBeInTheDocument();
+    expect(screen.getByText('The owner reviews each request before you can see the board.')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Please enter the access code.');
@@ -139,6 +140,7 @@ describe('join screen (D5)', () => {
     expect(await screen.findByRole('heading', { name: 'Ask to join' })).toBeInTheDocument();
     expect(screen.queryByLabelText('Access code')).not.toBeInTheDocument();
     expect(screen.queryByText(/only accepts requests with an access code/)).not.toBeInTheDocument();
+    expect(screen.getByText('The owner reviews each request before you can see the board.')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText(/Message to the owner/), { target: { value: ' Hi! ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
     expect(await screen.findByText('The owner reviews each request. Once approved, this page opens the board.')).toBeInTheDocument();
@@ -222,6 +224,12 @@ describe('board for members', () => {
     setup({ role: 'member', routes: { [`GET ${base}`]: { group: { ...group, requiresAccessCode: false }, role: 'member', canParticipate: true } } });
     fireEvent.click(await screen.findByRole('button', { name: 'Leave group' }));
     expect(await answerConfirm(false)).toHaveTextContent('You will need the owner’s approval to come back.');
+  });
+
+  it('mentions the access code when a member leaves a group whose response does not say whether it requires one', async () => {
+    setup({ role: 'member', routes: { [`GET ${base}`]: { group: { ...group, requiresAccessCode: undefined }, role: 'member', canParticipate: true } } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Leave group' }));
+    expect(await answerConfirm(false)).toHaveTextContent('You will need the access code and the owner’s approval to come back.');
   });
 
   it('shows member list errors', async () => {

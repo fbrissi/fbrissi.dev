@@ -73,6 +73,7 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
       ) : (
         <form noValidate onSubmit={submit} className={`${cardClass} flex flex-col gap-4 p-6`}>
           <h2 className="text-xl font-normal">Ask to join</h2>
+          <p className={hintClass}>The owner reviews each request before you can see the board.</p>
           {requiresCode ? (
             <>
               <p className="text-sm text-text-secondary">This group only accepts requests with an access code, by its creator&apos;s choice. Ask the group for it.</p>

@@ -91,7 +91,7 @@ export function GroupDirectory({ locale }: { locale: Locale }) {
               <h3 className="text-xl font-normal tracking-tight wrap-anywhere">{group.name}</h3>
             </div>
             <MeetingTime schedule={group} />
-            {group.requiresAccessCode ? (
+            {group.requiresAccessCode !== false ? (
               <span className="inline-flex items-center gap-1.5 self-start rounded-md bg-bg-card px-2.5 py-1 text-xs tracking-wide text-text-secondary">
                 <svg className="h-3.5 w-3.5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true"><rect x="4" y="11" width="16" height="10" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
                 {messages.accessCodeRequired}

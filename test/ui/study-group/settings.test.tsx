@@ -132,6 +132,37 @@ describe('group settings', () => {
     expect(screen.queryByRole('region', { name: 'Access code' })).not.toBeInTheDocument();
   });
 
+  it('shows the new access code after the owner turns the requirement back on', async () => {
+    const fetchMock = setup({
+      routes: {
+        [`GET ${base}/settings`]: { settings: { ...settings, requiresAccessCode: false }, notices: [], role: 'owner' },
+        [`PUT ${base}/settings`]: { settings: { ...settings, accessCode: 'fresh1234567' }, notices: [], role: 'owner' }
+      }
+    });
+    const form = await screen.findByRole('region', { name: 'Group profile' });
+    expect(screen.queryByRole('region', { name: 'Access code' })).not.toBeInTheDocument();
+    fireEvent.click(within(form).getByRole('checkbox', { name: /Require an access code/ }));
+    fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
+    expect(await within(form).findByText('Settings saved.')).toBeInTheDocument();
+    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toMatchObject({ requiresAccessCode: true });
+    expect(within(screen.getByRole('region', { name: 'Access code' })).getByLabelText('Access code')).toHaveTextContent('fresh1234567');
+  });
+
+  it('treats settings that do not say whether the group requires a code as requiring one', async () => {
+    const fetchMock = setup({
+      routes: {
+        [`GET ${base}/settings`]: { settings: { ...settings, requiresAccessCode: undefined }, notices: [], role: 'owner' },
+        [`PUT ${base}/settings`]: { settings, notices: [], role: 'owner' }
+      }
+    });
+    const form = await screen.findByRole('region', { name: 'Group profile' });
+    expect(screen.getByRole('region', { name: 'Access code' })).toBeInTheDocument();
+    expect(within(form).getByRole('checkbox', { name: /Require an access code/ })).toBeChecked();
+    fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
+    expect(await within(form).findByText('Settings saved.')).toBeInTheDocument();
+    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toMatchObject({ requiresAccessCode: true });
+  });
+
   it('shows admin deletion notices', async () => {
     setup();
     const section = await screen.findByRole('region', { name: 'Moderation notices' });

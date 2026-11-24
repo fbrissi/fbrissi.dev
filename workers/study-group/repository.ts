@@ -437,15 +437,18 @@ export function createRepository(db: D1Like) {
       return toGroupSettings(row!);
     },
 
-    async updateGroup(id: string, input: GroupProfileInput, now: string): Promise<GroupSettings> {
+    /** Turning the code requirement back on stores `newAccessCode`, so a code shared before it was turned off stops working. */
+    async updateGroup(id: string, input: GroupProfileInput, now: string, newAccessCode: string): Promise<GroupSettings> {
+      const requiresAccessCode = input.requiresAccessCode === undefined ? null : input.requiresAccessCode ? 1 : 0;
       const row = await one<GroupRow>(
         `UPDATE groups SET name = ?, summary = ?, rules = ?, meeting_day = ?, meeting_start = ?, meeting_end = ?, timezone = ?,
            meeting_url = ?, moderation_mode = ?, listed = ?, meeting_reminders = COALESCE(?, meeting_reminders),
+           access_code = CASE WHEN require_access_code = 0 AND ? = 1 THEN ? ELSE access_code END,
            require_access_code = COALESCE(?, require_access_code), updated_at = ?
          WHERE id = ? RETURNING *`,
         input.name, input.summary, JSON.stringify(input.rules), input.meetingDay, input.meetingStart, input.meetingEnd, input.timezone,
         input.meetingUrl, input.moderationMode, input.listed ? 1 : 0, input.meetingReminders === undefined ? null : input.meetingReminders ? 1 : 0,
-        input.requiresAccessCode === undefined ? null : input.requiresAccessCode ? 1 : 0, now, id
+        requiresAccessCode, newAccessCode, requiresAccessCode, now, id
       );
       return toGroupSettings(row!);
     },

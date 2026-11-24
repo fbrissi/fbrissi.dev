@@ -249,7 +249,7 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
           {canParticipate ? <SuggestForm authorName={user.displayName} onCreate={createMaterial} /> : (
             <p className={`${cardClass} p-6 text-sm text-text-secondary`}>You manage this group as the platform admin. Only members suggest materials and vote.</p>
           )}
-          <MembersPanel api={api} groupId={groupId} role={role} requiresAccessCode={group.requiresAccessCode} />
+          <MembersPanel api={api} groupId={groupId} role={role} requiresAccessCode={group.requiresAccessCode !== false} />
         </aside>
       </div>
     </>

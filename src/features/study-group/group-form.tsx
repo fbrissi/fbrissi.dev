@@ -59,7 +59,7 @@ export function toProfileValues(group: GroupInfo): ProfileValues {
     moderationMode: group.moderationMode,
     listed: group.listed,
     meetingReminders: group.meetingReminders,
-    requiresAccessCode: group.requiresAccessCode
+    requiresAccessCode: group.requiresAccessCode !== false
   };
 }
 

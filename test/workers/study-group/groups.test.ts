@@ -156,15 +156,34 @@ describe('groups', () => {
 
     // Saving without the field keeps the setting; the owner can turn the code on and off.
     const update = (body: object) => call('PUT', `/groups/${group.id}/settings`, w.owner, { ...groupInput, name: 'Open Talk', ...body });
-    expect((await expectJson(await update({ requiresAccessCode: undefined }), 200)).settings.requiresAccessCode).toBe(false);
-    expect((await expectJson(await update({ requiresAccessCode: true }), 200)).settings.requiresAccessCode).toBe(true);
-    expect((await expectJson(await update({ requiresAccessCode: undefined }), 200)).settings.requiresAccessCode).toBe(true);
+    expect((await expectJson(await update({ requiresAccessCode: undefined }), 200)).settings).toMatchObject({ requiresAccessCode: false, accessCode: group.accessCode });
+    const { settings } = await expectJson(await update({ requiresAccessCode: true }), 200);
+    expect(settings.requiresAccessCode).toBe(true);
+    expect(settings.accessCode).toMatch(/^[a-z0-9]{12}$/);
+    expect(settings.accessCode).not.toBe(group.accessCode);
+    expect((await expectJson(await update({ requiresAccessCode: undefined }), 200)).settings).toMatchObject({ requiresAccessCode: true, accessCode: settings.accessCode });
     const listed = (await expectJson(await call('GET', '/groups'), 200)).groups.find((item: { id: string }) => item.id === group.id);
     expect(listed.requiresAccessCode).toBe(true);
     const latecomer = await signIn(h, { email: 'latecomer@example.test', name: 'Lea Latecomer' });
     await expectJson(await call('POST', `/groups/${group.id}/join`, latecomer, {}), 403, { error: 'invalid_code' });
-    await expectJson(await call('POST', `/groups/${group.id}/join`, latecomer, { code: group.accessCode }), 201, { status: 'pending' });
+    await expectJson(await call('POST', `/groups/${group.id}/join`, latecomer, { code: group.accessCode }), 403, { error: 'invalid_code' });
+    await expectJson(await call('POST', `/groups/${group.id}/join`, latecomer, { code: settings.accessCode }), 201, { status: 'pending' });
     expect((await expectJson(await update({ requiresAccessCode: false }), 200)).settings.requiresAccessCode).toBe(false);
+  });
+
+  it('issues a new access code only when the owner turns the requirement back on', async () => {
+    const update = (body: object) => call('PUT', `/groups/${w.groupId}/settings`, w.owner, { ...groupInput, ...body });
+    // Already on: saving it on again, or editing anything else, keeps the code members were given.
+    expect((await expectJson(await update({ requiresAccessCode: true }), 200)).settings).toMatchObject({ requiresAccessCode: true, accessCode: w.accessCode });
+    expect((await expectJson(await update({ summary: 'A new summary for the group.' }), 200)).settings).toMatchObject({ requiresAccessCode: true, accessCode: w.accessCode });
+    // Off and back on: the code shared before stops working.
+    expect((await expectJson(await update({ requiresAccessCode: false }), 200)).settings).toMatchObject({ requiresAccessCode: false, accessCode: w.accessCode });
+    const { settings } = await expectJson(await update({ requiresAccessCode: true }), 200);
+    expect(settings.accessCode).toMatch(/^[a-z0-9]{12}$/);
+    expect(settings.accessCode).not.toBe(w.accessCode);
+    expect((await expectJson(await call('GET', `/groups/${w.groupId}/settings`, w.owner), 200)).settings.accessCode).toBe(settings.accessCode);
+    await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: w.accessCode }), 403, { error: 'invalid_code' });
+    await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: settings.accessCode }), 201, { status: 'pending' });
   });
 
   it('shows the join screen data and handles join requests (D5, Q10)', async () => {

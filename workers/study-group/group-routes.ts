@@ -208,7 +208,7 @@ export async function getSettings(context: GroupContext): Promise<RouteResult> {
 
 export async function updateSettings(context: GroupContext): Promise<RouteResult> {
   const input = await parseBody(context.request, groupProfileSchema);
-  const settings = await context.app.repository.updateGroup(context.group.id, input, now(context));
+  const settings = await context.app.repository.updateGroup(context.group.id, input, now(context), randomId(12));
   await purgePublicGroups(context);
   return settingsResponse(context, settings);
 }
