@@ -48,7 +48,7 @@ O consentimento não é a base legal principal. Registramos o seu aceite dos Ter
 
 ## 5. Grupos de estudo: quem vê os seus dados
 
-- Os membros dos seus grupos veem o seu nome de exibição, as suas sugestões e os seus votos, e o ícone do grupo. Qualquer pessoa conectada que abrir o link de entrada de um grupo vê o nome, o resumo e o ícone dele.
+- Os membros dos seus grupos veem o seu nome de exibição, as suas sugestões e os seus votos, e o ícone do grupo. Qualquer pessoa conectada que abrir o link de entrada de um grupo vê o nome, o resumo, o ícone, o dia e o horário da reunião semanal dele, e se ele exige código de acesso.
 - Os donos de grupos veem o nome de exibição e a mensagem opcional do seu pedido de entrada. Eles são avisados por e-mail de que há pedidos aguardando, sem o seu nome, a sua mensagem ou o seu e-mail. **O seu e-mail nunca é mostrado** a membros ou donos.
 - A página pública do programa mostra o nome, o resumo, o ícone, o dia e o horário da reunião semanal de cada grupo listado, e se ele exige código de acesso. Grupos não listados, e os seus ícones, nunca aparecem nela. O link da reunião é visível somente para os membros. Os ícones são servidos por links assinados que expiram em até 2 horas; até lá, quem tiver o link pode abrir o ícone.
 - Enquanto uma conta está banida, as suas sugestões, votos, participações e pedidos de entrada ficam ocultos para os outros usuários.

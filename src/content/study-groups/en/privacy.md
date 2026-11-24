@@ -48,7 +48,7 @@ Consent is not the main legal basis. We record your acceptance of the Terms and 
 
 ## 5. Study groups: who sees your data
 
-- Members of your groups see your display name, your suggestions and your votes, and the group's icon. Anyone signed in who opens a group's join link sees its name, summary and icon.
+- Members of your groups see your display name, your suggestions and your votes, and the group's icon. Anyone signed in who opens a group's join link sees its name, summary, icon, weekly meeting day and time, and whether it requires an access code.
 - Group owners see the display name and the optional message in your join request. They are told by email that requests are waiting, without your name, message or email. **Your email is never shown** to members or owners.
 - The public program page shows each listed group's name, summary, icon, weekly meeting day and time, and whether it requires an access code. Unlisted groups, and their icons, are never listed there. The meeting link is visible only to members. Icons are served through signed links that expire within 2 hours; until then, anyone who has the link can open the icon.
 - While an account is banned, its suggestions, votes, memberships and join requests are hidden from other users.
