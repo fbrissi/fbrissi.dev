@@ -33,6 +33,7 @@ test.describe('group lifecycle', () => {
     await owner.getByRole('button', { name: 'Create group' }).click();
     await expect(owner.getByText('Confirm that the group follows the content policy.')).toBeVisible();
 
+    await owner.getByRole('checkbox', { name: /Require an access code/ }).check();
     await owner.getByRole('checkbox', { name: /content policy/ }).check();
     await owner.getByRole('button', { name: 'Create group' }).click();
 
@@ -50,7 +51,7 @@ test.describe('group lifecycle', () => {
     await expect(card.getByRole('link', { name: 'Settings' })).toBeVisible();
   });
 
-  test('the landing page card shows only the name, the icon or its placeholder, and the summary (D3)', async ({ page }) => {
+  test('the landing page card shows only the name, the icon or its placeholder, the meeting time, the access code badge and the summary (D3)', async ({ page }) => {
     await page.goto('/study-groups');
     const card = page.getByRole('listitem').filter({ hasText: input.name });
     await expect(card).toBeVisible();
@@ -62,7 +63,9 @@ test.describe('group lifecycle', () => {
 
     const publicList = await page.request.get('/api/study-group/groups');
     const listed = ((await publicList.json()) as { groups: Record<string, unknown>[] }).groups.find((group) => group.id === groupId);
-    expect(Object.keys(listed ?? {}).sort()).toEqual(['iconUrl', 'id', 'name', 'summary']);
+    expect(Object.keys(listed ?? {}).sort()).toEqual(['iconUrl', 'id', 'meetingDay', 'meetingEnd', 'meetingStart', 'name', 'requiresAccessCode', 'summary', 'timezone']);
+    await expect(card.getByText('your time')).toBeVisible();
+    await expect(card.getByText('Access code required')).toBeVisible();
     await expect(card.locator('[data-placeholder]')).toHaveText(input.name[0].toUpperCase());
   });
 

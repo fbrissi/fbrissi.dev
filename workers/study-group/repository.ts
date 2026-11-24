@@ -9,6 +9,7 @@ import {
   type GroupCard,
   type GroupInfo,
   type GroupProfileInput,
+  type GroupSchedule,
   type GroupSettings,
   type JoinRequest,
   type Material,
@@ -79,6 +80,7 @@ interface GroupRow {
   moderation_mode: ModerationMode;
   listed: number;
   meeting_reminders: number;
+  require_access_code: number;
   created_at: string;
   icon_key: string | null;
   icon_content_type: string | null;
@@ -383,7 +385,7 @@ export function createRepository(db: D1Like) {
 
     // Groups
 
-    async listPublicGroups(cursor: [string, string] | null, limit: number): Promise<Page<GroupCard & { icon: StoredIcon | null }>> {
+    async listPublicGroups(cursor: [string, string] | null, limit: number): Promise<Page<GroupCard & GroupSchedule & { requiresAccessCode: boolean; icon: StoredIcon | null }>> {
       const rows = await many<GroupRow>(
         `SELECT * FROM groups WHERE listed = 1
            AND (? IS NULL OR created_at < ? OR (created_at = ? AND id < ?))
@@ -391,7 +393,7 @@ export function createRepository(db: D1Like) {
         cursor?.[0] ?? null, cursor?.[0] ?? null, cursor?.[0] ?? null, cursor?.[1] ?? null, limit + 1
       );
       const result = page(rows, limit, (row) => encodeCursor(row.created_at, row.id));
-      return { items: result.items.map((row) => ({ ...toGroupCard(row), icon: storedIcon(row) })), nextCursor: result.nextCursor };
+      return { items: result.items.map((row) => ({ ...toGroupCard(row), ...toGroupSchedule(row), requiresAccessCode: row.require_access_code === 1, icon: storedIcon(row) })), nextCursor: result.nextCursor };
     },
 
     async listAllGroups(cursor: [string, string] | null, limit: number): Promise<Page<AdminGroup>> {
@@ -426,21 +428,27 @@ export function createRepository(db: D1Like) {
 
     async createGroup(group: { id: string; ownerId: string; accessCode: string } & GroupProfileInput, now: string): Promise<GroupSettings> {
       const row = await one<GroupRow>(
-        `INSERT INTO groups (id, owner_id, name, summary, rules, meeting_day, meeting_start, meeting_end, timezone, meeting_url, access_code, moderation_mode, listed, meeting_reminders, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+        `INSERT INTO groups (id, owner_id, name, summary, rules, meeting_day, meeting_start, meeting_end, timezone, meeting_url, access_code, moderation_mode, listed, meeting_reminders, require_access_code, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
         group.id, group.ownerId, group.name, group.summary, JSON.stringify(group.rules), group.meetingDay, group.meetingStart, group.meetingEnd,
-        group.timezone, group.meetingUrl, group.accessCode, group.moderationMode, group.listed ? 1 : 0, group.meetingReminders === false ? 0 : 1, now, now
+        group.timezone, group.meetingUrl, group.accessCode, group.moderationMode, group.listed ? 1 : 0, group.meetingReminders === false ? 0 : 1,
+        group.requiresAccessCode === true ? 1 : 0, now, now
       );
       return toGroupSettings(row!);
     },
 
-    async updateGroup(id: string, input: GroupProfileInput, now: string): Promise<GroupSettings> {
+    /** Turning the code requirement back on stores `newAccessCode`, so a code shared before it was turned off stops working. */
+    async updateGroup(id: string, input: GroupProfileInput, now: string, newAccessCode: string): Promise<GroupSettings> {
+      const requiresAccessCode = input.requiresAccessCode === undefined ? null : input.requiresAccessCode ? 1 : 0;
       const row = await one<GroupRow>(
         `UPDATE groups SET name = ?, summary = ?, rules = ?, meeting_day = ?, meeting_start = ?, meeting_end = ?, timezone = ?,
-           meeting_url = ?, moderation_mode = ?, listed = ?, meeting_reminders = COALESCE(?, meeting_reminders), updated_at = ?
+           meeting_url = ?, moderation_mode = ?, listed = ?, meeting_reminders = COALESCE(?, meeting_reminders),
+           access_code = CASE WHEN require_access_code = 0 AND ? = 1 THEN ? ELSE access_code END,
+           require_access_code = COALESCE(?, require_access_code), updated_at = ?
          WHERE id = ? RETURNING *`,
         input.name, input.summary, JSON.stringify(input.rules), input.meetingDay, input.meetingStart, input.meetingEnd, input.timezone,
-        input.meetingUrl, input.moderationMode, input.listed ? 1 : 0, input.meetingReminders === undefined ? null : input.meetingReminders ? 1 : 0, now, id
+        input.meetingUrl, input.moderationMode, input.listed ? 1 : 0, input.meetingReminders === undefined ? null : input.meetingReminders ? 1 : 0,
+        requiresAccessCode, newAccessCode, requiresAccessCode, now, id
       );
       return toGroupSettings(row!);
     },
@@ -963,6 +971,10 @@ function toGroupCard(row: GroupRow): GroupCard {
   return { id: row.id, name: row.name, summary: row.summary };
 }
 
+function toGroupSchedule(row: GroupRow): GroupSchedule {
+  return { meetingDay: row.meeting_day, meetingStart: row.meeting_start, meetingEnd: row.meeting_end, timezone: row.timezone };
+}
+
 function toGroupInfo(row: GroupRow): GroupInfo {
   return {
     ...toGroupCard(row),
@@ -976,6 +988,7 @@ function toGroupInfo(row: GroupRow): GroupInfo {
     moderationMode: row.moderation_mode,
     listed: row.listed === 1,
     meetingReminders: row.meeting_reminders === 1,
+    requiresAccessCode: row.require_access_code === 1,
   };
 }
 

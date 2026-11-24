@@ -163,15 +163,15 @@
     "howTitle": "Como funciona",
     "how": [
       "Entre com o Google e aceite os Termos de Uso e a Política de Privacidade.",
-      "Crie um grupo com nome, um resumo público curto, regras e horário dos encontros, ou peça para entrar em um grupo existente com o código de acesso dele.",
+      "Crie um grupo com nome, um resumo público curto, regras e horário dos encontros, ou peça para entrar em um grupo existente (com o código de acesso dele, se ele exigir um).",
       "O dono do grupo aprova cada pedido, então só membros aprovados abrem o quadro.",
       "Os membros sugerem vídeos, artigos, livros ou podcasts; o dono escolhe o tema da semana por sorteio ou votação.",
       "Encontrem-se na chamada de vocês e conversem sobre o tema em inglês. Errar faz parte da prática."
     ],
     "startTitle": "Monte o seu grupo",
-    "startText": "Você não precisa ser professor para montar um grupo. Precisa de algumas pessoas, um horário fixo e um tema. Crie o grupo aqui, escreva um resumo público curto e as regras, e compartilhe o código de acesso com quem você quer convidar: amigos, colegas de trabalho ou de turma, ou uma comunidade de que você já participa. Durante a semana os membros sugerem vídeos, artigos ou palestras, e o quadro escolhe o próximo tema por sorteio ou votação. Os encontros acontecem na ferramenta de chamada que vocês já usam.",
+    "startText": "Você não precisa ser professor para montar um grupo. Precisa de algumas pessoas, um horário fixo e um tema. Crie o grupo aqui, escreva um resumo público curto e as regras, e convide quem você quiser, compartilhando o código de acesso se você exigir um: amigos, colegas de trabalho ou de turma, ou uma comunidade de que você já participa. Durante a semana os membros sugerem vídeos, artigos ou palestras, e o quadro escolhe o próximo tema por sorteio ou votação. Os encontros acontecem na ferramenta de chamada que vocês já usam.",
     "groupsTitle": "Grupos abertos para participar",
-    "groupsIntro": "Cada cartão mostra o nome, o ícone e o resumo escritos por quem criou o grupo. Peça o código de acesso ao grupo antes de solicitar a entrada, ou monte o seu se nenhum combinar com o seu horário.",
+    "groupsIntro": "Cada cartão mostra o nome e o ícone do grupo, o resumo escrito por quem o criou e o horário do encontro semanal no seu fuso horário. Alguns grupos também exigem um código de acesso: peça o código ao grupo antes de solicitar a entrada. Monte o seu se nenhum combinar com o seu horário.",
     "groupsNoScript": "Ative o JavaScript para ver os grupos abertos.",
     "groupsEmpty": "Ainda não há grupos listados. Seja o primeiro a criar um.",
     "groupsError": "Não foi possível carregar os grupos. Tente novamente mais tarde.",
@@ -179,6 +179,7 @@
     "loadMore": "Carregar mais grupos",
     "openGroup": "Abrir grupo",
     "signInToJoin": "Entre para participar",
+    "accessCodeRequired": "Código de acesso obrigatório",
     "signInFailed": "Não foi possível entrar. Tente novamente.",
     "signInBanned": "Esta conta Google está banida dos grupos de estudo por violar a política de conteúdo. Se você acha que é um engano, escreva para groups@fbrissi.dev.",
     "faqTitle": "Perguntas frequentes",
@@ -201,7 +202,7 @@
       },
       {
         "q": "Posso criar um grupo fechado para o meu time ou comunidade?",
-        "a": "Pode. Só quem tem o código de acesso consegue pedir para entrar, e o dono aprova cada pedido."
+        "a": "Pode. Exija um código de acesso para que só quem o recebeu de você consiga pedir para entrar; em qualquer caso, o dono aprova cada pedido."
       },
       {
         "q": "Por que o aplicativo dos grupos é em inglês?",

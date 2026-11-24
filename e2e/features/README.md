@@ -14,7 +14,7 @@ step implementation.
 | --- | --- | --- | --- | --- | --- |
 | `public-site.feature` | Bilingual portfolio, program pages, SEO, redirects, cookie notice, contact | `/`, `/pt-br`, `/projects`, `/contact`, `/privacy`, `/study-groups`, `/pt-br/grupos-de-estudo-de-ingles` | visitor | contact email | 00, 01, 10, 13 |
 | `auth.feature` | Google sign-in, welcome and consent, sessions, re-consent | `/api/study-group/auth/*`, `/study-groups/welcome` | visitor, user, banned | session cookie | 02, 09, 15 |
-| `groups.feature` | Create, join with code and approval, code rotation, listing, members, delete, caps, schedule and reminder setting | `/study-groups/new`, `/study-groups/g/<id>`, settings | user, requester, member, owner | join emails | 03, 04, 06, 10, 15, 18 |
+| `groups.feature` | Create, join with or without a code (owner's choice) and approval, code rotation, listing, members, delete, caps, schedule, meeting time in the viewer's zone and reminder setting | `/study-groups/new`, `/study-groups/g/<id>`, settings | user, requester, member, owner | join emails | 03, 04, 06, 10, 15, 18, 19, 20 |
 | `board.feature` | Suggestions, review-first mode, draw and vote rounds, content deletion | board | member, owner, admin | none | 04, 05, 10, 15 |
 | `icons.feature` | Icon upload, checks, metadata stripping, signed links, caps | settings, `/api/study-group/icons/*` | owner, member, admin, visitor | R2 (local folder), icon email | 12, 16 |
 | `admin.feature` | Moderation with reasons, log, bans | `/study-groups/admin` | platform admin | owner notices, emails | 07, 10, 12, 15 |

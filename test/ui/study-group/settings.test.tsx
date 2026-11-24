@@ -93,7 +93,7 @@ describe('group settings', () => {
 
   it('saves the profile with validation (4.4)', async () => {
     let attempt = 0;
-    const fetchMock = setup({ routes: { [`PUT ${base}/settings`]: () => (attempt++ === 0 ? apiError(403, 'consent_required') : { settings: { ...settings, name: 'Go Talk 2', moderationMode: 'review', listed: false }, notices: [], role: 'owner' }) } });
+    const fetchMock = setup({ routes: { [`PUT ${base}/settings`]: () => (attempt++ === 0 ? apiError(403, 'consent_required') : { settings: { ...settings, name: 'Go Talk 2', moderationMode: 'review', listed: false, requiresAccessCode: false }, notices: [], role: 'owner' }) } });
     expect(await screen.findByRole('heading', { name: 'Group settings' })).toBeInTheDocument();
     const form = screen.getByRole('region', { name: 'Group profile' });
     const name = within(form).getByLabelText('Group name');
@@ -118,12 +118,49 @@ describe('group settings', () => {
     fireEvent.change(within(form).getByLabelText('Suggestions'), { target: { value: 'review' } });
     fireEvent.click(within(form).getByRole('checkbox', { name: /List this group/ }));
     fireEvent.click(within(form).getByRole('checkbox', { name: /Email meeting reminders/ }));
+    const requireCode = within(form).getByRole('checkbox', { name: /Require an access code/ });
+    expect(requireCode).toBeChecked();
+    fireEvent.click(requireCode);
+    expect(screen.getByRole('region', { name: 'Access code' })).toBeInTheDocument();
     fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
     expect(await within(form).findByText('Accept the updated Terms and Privacy Policy to make changes.')).toBeInTheDocument();
     fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
     expect(await within(form).findByText('Settings saved.')).toBeInTheDocument();
-    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toEqual({ ...group, id: undefined, iconUrl: undefined, name: 'Go Talk 2', rules: ['One', 'Two'], meetingUrl: null, moderationMode: 'review', listed: false, meetingReminders: false });
+    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toEqual({ ...group, id: undefined, iconUrl: undefined, name: 'Go Talk 2', rules: ['One', 'Two'], meetingUrl: null, moderationMode: 'review', listed: false, meetingReminders: false, requiresAccessCode: false });
     expect(screen.getByText('Go Talk 2', { selector: 'p' })).toBeInTheDocument();
+    // The code and its rotation are hidden while the group doesn't require it.
+    expect(screen.queryByRole('region', { name: 'Access code' })).not.toBeInTheDocument();
+  });
+
+  it('shows the new access code after the owner turns the requirement back on', async () => {
+    const fetchMock = setup({
+      routes: {
+        [`GET ${base}/settings`]: { settings: { ...settings, requiresAccessCode: false }, notices: [], role: 'owner' },
+        [`PUT ${base}/settings`]: { settings: { ...settings, accessCode: 'fresh1234567' }, notices: [], role: 'owner' }
+      }
+    });
+    const form = await screen.findByRole('region', { name: 'Group profile' });
+    expect(screen.queryByRole('region', { name: 'Access code' })).not.toBeInTheDocument();
+    fireEvent.click(within(form).getByRole('checkbox', { name: /Require an access code/ }));
+    fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
+    expect(await within(form).findByText('Settings saved.')).toBeInTheDocument();
+    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toMatchObject({ requiresAccessCode: true });
+    expect(within(screen.getByRole('region', { name: 'Access code' })).getByLabelText('Access code')).toHaveTextContent('fresh1234567');
+  });
+
+  it('treats settings that do not say whether the group requires a code as requiring one', async () => {
+    const fetchMock = setup({
+      routes: {
+        [`GET ${base}/settings`]: { settings: { ...settings, requiresAccessCode: undefined }, notices: [], role: 'owner' },
+        [`PUT ${base}/settings`]: { settings, notices: [], role: 'owner' }
+      }
+    });
+    const form = await screen.findByRole('region', { name: 'Group profile' });
+    expect(screen.getByRole('region', { name: 'Access code' })).toBeInTheDocument();
+    expect(within(form).getByRole('checkbox', { name: /Require an access code/ })).toBeChecked();
+    fireEvent.click(within(form).getByRole('button', { name: 'Save settings' }));
+    expect(await within(form).findByText('Settings saved.')).toBeInTheDocument();
+    expect(bodyOf(fetchMock, `PUT ${base}/settings`)).toMatchObject({ requiresAccessCode: true });
   });
 
   it('shows admin deletion notices', async () => {

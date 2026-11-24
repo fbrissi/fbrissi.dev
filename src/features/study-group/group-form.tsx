@@ -15,7 +15,7 @@ import { hintClass, inputClass } from './ui';
 
 type TextField = 'name' | 'summary' | 'rules' | 'meetingDay' | 'meetingStart' | 'meetingEnd' | 'timezone' | 'meetingUrl';
 
-export type ProfileValues = Record<TextField, string> & { moderationMode: ModerationMode; listed: boolean; meetingReminders: boolean };
+export type ProfileValues = Record<TextField, string> & { moderationMode: ModerationMode; listed: boolean; meetingReminders: boolean; requiresAccessCode: boolean };
 export type ProfileErrors = Partial<Record<TextField, string>>;
 
 const messages: Record<TextField, string> = {
@@ -42,7 +42,8 @@ export const emptyProfile: ProfileValues = {
   meetingUrl: '',
   moderationMode: 'free',
   listed: true,
-  meetingReminders: true
+  meetingReminders: true,
+  requiresAccessCode: false
 };
 
 export function toProfileValues(group: GroupInfo): ProfileValues {
@@ -57,7 +58,8 @@ export function toProfileValues(group: GroupInfo): ProfileValues {
     meetingUrl: group.meetingUrl ?? '',
     moderationMode: group.moderationMode,
     listed: group.listed,
-    meetingReminders: group.meetingReminders
+    meetingReminders: group.meetingReminders,
+    requiresAccessCode: group.requiresAccessCode !== false
   };
 }
 
@@ -144,12 +146,18 @@ export function GroupProfileFields({ values, errors, onChange }: { values: Profi
       </Field>
       <label className="flex items-start gap-2 text-sm text-text-secondary">
         <input type="checkbox" checked={values.listed} onChange={(event) => onChange({ listed: event.target.checked })} />
-        <span>List this group on the public study groups page (name, icon and summary only).</span>
+        <span>List this group on the public study groups page (name, icon, summary and meeting time only).</span>
       </label>
       <label className="flex items-start gap-2 text-sm text-text-secondary">
         <input type="checkbox" checked={values.meetingReminders} onChange={(event) => onChange({ meetingReminders: event.target.checked })} />
         <span>
           Email meeting reminders to the members, {MEETING_REMINDER_LEADS.day_before} hours and {MEETING_REMINDER_LEADS.same_day} hours before each meeting, in the group&apos;s time zone. Members who turned service emails off don&apos;t get them.
+        </span>
+      </label>
+      <label className="flex items-start gap-2 text-sm text-text-secondary">
+        <input type="checkbox" checked={values.requiresAccessCode} onChange={(event) => onChange({ requiresAccessCode: event.target.checked })} />
+        <span>
+          Require an access code to ask to join. This gives more privacy: only people you share the code with can ask. Leave it off to let anyone ask to join. Either way, you approve every request.
         </span>
       </label>
     </>

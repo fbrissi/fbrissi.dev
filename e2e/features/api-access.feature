@@ -53,6 +53,6 @@ Feature: API access control
     When every role reads every readable route
     Then no response contains another user's email
 
-  Scenario: the public groups list is cacheable and holds only id, name, summary and a signed icon link
+  Scenario: the public groups list is cacheable and holds only id, name, summary, the meeting schedule, whether it requires an access code and a signed icon link
     When a visitor reads the public groups list
-    Then it is cacheable for 60 seconds, noindex, and has only id, name, summary and a signed icon link or null
+    Then it is cacheable for 60 seconds, noindex, and has only id, name, summary, meeting day, start, end and time zone, whether it requires an access code, and a signed icon link or null

@@ -24,7 +24,7 @@ O programa nasceu do quadro do DevTalk, um grupo de estudo em que os membros sug
 ## Como um grupo funciona
 
 1. Entre com o Google e aceite os Termos de Uso e a Política de Privacidade.
-2. Crie um grupo com nome, um resumo público curto, regras e horário dos encontros, ou peça para entrar em um grupo com o código de acesso dele.
+2. Crie um grupo com nome, um resumo público curto, regras e horário dos encontros, ou peça para entrar em um grupo (com o código de acesso dele, se ele exigir um).
 3. O dono aprova cada pedido, então só membros aprovados veem o quadro.
 4. Os membros sugerem materiais; o dono escolhe o tema da semana por sorteio ou votação.
 5. O grupo se reúne na própria chamada e conversa sobre o tema em inglês.

@@ -173,3 +173,29 @@ describe('0006 migration (meeting reminders)', () => {
       .toEqual(['notifications_created_at', 'notifications_group_kind', 'notifications_status_created', 'notifications_user_sent']);
   });
 });
+
+describe('0007 migration (optional access code)', () => {
+  it('keeps the access code required for existing groups and leaves new rows open by default', async () => {
+    workDir = mkdtempSync(path.join(os.tmpdir(), 'study-group-migration-'));
+    const dir = path.join(workDir, 'migrations');
+    mkdirSync(dir);
+    const file = path.join(workDir, 'db.sqlite');
+    const before = ['0001_init.sql', '0002_groups_and_accounts.sql', '0003_notifications.sql', '0004_hard_delete.sql', '0005_icons_and_bans.sql', '0006_meeting_reminders.sql'];
+    for (const name of before) copyFileSync(path.join(migrationsDir, name), path.join(dir, name));
+    const v6 = openD1Sqlite(file, dir);
+    await v6.batch([
+      v6.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES ('owner001', 's', 'o@example.test', 'O', 'x', 'x')"),
+      v6.prepare("INSERT INTO groups (id, owner_id, name, summary, meeting_day, meeting_start, meeting_end, timezone, access_code, created_at, updated_at) VALUES ('a', 'owner001', 'A', 'A group summary text', 'Monday', '20:00', '21:00', 'UTC', 'code-a', 'x', 'x')"),
+    ]);
+    copyFileSync(path.join(migrationsDir, '0007_optional_access_code.sql'), path.join(dir, '0007_optional_access_code.sql'));
+    const db = openD1Sqlite(file, dir);
+
+    expect((await db.prepare('SELECT id, access_code, require_access_code FROM groups ORDER BY id').all()).results).toEqual([
+      { id: 'a', access_code: 'code-a', require_access_code: 1 },
+      { id: 'devtalk', access_code: expect.any(String), require_access_code: 1 },
+    ]);
+    await db.prepare("INSERT INTO groups (id, owner_id, name, summary, meeting_day, meeting_start, meeting_end, timezone, access_code, created_at, updated_at) VALUES ('b', 'owner001', 'B', 'B group summary text', 'Monday', '20:00', '21:00', 'UTC', 'code-b', 'x', 'x')").run();
+    expect(await db.prepare("SELECT require_access_code FROM groups WHERE id = 'b'").first()).toEqual({ require_access_code: 0 });
+    await expect(db.prepare("UPDATE groups SET require_access_code = 2 WHERE id = 'b'").run()).rejects.toThrow(/CHECK/);
+  });
+});

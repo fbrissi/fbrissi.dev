@@ -1,7 +1,7 @@
 ---
 title: Termos de Uso
 description: Termos de Uso e política de conteúdo do programa gratuito de grupos de estudo de inglês.
-version: '2026-11-25'
+version: '2026-11-27'
 ---
 
 Estes Termos de Uso regem o programa de grupos de estudo de inglês disponível em `fbrissi.dev/study-groups` (o "programa"). Ao criar uma conta, você concorda com eles. Para usuários no Brasil, esta versão em português prevalece sobre a [versão em inglês](/study-groups/terms).
@@ -50,7 +50,7 @@ Os ícones dos grupos devem ser uma imagem PNG, JPEG ou WebP de até 256 KB e 51
 Ao criar um grupo, você se torna o dono dele. Como dono, você:
 
 - escreve um resumo público fiel, sem dados pessoais nem o link da reunião;
-- compartilha o código de acesso apenas com quem quer convidar e aprova cada pedido de entrada;
+- se o seu grupo exige código de acesso, compartilha-o apenas com quem quer convidar; e aprova cada pedido de entrada;
 - modera o quadro: conduz sorteios e votações, revisa sugestões se ativar o modo de revisão e exclui conteúdos que violem esta política;
 - usa as informações dos membros apenas para conduzir o grupo;
 - responde pelo link de reunião que adicionar e pelos encontros realizados fora do programa.

@@ -69,7 +69,7 @@ describe('create a group (3.1)', () => {
     await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith(`/study-groups/g/${group.id}/settings`));
     expect(bodyOf(fetchMock, 'POST /groups')).toEqual({
       name: 'Go Talk', summary: group.summary, rules: [], meetingDay: 'Monday', meetingStart: '20:00', meetingEnd: '21:00',
-      timezone: 'America/Sao_Paulo', meetingUrl: null, moderationMode: 'free', listed: true, meetingReminders: true, acceptContentPolicy: true
+      timezone: 'America/Sao_Paulo', meetingUrl: null, moderationMode: 'free', listed: true, meetingReminders: true, requiresAccessCode: false, acceptContentPolicy: true
     });
   });
 });
@@ -335,8 +335,8 @@ describe('program landing (1.1, 1.2)', () => {
     window.history.pushState({}, '', '/study-groups?signin=failed');
     renderWith({
       'GET /me': { user: null },
-      'GET /groups': { groups: [{ id: 'aaa1234567', name: 'Go Talk', summary: 'About Go', iconUrl: '/api/study-group/icons/aaa1234567/abcdefghjkmnpqrs.png?exp=1&sig=s' }], nextCursor: 'next' },
-      'GET /groups?cursor=next': { groups: [{ id: 'bbb1234567', name: 'Rust Talk', summary: 'About Rust', iconUrl: null }], nextCursor: null }
+      'GET /groups': { groups: [{ id: 'aaa1234567', name: 'Go Talk', summary: 'About Go', requiresAccessCode: true, iconUrl: '/api/study-group/icons/aaa1234567/abcdefghjkmnpqrs.png?exp=1&sig=s' }], nextCursor: 'next' },
+      'GET /groups?cursor=next': { groups: [{ id: 'bbb1234567', name: 'Rust Talk', summary: 'About Rust', requiresAccessCode: false, iconUrl: null }], nextCursor: null }
     }, <><ProgramActions locale="en" /><GroupDirectory locale="en" /></>);
     expect(await screen.findByText("Sign-in didn't work. Please try again.")).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Join a free English study group' })).toHaveAttribute('href', '/api/study-group/auth/login?returnTo=%2Fstudy-groups%2Fmy');
@@ -351,6 +351,9 @@ describe('program landing (1.1, 1.2)', () => {
     expect(goCard.querySelector('img')).toHaveAttribute('src', '/api/study-group/icons/aaa1234567/abcdefghjkmnpqrs.png?exp=1&sig=s');
     expect(rustCard.querySelector('img')).toBeNull();
     expect(rustCard.querySelector('[data-placeholder]')).toHaveTextContent('R');
+    // Only a group that requires an access code shows the badge.
+    expect(goCard).toHaveTextContent('Access code required');
+    expect(rustCard).not.toHaveTextContent('Access code required');
   });
 
   it('links signed-in users straight to their groups, in Portuguese too', async () => {
@@ -358,6 +361,8 @@ describe('program landing (1.1, 1.2)', () => {
     expect(await screen.findByRole('link', { name: 'Meus grupos' })).toHaveAttribute('href', '/study-groups/my');
     expect(screen.getByRole('link', { name: 'Criar um grupo' })).toHaveAttribute('href', '/study-groups/new');
     expect(await screen.findByRole('link', { name: 'Abrir grupo: Go Talk' })).toHaveAttribute('href', '/study-groups/g/aaa1234567');
+    // A list that doesn't say whether the group requires a code shows the badge.
+    expect(screen.getByText('Código de acesso obrigatório')).toBeInTheDocument();
     expect(screen.queryByText('Não foi possível entrar. Tente novamente.')).not.toBeInTheDocument();
   });
 

@@ -6,9 +6,10 @@ import { formatAskAgainAt, LIMITS, type GroupPreviewResponse } from '@/workers/s
 
 import { errorMessage, hasStatus, type StudyGroupApi } from './api';
 import { GroupIcon } from './group-icon';
+import { MeetingTime } from './meeting-time';
 import { Banner, buttonClass, cardClass, eyebrowClass, hintClass, inputClass } from './ui';
 
-/** Shown to signed-in users who aren't members: request to join with the access code; the owner approves (D5). */
+/** Shown to signed-in users who aren't members: request to join, with the access code when the group requires one; the owner approves (D5). */
 export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: string }) {
   const [preview, setPreview] = useState<GroupPreviewResponse | null>(null);
   const [loadError, setLoadError] = useState(false);
@@ -27,9 +28,11 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
   if (loadError) return <Banner tone="error" title="Couldn't load this group. Check the link and try again." />;
   if (!preview) return <p role="status" className="text-text-secondary">Loading…</p>;
 
+  const requiresCode = preview.group.requiresAccessCode !== false;
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    if (!code.trim()) {
+    if (requiresCode && !code.trim()) {
       setError('Please enter the access code.');
       return;
     }
@@ -37,7 +40,7 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
     setError('');
     setFormError('');
     try {
-      await api.joinGroup(groupId, { code: code.trim(), message: message.trim() || undefined });
+      await api.joinGroup(groupId, { code: requiresCode ? code.trim() : undefined, message: message.trim() || undefined });
       setSent(true);
     } catch (joinError) {
       if (hasStatus(joinError, 403)) setError("That code didn't work. Check the latest code with the group.");
@@ -57,10 +60,11 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
         <GroupIcon url={preview.group.iconUrl} name={preview.group.name} size={56} />
         <h1 className="text-3xl font-normal tracking-tight wrap-anywhere sm:text-4xl">{preview.group.name}</h1>
       </div>
-      <p className="mb-6 text-text-secondary wrap-anywhere">{preview.group.summary}</p>
+      <p className="mb-4 text-text-secondary wrap-anywhere">{preview.group.summary}</p>
+      <div className="mb-6"><MeetingTime schedule={preview.group} /></div>
       {waiting ? (
         <Banner tone="success" title="Your request was sent.">
-          <p className="text-text-secondary">The owner reviews each request. Once approved, this page opens the board; you won&apos;t need the code again.</p>
+          <p className="text-text-secondary">The owner reviews each request. Once approved, this page opens the board{requiresCode ? <>; you won&apos;t need the code again</> : null}.</p>
         </Banner>
       ) : rejectedUntil ? (
         <Banner tone="error" title="The owner didn’t approve your request to join this group.">
@@ -69,18 +73,24 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
       ) : (
         <form noValidate onSubmit={submit} className={`${cardClass} flex flex-col gap-4 p-6`}>
           <h2 className="text-xl font-normal">Ask to join</h2>
-          <label htmlFor="join-code" className="text-sm tracking-wide text-text-secondary">Access code</label>
-          <input
-            id="join-code"
-            className={inputClass}
-            value={code}
-            autoComplete="off"
-            autoCapitalize="none"
-            spellCheck={false}
-            aria-invalid={Boolean(error)}
-            aria-describedby={error ? 'join-error' : undefined}
-            onChange={(event) => { setCode(event.target.value); setError(''); }}
-          />
+          <p className={hintClass}>The owner reviews each request before you can see the board.</p>
+          {requiresCode ? (
+            <>
+              <p className="text-sm text-text-secondary">This group only accepts requests with an access code, by its creator&apos;s choice. Ask the group for it.</p>
+              <label htmlFor="join-code" className="text-sm tracking-wide text-text-secondary">Access code</label>
+              <input
+                id="join-code"
+                className={inputClass}
+                value={code}
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                aria-invalid={Boolean(error)}
+                aria-describedby={error ? 'join-error' : undefined}
+                onChange={(event) => { setCode(event.target.value); setError(''); }}
+              />
+            </>
+          ) : null}
           <label htmlFor="join-message" className="flex justify-between text-sm tracking-wide text-text-secondary">Message to the owner <span className="text-xs text-text-muted">Optional</span></label>
           <textarea id="join-message" className={`${inputClass} min-h-20 resize-y`} rows={2} maxLength={LIMITS.joinMessage} value={message} onChange={(event) => setMessage(event.target.value)} />
           <span className={hintClass}>The owner sees your display name and this message, never your email.</span>

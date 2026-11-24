@@ -89,7 +89,7 @@ function SettingsLoader({ api, groupId, isPlatformAdmin }: { api: StudyGroupApi;
       <Notices notices={ready.notices} />
       <ProfileForm api={api} settings={ready.settings} onSaved={(settings) => update({ settings })} />
       <IconSettings api={api} groupId={groupId} groupName={ready.settings.name} iconUrl={ready.settings.iconUrl} isOwner={ready.role === 'owner'} onChange={(iconUrl) => update({ settings: { ...ready.settings, iconUrl } })} />
-      <AccessCode api={api} settings={ready.settings} onRotated={(settings) => update({ settings })} />
+      {ready.settings.requiresAccessCode !== false ? <AccessCode api={api} settings={ready.settings} onRotated={(settings) => update({ settings })} /> : null}
       <Requests api={api} groupId={groupId} requests={ready.requests} canDeleteMessages={isPlatformAdmin} onChange={(requests, members) => update(members ? { requests, members } : { requests })} />
       <Members api={api} groupId={groupId} members={ready.members} onRemoved={(userId) => update({ members: ready.members.filter((member) => member.userId !== userId) })} />
       <DeleteGroup api={api} settings={ready.settings} needsReason={isAdminActor} />
@@ -251,7 +251,7 @@ function Requests({ api, groupId, requests, canDeleteMessages, onChange }: { api
     <section aria-labelledby="requests-title" className={sectionClass}>
       {dialog}
       <h2 id="requests-title" ref={title} tabIndex={-1} className={`${sectionTitleClass} focus:outline-none`}>Join requests</h2>
-      <p className="mb-4 text-sm text-text-secondary">People who entered the access code. Approve the ones you know.</p>
+      <p className="mb-4 text-sm text-text-secondary">People who asked to join. Approve the ones you know.</p>
       {notice ? <div className="mb-4"><Banner tone={notice.tone} title={notice.text} /></div> : null}
       {requests.length ? (
         <ul className="m-0 list-none p-0">

@@ -9,7 +9,7 @@ published Privacy Policy (`src/content/study-groups/*/privacy.md`) and the code;
 - **ATPP status:** individual (art. 2, I), no exclusion under art. 3, no high-risk processing under art. 4 (no large
   scale, no sensitive data, no automated decisions, no minors: the program is 18+). Uses the doubled deadlines of
   arts. 14 and 15. Re-check if the program grows large or admits minors.
-- **Last reviewed:** 2026-11-26 (policy version 2026-11-26).
+- **Last reviewed:** 2026-11-27 (policy version 2026-11-27).
 
 | # | Activity | Data subjects | Data | Purpose | Legal basis (art. 7) | Providers | Retention |
 |---|---|---|---|---|---|---|---|
