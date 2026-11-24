@@ -30,5 +30,6 @@ export function getWork(locale: Locale, slug: string): WorkEntry | null {
 
 export function getWorks(locale: Locale): WorkEntry[] {
   return getMarkdownCollectionItems<WorkFrontMatter>(collectionName, locale)
-    .sort((left, right) => (left.order ?? 0) - (right.order ?? 0) || left.company.localeCompare(right.company));
+    // Current roles (no end date) first, then newest start date first (D-2).
+    .sort((left, right) => Number(Boolean(left.endDate)) - Number(Boolean(right.endDate)) || right.startDate.localeCompare(left.startDate) || left.company.localeCompare(right.company));
 }

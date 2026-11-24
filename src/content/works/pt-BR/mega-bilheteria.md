@@ -1,5 +1,5 @@
 ---
-company: "MEGA BILHETERIA"
+company: "Mega Bilheteria"
 title: "Especialista em Engenharia de Software"
 dateRange: "set de 2019 - atual"
 summary: "Modernização incremental de uma plataforma legada de ingressos com Kubernetes, AWS, Go e testes automatizados."

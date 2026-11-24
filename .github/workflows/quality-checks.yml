@@ -173,10 +173,87 @@ jobs:
       - run: terraform init -backend=false
       - run: terraform validate
 
+  # Full Playwright suite (e2e/, specified by e2e/features/*.feature) against the local Docker stack: app, study group
+  # API, fake Google IdP, Mailpit, contact API and consumer with LocalStack. Everything is local and fake: no secrets.
+  # Pull requests only (not pushes, the schedule or manual runs), and the Docker images are pulled fresh, not cached.
+  e2e:
+    name: Quality / e2e
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    if: ${{ github.event_name == 'pull_request' && github.event.pull_request.draft == false }}
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    env:
+      COMPOSE_FILE: docker-compose.yml:docker-compose.ci.yml
+      COMPOSE_PROJECT_NAME: fbrissidev-e2e
+    steps:
+      - uses: actions/checkout@v7
+      # The stack runs on the Alpine kooldev/node image (as `kool start` does), so its dependencies are installed there
+      # and cached apart from the host ones (native packages differ).
+      - id: deps
+        uses: actions/cache/restore@v6
+        with:
+          path: node_modules
+          key: e2e-deps-v1-kooldev-node24-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+      - if: ${{ steps.deps.outputs.cache-hit != 'true' }}
+        run: docker run --rm -v "$PWD:/app" -w /app kooldev/node:24 yarn install --frozen-lockfile
+      - if: ${{ steps.deps.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@v6
+        with:
+          path: node_modules
+          key: e2e-deps-v1-kooldev-node24-${{ runner.arch }}-${{ hashFiles('yarn.lock') }}
+      - name: Check the feature files against the tests
+        run: docker run --rm -v "$PWD:/app" -w /app kooldev/node:24 node scripts/check-e2e-features.mjs
+      - name: Start the stack
+        run: |
+          docker compose up -d --quiet-pull
+          # Wait for the API through the Next.js proxy, then compile the pages once so the first tests don't time out.
+          for _ in $(seq 1 90); do
+            if docker compose exec -T app wget -qO /dev/null http://localhost:3000/api/study-group/me; then break; fi
+            sleep 2
+          done
+          for path in / /pt-br /study-groups /pt-br/grupos-de-estudo-de-ingles /privacy /study-groups/my /study-groups/g/devtalk /study-groups/welcome; do
+            docker compose exec -T app wget -qO /dev/null "http://localhost:3000${path}" || true
+          done
+      - name: Run the E2E suite
+        run: bash e2e/run.sh
+      - name: Upload the Playwright report and traces
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          if-no-files-found: ignore
+          retention-days: 14
+      - name: Show the stack logs
+        if: ${{ failure() }}
+        run: docker compose logs --no-color --tail 200
+      - name: Stop the stack
+        if: ${{ always() }}
+        run: |
+          docker compose down -v --remove-orphans
+          # The containers write as root into the checkout; hand it back to the runner user (self-hosted runners).
+          docker run --rm -v "$PWD:/app" kooldev/node:24 chown -R "$(id -u):$(id -g)" /app
+
+  # Compares terraform/cloudflare-token-permissions.json with terraform/*.tf and with the real Terraform Cloudflare
+  # token, so a missing permission fails here instead of in the Terraform Cloud apply after merge.
+  terraform-permissions:
+    name: Terraform / Cloudflare token permissions
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    uses: fbrissi/github-actions/.github/workflows/terraform-permissions.yml@v1
+    permissions:
+      contents: read
+    with:
+      change-pattern: '^(terraform/|\.github/workflows/quality-checks\.yml$)'
+    secrets:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
   quality-jobs:
     name: Quality Checks
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
-    needs: [quality, terraform, release-note]
+    needs: [quality, e2e, terraform, terraform-permissions, release-note]
     if: ${{ always() && !cancelled() && (github.event_name != 'pull_request' || github.event.pull_request.draft == false) }}
     permissions:
       actions: write
@@ -185,14 +262,24 @@ jobs:
       - name: Validate quality results
         env:
           QUALITY_RESULT: ${{ needs.quality.result }}
+          E2E_RESULT: ${{ needs.e2e.result }}
+          EVENT_NAME: ${{ github.event_name }}
           TERRAFORM_RESULT: ${{ needs.terraform.result }}
+          TERRAFORM_PERMISSIONS_RESULT: ${{ needs.terraform-permissions.result }}
           RELEASE_NOTE_RESULT: ${{ needs.release-note.result }}
         run: |
           set -euo pipefail
 
-          if [ "$QUALITY_RESULT" != 'success' ] || [ "$TERRAFORM_RESULT" != 'success' ]; then
+          # The E2E suite runs on pull requests only; elsewhere it is skipped, which counts as passing.
+          if [ "$EVENT_NAME" != 'pull_request' ] && [ "$E2E_RESULT" = 'skipped' ]; then
+            E2E_RESULT=success
+          fi
+
+          if [ "$QUALITY_RESULT" != 'success' ] || [ "$E2E_RESULT" != 'success' ] || [ "$TERRAFORM_RESULT" != 'success' ] || [ "$TERRAFORM_PERMISSIONS_RESULT" != 'success' ]; then
             echo "Quality result: $QUALITY_RESULT"
+            echo "E2E result: $E2E_RESULT"
             echo "Terraform result: $TERRAFORM_RESULT"
+            echo "Terraform permissions result: $TERRAFORM_PERMISSIONS_RESULT"
             exit 1
           fi
 

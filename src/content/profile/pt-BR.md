@@ -1,9 +1,9 @@
 ---
-headline: "Staff Software Engineer • Sistemas Distribuídos • Arquitetura Cloud • AWS • Kubernetes • Microsserviços"
-summary: "Staff Software Engineer com mais de 15 anos de experiência construindo soluções escaláveis para ambientes web, mobile e cloud."
+headline: "Engenheiro Backend e Cloud"
+summary: "Engenheiro backend e cloud construindo soluções escaláveis para ambientes web, mobile e cloud desde 2009."
 ---
 
-Sou **Staff Software Engineer com mais de 15 anos de experiência** construindo soluções escaláveis para ambientes web, mobile e cloud. Minha trajetória inclui **desenvolvimento full-stack, sistemas distribuídos e arquitetura de microsserviços**, apoiada por uma ampla variedade de tecnologias utilizadas ao longo da carreira.
+Sou **engenheiro backend e cloud e desenvolvo software desde 2009**, com foco em soluções escaláveis para ambientes web, mobile e cloud. Minha trajetória inclui **desenvolvimento full-stack, sistemas distribuídos e arquitetura de microsserviços**, apoiada por uma ampla variedade de tecnologias utilizadas ao longo da carreira.
 
 ## Engenharia cloud-native
 
@@ -13,12 +13,14 @@ Tenho ampla experiência na construção de microsserviços com **Java, Kotlin, 
 
 ## Experiência em escala
 
-Na **Exlink**, contribuí para uma plataforma multi-tenant voltada a programas de intercâmbio internacional, atendendo estudantes, famílias anfitriãs, agências e outros participantes. Meu trabalho incluiu funcionalidades escaláveis, fluxos de assinatura digital, melhorias arquiteturais e evolução da experiência do usuário.
+Atualmente, na **Mega Bilheteria**, onde atuo como freelancer desde 2019, modernizo uma plataforma legada de ingressos com uma migração incremental para cloud-native usando Kubernetes, AWS, Go e testes automatizados.
 
-Anteriormente, no **PagBank (PagSeguro)**, uma das maiores empresas de pagamentos do Brasil, trabalhei na plataforma de Open Finance e contribuí para o desenho, desenvolvimento e evolução de soluções baseadas em microsserviços em ambiente cloud.
+De 2024 a 2026, na **Exlink**, contribuí para uma plataforma multi-tenant voltada a programas de intercâmbio internacional, atendendo estudantes, famílias anfitriãs, agências e outros participantes. Meu trabalho incluiu funcionalidades escaláveis, fluxos de assinatura digital, melhorias arquiteturais e evolução da experiência do usuário.
+
+Antes disso, no **PagBank (PagSeguro)**, uma das maiores empresas de pagamentos do Brasil, trabalhei na plataforma de Open Finance e contribuí para o desenho, desenvolvimento e evolução de soluções baseadas em microsserviços em ambiente cloud.
 
 ## Liderança e aprendizado contínuo
 
-Possuo **MBA em Engenharia de Software**, com foco em metodologias ágeis. Também tenho experiência com mentoria de equipes, treinamentos técnicos e contribuições para projetos open source.
+Possuo **MBA em Engenharia de Software**, com foco em metodologias ágeis. Também tenho experiência com mentoria de equipes, treinamentos técnicos e contribuições para projetos open source, e mantenho um [programa gratuito de grupos de estudo de inglês](/pt-br/grupos-de-estudo-de-ingles) aberto a qualquer pessoa.
 
-Sou apaixonado por resolver problemas complexos, aprender continuamente e construir soluções de alta qualidade que gerem valor real para usuários e negócios.
+O trabalho de que mais gosto é aquele de que outros times dependem: fluxos de autenticação, migrações de plataformas legadas e pipelines de entrega usados por mais de 20 times.

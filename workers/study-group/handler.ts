@@ -1,347 +1,265 @@
-import { z } from 'zod';
-import { createAdminToken, timingSafeEqual, verifyAdminLogin, verifyAdminToken, type AdminCredentials } from './auth';
+import * as admin from './admin-routes';
+import * as auth from './auth-routes';
+import { authorize, isPlatformAdminEmail, resolveGroupRole, resolveRole, type Role } from './authorization';
+import * as board from './board-routes';
+import { STUDY_GROUP_API_PREFIX } from './contract';
+import { cryptoRandomInt, sha256Hex } from './crypto';
+import * as groups from './group-routes';
+import * as icons from './icon-routes';
+import { canParticipate } from './group-routes';
+import * as notifications from './notification-routes';
 import {
-  adminLoginSchema,
-  castVoteSchema,
-  createMaterialSchema,
-  createRoundSchema,
-  materialStatuses,
-  STUDY_GROUP_ACCESS_CODE_HEADER,
-  STUDY_GROUP_API_PREFIX,
-  updateGroupSettingsSchema,
-  updateMaterialSchema,
-  type ErrorResponse,
-  type Round,
-  type RoundResponse,
-} from './contract';
-import { createRepository, isUniqueConstraintError, type D1Like, type StudyGroupRepository } from './repository';
+  errorBody,
+  HttpError,
+  parseCookies,
+  SESSION_COOKIE,
+  type AppConfig,
+  type FetchLike,
+  type RateLimitKind,
+  type RequestContext,
+  type RouteResult,
+} from './http';
+import type { BucketLike } from './icons';
+import { createJwksProvider, type CacheLike, type OidcClient } from './oidc';
+import { createRepository, type D1Like, type QueuedNotification } from './repository';
+import { reportError } from '../observability/sentry';
 
-export type RateLimitKind = 'read' | 'write' | 'login';
+export type { RateLimitKind } from './http';
 
 export interface StudyGroupHandlerDeps {
   db: D1Like;
+  /** Origins allowed to send state-changing requests (CSRF check). */
   allowedOrigins: readonly string[];
-  /** Admin login configuration; when absent every admin login fails. */
-  admin?: AdminCredentials;
-  /** Returns false when the request exceeds its rate limit. */
-  rateLimit?: (kind: RateLimitKind, request: Request) => Promise<boolean>;
+  /** Origin of the site pages; the OAuth redirect URI and post-sign-in redirects use it. */
+  appOrigin: string;
+  oidc: OidcClient;
+  /** Signs the short-lived OAuth and sign-up cookies. Sign-in is disabled while it is empty. */
+  sessionSecret: string;
+  platformAdminEmails: readonly string[];
+  /** Returns false when the request exceeds its rate limit; the key is the user ID when signed in, else the IP. */
+  rateLimit?: (kind: RateLimitKind, key: string) => Promise<boolean>;
+  fetch?: FetchLike;
+  cache?: CacheLike;
   now?: () => Date;
   /** Returns an integer in [0, max). */
   randomInt?: (max: number) => number;
+  /** `production`, `sandbox` or `local`; signed into unsubscribe links. Defaults to production. */
+  environment?: string;
+  /** Verifies one-click unsubscribe links (STUDY_GROUP_UNSUBSCRIBE_SECRET). */
+  unsubscribeSecret?: string;
+  /** Hands new outbox rows to the mailer. Without it, rows wait for the daily cron. */
+  notify?: (notifications: QueuedNotification[]) => Promise<void>;
+  /** The private group icon bucket (R2 in the Workers, a folder locally). */
+  icons?: BucketLike;
 }
 
-class HttpError extends Error {
-  constructor(readonly status: number, message: string, readonly issues?: unknown[]) {
-    super(message);
+type Handler = (context: never) => Promise<RouteResult>;
+
+interface Route {
+  method: string;
+  path: string;
+  /** Minimum role; group routes resolve the role inside the group. */
+  role: Role;
+  rateLimit?: RateLimitKind;
+  /** Skips the session lookup: the public, cacheable groups list and the token-authenticated unsubscribe. */
+  anonymous?: boolean;
+  /** Allowed while the user still has to accept a new policy version (Q18). */
+  consentExempt?: boolean;
+  /** Suggesting and voting need membership (or ownership); a platform admin outside the group can only manage it. */
+  participate?: boolean;
+  /**
+   * Skips the Origin and JSON checks. Only the one-click unsubscribe POST (RFC 8058): mail providers send it with a
+   * form body and no Origin, and its signed token, not a cookie, is the credential.
+   */
+  csrfExempt?: boolean;
+  /** The body is a raw image (icon upload): the Origin check stays, and only image content types are accepted. */
+  imageBody?: boolean;
+  run: Handler;
+}
+
+const paramPatterns: Record<string, RegExp> = {
+  groupId: /^[a-z0-9]{3,32}$/,
+  userId: /^[a-z0-9]{8,32}$/,
+  materialId: /^[1-9]\d{0,15}$/,
+  roundId: /^[1-9]\d{0,15}$/,
+  requestId: /^[1-9]\d{0,15}$/,
+  iconGroup: /^[a-z0-9]{3,32}$/,
+  iconFile: /^[a-z0-9]{16}\.(png|jpg|webp)$/,
+};
+
+/** Every API route with the minimum role it needs (D10). Tests walk this table for the route x role matrix. */
+export const routes: readonly Route[] = [
+  { method: 'GET', path: '/auth/login', role: 'visitor', rateLimit: 'auth', run: auth.login },
+  { method: 'GET', path: '/auth/callback', role: 'visitor', rateLimit: 'auth', run: auth.callback },
+  { method: 'GET', path: '/auth/signup', role: 'visitor', run: auth.getSignup },
+  { method: 'POST', path: '/auth/signup', role: 'visitor', rateLimit: 'auth', run: auth.completeSignup },
+  { method: 'POST', path: '/auth/signup/cancel', role: 'visitor', run: auth.cancelSignup },
+  { method: 'POST', path: '/auth/logout', role: 'visitor', consentExempt: true, run: auth.logout },
+
+  { method: 'GET', path: '/me', role: 'visitor', run: auth.getMe },
+  { method: 'PATCH', path: '/me', role: 'user', run: auth.updateMe },
+  { method: 'DELETE', path: '/me', role: 'user', consentExempt: true, run: auth.deleteAccount },
+  { method: 'POST', path: '/me/consents', role: 'user', consentExempt: true, run: auth.acceptPolicies },
+  { method: 'GET', path: '/me/groups', role: 'user', run: auth.myGroups },
+  { method: 'GET', path: '/me/export', role: 'user', run: auth.exportAccount },
+  { method: 'GET', path: '/me/notifications', role: 'user', run: notifications.getPreferences },
+  { method: 'PUT', path: '/me/notifications', role: 'user', consentExempt: true, run: notifications.updatePreferences },
+  { method: 'GET', path: '/unsubscribe', role: 'visitor', anonymous: true, run: notifications.unsubscribePage },
+  { method: 'POST', path: '/unsubscribe', role: 'visitor', anonymous: true, csrfExempt: true, run: notifications.unsubscribe },
+
+  { method: 'GET', path: '/groups', role: 'visitor', anonymous: true, run: groups.listPublicGroups },
+  { method: 'POST', path: '/groups', role: 'user', run: groups.createGroup },
+  { method: 'GET', path: '/groups/:groupId/preview', role: 'user', run: groups.previewGroup },
+  { method: 'POST', path: '/groups/:groupId/join', role: 'user', rateLimit: 'join', run: groups.joinGroup },
+  { method: 'GET', path: '/groups/:groupId', role: 'member', run: groups.getGroup },
+  { method: 'DELETE', path: '/groups/:groupId', role: 'owner', run: groups.deleteGroup },
+  { method: 'GET', path: '/groups/:groupId/members', role: 'member', run: groups.listMembers },
+  { method: 'DELETE', path: '/groups/:groupId/members/:userId', role: 'owner', run: groups.removeMember },
+  { method: 'POST', path: '/groups/:groupId/leave', role: 'member', run: groups.leaveGroup },
+  { method: 'GET', path: '/groups/:groupId/settings', role: 'owner', run: groups.getSettings },
+  { method: 'PUT', path: '/groups/:groupId/settings', role: 'owner', run: groups.updateSettings },
+  { method: 'POST', path: '/groups/:groupId/access-code', role: 'owner', run: groups.rotateAccessCode },
+  { method: 'GET', path: '/groups/:groupId/requests', role: 'owner', run: groups.listRequests },
+  { method: 'POST', path: '/groups/:groupId/requests/:requestId/approve', role: 'owner', run: groups.approveRequest },
+  { method: 'POST', path: '/groups/:groupId/requests/:requestId/reject', role: 'owner', run: groups.rejectRequest },
+  { method: 'DELETE', path: '/groups/:groupId/requests/:requestId/message', role: 'owner', run: groups.deleteRequestMessage },
+  { method: 'PUT', path: '/groups/:groupId/icon', role: 'owner', rateLimit: 'icon', imageBody: true, run: icons.uploadIcon },
+  { method: 'DELETE', path: '/groups/:groupId/icon', role: 'owner', run: icons.deleteIcon },
+  { method: 'GET', path: '/icons/:iconGroup/:iconFile', role: 'visitor', anonymous: true, run: icons.serveIcon },
+
+  { method: 'GET', path: '/groups/:groupId/materials', role: 'member', run: board.listMaterials },
+  { method: 'POST', path: '/groups/:groupId/materials', role: 'member', participate: true, run: board.createMaterial },
+  { method: 'PATCH', path: '/groups/:groupId/materials/:materialId', role: 'owner', run: board.updateMaterial },
+  { method: 'DELETE', path: '/groups/:groupId/materials/:materialId', role: 'owner', run: board.deleteMaterial },
+  { method: 'POST', path: '/groups/:groupId/materials/:materialId/approve', role: 'owner', run: board.approveMaterial },
+  { method: 'GET', path: '/groups/:groupId/rounds/current', role: 'member', run: board.getCurrentRound },
+  { method: 'POST', path: '/groups/:groupId/rounds', role: 'owner', run: board.createRound },
+  { method: 'POST', path: '/groups/:groupId/rounds/:roundId/votes', role: 'member', participate: true, run: board.castVote },
+  { method: 'POST', path: '/groups/:groupId/rounds/:roundId/close', role: 'owner', run: board.closeRound },
+  { method: 'POST', path: '/groups/:groupId/rounds/:roundId/cancel', role: 'owner', run: board.cancelRound },
+
+  { method: 'GET', path: '/admin/groups', role: 'platform_admin', run: groups.listAllGroups },
+  { method: 'GET', path: '/admin/moderation-log', role: 'platform_admin', run: groups.moderationLog },
+  { method: 'GET', path: '/admin/users', role: 'platform_admin', run: admin.listUsers },
+  { method: 'POST', path: '/admin/users/:userId/ban', role: 'platform_admin', run: admin.banUser },
+  { method: 'POST', path: '/admin/users/:userId/ban/renew', role: 'platform_admin', run: admin.renewBan },
+  { method: 'DELETE', path: '/admin/users/:userId/ban', role: 'platform_admin', run: admin.unbanUser },
+];
+
+function matchRoute(method: string, segments: string[]): { route: Route; params: Record<string, string> } {
+  let methodMismatch = false;
+  for (const route of routes) {
+    const pattern = route.path.split('/').filter(Boolean);
+    if (pattern.length !== segments.length) continue;
+    const params: Record<string, string> = {};
+    const matches = pattern.every((part, index) => {
+      if (!part.startsWith(':')) return part === segments[index];
+      params[part.slice(1)] = segments[index];
+      return true;
+    });
+    if (!matches) continue;
+    // A literal segment such as /materials/deleted wins over a parameter in the same position.
+    if (Object.entries(params).some(([name, value]) => !paramPatterns[name].test(value))) continue;
+    if (route.method !== method) {
+      methodMismatch = true;
+      continue;
+    }
+    return { route, params };
+  }
+  throw methodMismatch ? new HttpError(405, 'Method not allowed') : new HttpError(404, 'Not found');
+}
+
+function baseHeaders(): Headers {
+  return new Headers({
+    'Cache-Control': 'no-store',
+    'X-Robots-Tag': 'noindex, nofollow',
+    'Referrer-Policy': 'no-referrer',
+    'X-Content-Type-Options': 'nosniff',
+  });
+}
+
+function withBaseHeaders(response: Response): Response {
+  const headers = new Headers(response.headers);
+  for (const [name, value] of baseHeaders()) if (!headers.has(name)) headers.set(name, value);
+  return new Response(response.body, { status: response.status, headers });
+}
+
+/** Same-origin API: every state-changing request needs an allowed Origin and a JSON body (CSRF, on top of SameSite=Lax). */
+function checkCsrf(request: Request, allowedOrigins: readonly string[], imageBody = false): void {
+  if (request.method === 'GET') return;
+  const origin = request.headers.get('Origin');
+  if (!origin || !allowedOrigins.includes(origin)) throw new HttpError(403, 'Forbidden');
+  const type = request.headers.get('Content-Type') ?? '';
+  if (imageBody) {
+    if (!/^image\/(png|jpeg|webp)$/i.test(type)) throw new HttpError(415, 'Use a PNG, JPEG or WebP image');
+  } else if (!/^application\/json\b/i.test(type)) {
+    throw new HttpError(415, 'Use a JSON body');
   }
 }
 
-const listStatusSchema = z.enum([...materialStatuses, 'all']).default('all');
-
-export function cryptoRandomInt(max: number): number {
-  return crypto.getRandomValues(new Uint32Array(1))[0] % max;
+function globalFetch(input: Request | string, init?: RequestInit): Promise<Response> {
+  return fetch(input, init);
 }
 
 export function createHandler(deps: StudyGroupHandlerDeps) {
-  const repository = createRepository(deps.db);
-  const clock = () => deps.now?.() ?? new Date();
+  const fetcher: FetchLike = deps.fetch ?? globalFetch;
   const randomInt = deps.randomInt ?? cryptoRandomInt;
-  const context: RouteContext = {
-    repository,
-    admin: deps.admin,
-    clock,
-    now: () => clock().toISOString(),
+  const app: AppConfig = {
+    repository: createRepository(deps.db),
+    appOrigin: deps.appOrigin,
+    oidc: deps.oidc,
+    sessionSecret: deps.sessionSecret,
+    platformAdminEmails: deps.platformAdminEmails,
+    fetch: fetcher,
+    getKey: createJwksProvider(deps.oidc.provider.jwksUri, fetcher, deps.cache),
+    cache: deps.cache,
+    clock: () => deps.now?.() ?? new Date(),
     pick: <T>(items: T[]): T => items[randomInt(items.length)],
+    environment: deps.environment ?? 'production',
+    unsubscribeSecret: deps.unsubscribeSecret ?? '',
+    notify: deps.notify,
+    icons: deps.icons,
   };
 
   return async function handle(request: Request): Promise<Response> {
-    const headers = responseHeaders(request, deps.allowedOrigins);
-    if (request.method === 'OPTIONS') return new Response(null, { status: 204, headers });
-
     try {
-      const pathname = new URL(request.url).pathname;
-      if (pathname !== STUDY_GROUP_API_PREFIX && !pathname.startsWith(`${STUDY_GROUP_API_PREFIX}/`)) {
-        throw new HttpError(404, 'Not found');
+      const url = new URL(request.url);
+      if (url.pathname !== STUDY_GROUP_API_PREFIX && !url.pathname.startsWith(`${STUDY_GROUP_API_PREFIX}/`)) throw new HttpError(404, 'Not found');
+      const { route, params } = matchRoute(request.method, url.pathname.slice(STUDY_GROUP_API_PREFIX.length).split('/').filter(Boolean));
+      if (!route.csrfExempt) checkCsrf(request, deps.allowedOrigins, route.imageBody);
+
+      const token = route.anonymous ? undefined : parseCookies(request).get(SESSION_COOKIE);
+      const sessionHash = token ? await sha256Hex(token) : null;
+      const user = sessionHash ? await app.repository.getSessionUser(sessionHash, app.clock().toISOString()) : null;
+      const isPlatformAdmin = Boolean(user && isPlatformAdminEmail(user.email, app.platformAdminEmails));
+
+      const limitKey = user ? `user:${user.id}` : `ip:${request.headers.get('CF-Connecting-IP') || 'unknown'}`;
+      const kind = route.rateLimit ?? (request.method === 'GET' ? 'read' : 'write');
+      if (deps.rateLimit && !(await deps.rateLimit(kind, limitKey))) throw new HttpError(429, 'Too many requests');
+
+      if (route.role !== 'visitor' && !user) throw new HttpError(401, 'Sign in to continue');
+      if (user && !user.consented && request.method !== 'GET' && !route.consentExempt) throw new HttpError(403, 'consent_required');
+
+      const context: RequestContext = { request, url, params, user, isPlatformAdmin, sessionHash, role: resolveRole(user, isPlatformAdmin), group: null, isMember: false, app };
+      if (params.groupId) {
+        const group = await app.repository.getGroup(params.groupId);
+        if (!group) throw new HttpError(404, 'Group not found');
+        context.group = group;
+        context.isMember = await app.repository.isMember(group.id, user!.id);
+        context.role = resolveGroupRole(user, isPlatformAdmin, group, context.isMember);
       }
-      const segments = pathname.slice(STUDY_GROUP_API_PREFIX.length).split('/').filter(Boolean);
-      const route = matchRoute(request.method, segments);
+      if (!authorize(context.role, route.role)) throw new HttpError(403, 'Forbidden');
+      if (route.participate && !canParticipate(context)) throw new HttpError(403, 'Forbidden');
 
-      const kind: RateLimitKind = route.access === 'login' ? 'login' : request.method === 'GET' ? 'read' : 'write';
-      if (deps.rateLimit && !(await deps.rateLimit(kind, request))) throw new HttpError(429, 'Too many requests');
-
-      if (route.access === 'member') await requireMember(request, repository);
-      if (route.access === 'admin') await requireAdmin(request, context);
-
-      const result = await route.run(request, context);
-      if (result === null) return new Response(null, { status: 204, headers });
-      return Response.json(result.body, { status: result.status, headers });
+      const result = await route.run(context as never);
+      if (result instanceof Response) return withBaseHeaders(result);
+      if (result === null) return new Response(null, { status: 204, headers: baseHeaders() });
+      return Response.json(result.body, { status: result.status, headers: baseHeaders() });
     } catch (error) {
-      if (error instanceof HttpError) {
-        const body: ErrorResponse = { error: error.message };
-        if (error.issues) body.issues = error.issues;
-        return Response.json(body, { status: error.status, headers });
-      }
+      if (error instanceof HttpError) return Response.json(errorBody(error), { status: error.status, headers: baseHeaders() });
       console.error('Unable to handle study group request:', error);
-      return Response.json({ error: 'Internal server error' } satisfies ErrorResponse, { status: 500, headers });
+      reportError(error);
+      return Response.json({ error: 'Internal server error' }, { status: 500, headers: baseHeaders() });
     }
   };
-}
-
-interface RouteContext {
-  repository: StudyGroupRepository;
-  admin: AdminCredentials | undefined;
-  clock: () => Date;
-  now: () => string;
-  pick: <T>(items: T[]) => T;
-}
-
-type RouteResult = { status: number; body: object } | null;
-type RouteRun = (request: Request, context: RouteContext) => Promise<RouteResult>;
-type Access = 'member' | 'admin' | 'login';
-interface Route {
-  access: Access;
-  run: RouteRun;
-}
-
-function matchRoute(method: string, segments: string[]): Route {
-  const methods = (access: Access, routes: Record<string, RouteRun>): Route => {
-    const run = routes[method];
-    if (!run) throw new HttpError(405, 'Method not allowed');
-    return { access, run };
-  };
-
-  if (segments[0] === 'admin') {
-    const [, resource, rawId, action, ...rest] = segments;
-    if (resource === 'login' && rawId === undefined) return methods('login', { POST: login });
-    if (resource === 'settings' && rawId === undefined) return methods('admin', { GET: getSettings, PUT: updateSettings });
-    if (resource === 'materials' && rawId === 'deleted' && action === undefined) {
-      return methods('admin', { GET: listDeletedMaterials });
-    }
-    if (resource === 'materials' && action === 'restore' && rest.length === 0) {
-      const id = parseId(rawId);
-      return methods('admin', { POST: (_request, context) => restoreMaterial(id, context) });
-    }
-    throw new HttpError(404, 'Not found');
-  }
-
-  const [resource, rawId, action, ...rest] = segments;
-  if (resource === 'group' && rawId === undefined) return methods('member', { GET: getGroupInfo });
-  if (resource === 'materials' && rawId === undefined) {
-    return methods('member', { GET: listMaterials, POST: createMaterial });
-  }
-  if (resource === 'materials' && action === undefined) {
-    const id = parseId(rawId);
-    return methods('member', {
-      PATCH: (request, context) => updateMaterial(id, request, context),
-      DELETE: (_request, context) => deleteMaterial(id, context),
-    });
-  }
-  if (resource === 'rounds' && rawId === undefined) return methods('member', { POST: createRound });
-  if (resource === 'rounds' && rawId === 'current' && action === undefined) return methods('member', { GET: getCurrentRound });
-  if (resource === 'rounds' && rest.length === 0) {
-    const id = parseId(rawId);
-    if (action === 'votes') return methods('member', { POST: (request, context) => castVote(id, request, context) });
-    if (action === 'close') return methods('member', { POST: (_request, context) => closeRound(id, context) });
-    if (action === 'cancel') return methods('member', { POST: (_request, context) => cancelRound(id, context) });
-  }
-  throw new HttpError(404, 'Not found');
-}
-
-async function requireMember(request: Request, repository: StudyGroupRepository): Promise<void> {
-  const provided = request.headers.get(STUDY_GROUP_ACCESS_CODE_HEADER) ?? '';
-  const accessCode = await repository.getAccessCode();
-  if (!accessCode || !timingSafeEqual(provided, accessCode)) throw new HttpError(401, 'access_code_required');
-}
-
-async function requireAdmin(request: Request, { admin, clock }: RouteContext): Promise<void> {
-  const [scheme, token] = (request.headers.get('Authorization') ?? '').split(' ');
-  const valid = scheme === 'Bearer' && Boolean(token) && await verifyAdminToken(token, admin?.sessionSecret ?? '', clock());
-  if (!valid) throw new HttpError(401, 'unauthorized');
-}
-
-function parseId(value: string): number {
-  if (!/^[1-9]\d{0,15}$/.test(value)) throw new HttpError(404, 'Not found');
-  return Number(value);
-}
-
-async function parseBody<T>(request: Request, schema: z.ZodType<T>): Promise<T> {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    throw new HttpError(400, 'Invalid JSON body');
-  }
-  const result = schema.safeParse(body);
-  if (!result.success) throw new HttpError(400, 'Invalid request', result.error.issues);
-  return result.data;
-}
-
-async function login(request: Request, { admin, clock }: RouteContext): Promise<RouteResult> {
-  const input = await parseBody(request, adminLoginSchema);
-  if (!admin?.sessionSecret || !(await verifyAdminLogin(input.email, input.password, admin))) {
-    throw new HttpError(401, 'invalid_credentials');
-  }
-  return { status: 200, body: await createAdminToken(admin.sessionSecret, clock()) };
-}
-
-async function getSettings(_request: Request, { repository }: RouteContext): Promise<RouteResult> {
-  const settings = await repository.getGroupSettings();
-  if (!settings) throw new HttpError(404, 'Group settings not found');
-  return { status: 200, body: { settings } };
-}
-
-async function updateSettings(request: Request, { repository }: RouteContext): Promise<RouteResult> {
-  const input = await parseBody(request, updateGroupSettingsSchema);
-  return { status: 200, body: { settings: await repository.updateGroupSettings(input) } };
-}
-
-async function listDeletedMaterials(_request: Request, { repository }: RouteContext): Promise<RouteResult> {
-  return { status: 200, body: { materials: await repository.listDeletedMaterials() } };
-}
-
-async function restoreMaterial(id: number, { repository }: RouteContext): Promise<RouteResult> {
-  try {
-    const material = await repository.restoreMaterial(id);
-    if (!material) throw new HttpError(404, 'Deleted material not found');
-    return { status: 200, body: { material } };
-  } catch (error) {
-    if (isUniqueConstraintError(error)) throw new HttpError(409, 'This URL is already open in another suggestion');
-    throw error;
-  }
-}
-
-async function getGroupInfo(_request: Request, { repository }: RouteContext): Promise<RouteResult> {
-  return { status: 200, body: { group: await repository.getGroupInfo() } };
-}
-
-async function listMaterials(request: Request, { repository }: RouteContext): Promise<RouteResult> {
-  const status = listStatusSchema.safeParse(new URL(request.url).searchParams.get('status') ?? undefined);
-  if (!status.success) throw new HttpError(400, 'Invalid status filter', status.error.issues);
-  return { status: 200, body: { materials: await repository.listMaterials(status.data) } };
-}
-
-async function createMaterial(request: Request, { repository, now }: RouteContext): Promise<RouteResult> {
-  const input = await parseBody(request, createMaterialSchema);
-  try {
-    return { status: 201, body: { material: await repository.createMaterial(input, now()) } };
-  } catch (error) {
-    if (isUniqueConstraintError(error)) throw new HttpError(409, 'This URL was already suggested');
-    throw error;
-  }
-}
-
-async function updateMaterial(id: number, request: Request, { repository, now }: RouteContext): Promise<RouteResult> {
-  const input = await parseBody(request, updateMaterialSchema);
-  try {
-    const material = await repository.updateMaterialStatus(id, input.status, now());
-    if (!material) throw new HttpError(404, 'Material not found');
-    return { status: 200, body: { material } };
-  } catch (error) {
-    if (isUniqueConstraintError(error)) throw new HttpError(409, 'This URL is already open in another suggestion');
-    throw error;
-  }
-}
-
-async function deleteMaterial(id: number, { repository, now }: RouteContext): Promise<RouteResult> {
-  if (!(await repository.getMaterial(id))) throw new HttpError(404, 'Material not found');
-  await repository.deleteMaterial(id, now());
-  return null;
-}
-
-async function getCurrentRound(_request: Request, { repository }: RouteContext): Promise<RouteResult> {
-  const round = await repository.getCurrentRound();
-  return { status: 200, body: { round, tally: round ? await repository.getTally(round.id) : [] } };
-}
-
-async function createRound(request: Request, { repository, now, pick }: RouteContext): Promise<RouteResult> {
-  const { mode } = await parseBody(request, createRoundSchema);
-  if (await repository.getCurrentRound().then((round) => round?.status === 'open')) {
-    throw new HttpError(409, 'A round is already open');
-  }
-  const openMaterialIds = await repository.listOpenMaterialIds();
-  if (openMaterialIds.length === 0) throw new HttpError(422, 'There are no open materials');
-
-  try {
-    const round = await repository.createRound(mode, now(), mode === 'draw' ? pick(openMaterialIds) : null);
-    return { status: 201, body: await roundResponse(round, repository) };
-  } catch (error) {
-    if (isUniqueConstraintError(error)) throw new HttpError(409, 'A round is already open');
-    throw error;
-  }
-}
-
-async function castVote(roundId: number, request: Request, { repository, now }: RouteContext): Promise<RouteResult> {
-  const input = await parseBody(request, castVoteSchema);
-  const round = await requireRound(roundId, repository);
-  if (round.status !== 'open') throw new HttpError(422, 'This round is closed');
-  const material = await repository.getMaterial(input.materialId);
-  if (!material) throw new HttpError(404, 'Material not found');
-  if (material.status !== 'open') throw new HttpError(422, 'This material is not open for voting');
-
-  await repository.castVote(round.id, material.id, input.voterName, now());
-  return { status: 201, body: await roundResponse(round, repository) };
-}
-
-async function closeRound(roundId: number, { repository, now, pick }: RouteContext): Promise<RouteResult> {
-  const round = await requireOpenRound(roundId, repository);
-  const openIds = new Set(await repository.listOpenMaterialIds());
-  const tally = (await repository.getTally(round.id)).filter((entry) => openIds.has(entry.materialId));
-
-  let winnerMaterialId: number | null = null;
-  if (tally.length > 0) {
-    winnerMaterialId = pick(tally.filter((entry) => entry.votes === tally[0].votes)).materialId;
-  } else {
-    const eligible = await repository.listOpenMaterialIds(round.createdAt);
-    if (eligible.length > 0) winnerMaterialId = pick(eligible);
-  }
-
-  return finishRound(round.id, winnerMaterialId, repository, now());
-}
-
-async function cancelRound(roundId: number, { repository, now }: RouteContext): Promise<RouteResult> {
-  const round = await requireOpenRound(roundId, repository);
-  return finishRound(round.id, null, repository, now());
-}
-
-async function finishRound(
-  roundId: number,
-  winnerMaterialId: number | null,
-  repository: StudyGroupRepository,
-  closedAt: string
-): Promise<RouteResult> {
-  const closed = await repository.closeRound(roundId, closedAt, winnerMaterialId);
-  if (!closed) throw new HttpError(409, 'This round is already closed');
-  return { status: 200, body: await roundResponse(closed, repository) };
-}
-
-async function requireRound(id: number, repository: StudyGroupRepository): Promise<Round> {
-  const round = await repository.getRound(id);
-  if (!round) throw new HttpError(404, 'Round not found');
-  return round;
-}
-
-async function requireOpenRound(id: number, repository: StudyGroupRepository): Promise<Round> {
-  const round = await requireRound(id, repository);
-  if (round.status !== 'open') throw new HttpError(409, 'This round is already closed');
-  return round;
-}
-
-async function roundResponse(round: Round, repository: StudyGroupRepository): Promise<RoundResponse> {
-  const [winner, tally] = await Promise.all([
-    round.winnerMaterialId === null ? null : repository.getMaterial(round.winnerMaterialId),
-    repository.getTally(round.id),
-  ]);
-  return { round, winner, tally };
-}
-
-function responseHeaders(request: Request, allowedOrigins: readonly string[]): Headers {
-  const origin = request.headers.get('Origin');
-  return new Headers({
-    'Access-Control-Allow-Origin': origin && allowedOrigins.includes(origin) ? origin : allowedOrigins[0],
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': `Content-Type, Authorization, ${STUDY_GROUP_ACCESS_CODE_HEADER}`,
-    'Cache-Control': 'no-store',
-    'Vary': 'Origin',
-    'X-Robots-Tag': 'noindex, nofollow',
-  });
 }

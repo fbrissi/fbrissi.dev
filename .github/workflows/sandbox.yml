@@ -12,11 +12,41 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # The sandbox is off (terraform/locals.tf `sandbox_enabled`), so its Pages project, D1, queues and SES key don't
+  # exist. Set the repository variable SANDBOX_ENABLED to true only after enabling it in Terraform and applying.
+  disabled:
+    name: Sandbox disabled
+    if: ${{ vars.SANDBOX_ENABLED != 'true' }}
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    steps:
+      - run: echo "::notice::The sandbox is disabled. Enable it in terraform/locals.tf (sandbox_enabled), apply, then set the SANDBOX_ENABLED repository variable to true."
   deploy:
     name: Deploy Sandbox
+    if: ${{ vars.SANDBOX_ENABLED == 'true' }}
     runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
     steps:
       - uses: actions/checkout@v7
+      - name: Check required study group secrets
+        # Fails before anything is deployed or migrated, so a missing secret can't leave the API down on a new schema.
+        env:
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          STUDY_GROUP_PLATFORM_ADMIN_EMAILS: ${{ secrets.STUDY_GROUP_PLATFORM_ADMIN_EMAILS }}
+          STUDY_GROUP_SESSION_SECRET: ${{ secrets.STUDY_GROUP_SESSION_SECRET }}
+          CLOUDFLARE_DEPLOY_API_TOKEN: ${{ secrets.CLOUDFLARE_DEPLOY_API_TOKEN }}
+          STUDY_GROUP_UNSUBSCRIBE_SECRET: ${{ secrets.STUDY_GROUP_UNSUBSCRIBE_SECRET }}
+          STUDY_GROUP_SANDBOX_SES_ACCESS_KEY_ID: ${{ secrets.STUDY_GROUP_SANDBOX_SES_ACCESS_KEY_ID }}
+          STUDY_GROUP_SANDBOX_SES_SECRET_ACCESS_KEY: ${{ secrets.STUDY_GROUP_SANDBOX_SES_SECRET_ACCESS_KEY }}
+          STUDY_GROUP_EMAIL_ALLOWLIST: ${{ secrets.STUDY_GROUP_EMAIL_ALLOWLIST }}
+        run: |
+          missing=0
+          for name in GOOGLE_OAUTH_CLIENT_ID GOOGLE_OAUTH_CLIENT_SECRET STUDY_GROUP_PLATFORM_ADMIN_EMAILS STUDY_GROUP_SESSION_SECRET CLOUDFLARE_DEPLOY_API_TOKEN STUDY_GROUP_UNSUBSCRIBE_SECRET STUDY_GROUP_SANDBOX_SES_ACCESS_KEY_ID STUDY_GROUP_SANDBOX_SES_SECRET_ACCESS_KEY STUDY_GROUP_EMAIL_ALLOWLIST; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required secret: $name"
+              missing=1
+            fi
+          done
+          exit "$missing"
       - uses: actions/setup-node@v7
         with:
           node-version: 24
@@ -45,6 +75,7 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/contact-api
           wranglerVersion: '4'
+          environment: sandbox
           secrets: TURNSTILE_SECRET_KEY
         env:
           TURNSTILE_SECRET_KEY: ${{ secrets.TURNSTILE_SECRET_KEY }}
@@ -55,6 +86,7 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/contact-email-consumer
           wranglerVersion: '4'
+          environment: sandbox
       - name: List D1 databases
         id: d1
         uses: cloudflare/wrangler-action@v4
@@ -71,28 +103,46 @@ jobs:
             import { readFileSync, writeFileSync } from "node:fs";
             const output = process.env.D1_DATABASES ?? "";
             const databases = JSON.parse(output.slice(output.indexOf("["), output.lastIndexOf("]") + 1));
-            const file = "workers/study-group-api/wrangler.toml";
-            let config = readFileSync(file, "utf8");
-            for (const [placeholder, name] of [
-              ["STUDY_GROUP_DB_ID", "fbrissi-dev-study-group"],
-              ["STUDY_GROUP_SANDBOX_DB_ID", "fbrissi-dev-sandbox-study-group"],
-            ]) {
-              const database = databases.find((item) => item.name === name);
-              if (!database?.uuid) throw new Error("D1 database not found: " + name);
-              config = config.replace(JSON.stringify(placeholder), JSON.stringify(database.uuid));
+            for (const file of ["workers/study-group-api/wrangler.toml", "workers/study-group-mailer/wrangler.toml"]) {
+              let config = readFileSync(file, "utf8");
+              for (const [placeholder, name] of [
+                ["STUDY_GROUP_SANDBOX_DB_ID", "fbrissi-dev-sandbox-study-group"],
+              ]) {
+                const database = databases.find((item) => item.name === name);
+                if (!database?.uuid) throw new Error("D1 database not found: " + name);
+                config = config.replace(JSON.stringify(placeholder), JSON.stringify(database.uuid));
+              }
+              writeFileSync(file, config);
             }
-            writeFileSync(file, config);
           '
-      - name: Apply study group D1 migrations
+      - name: Apply sandbox study group D1 migrations
         uses: cloudflare/wrangler-action@v4
         with:
           apiToken: ${{ secrets.CLOUDFLARE_DEPLOY_API_TOKEN }}
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/study-group-api
           wranglerVersion: '4'
-          command: |
-            d1 migrations apply fbrissi-dev-study-group --remote
-            d1 migrations apply fbrissi-dev-sandbox-study-group --remote
+          command: d1 migrations apply fbrissi-dev-sandbox-study-group --remote --env sandbox
+      # Only the sandbox mailer (`--env sandbox`): it consumes the sandbox queue, reads the sandbox D1, sends with the
+      # sandbox's own SES key and emails only the testers in STUDY_GROUP_EMAIL_ALLOWLIST.
+      - name: Deploy sandbox study group mailer Worker
+        uses: cloudflare/wrangler-action@v4
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_DEPLOY_API_TOKEN }}
+          accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: workers/study-group-mailer
+          wranglerVersion: '4'
+          environment: sandbox
+          secrets: |
+            STUDY_GROUP_SES_ACCESS_KEY_ID
+            STUDY_GROUP_SES_SECRET_ACCESS_KEY
+            STUDY_GROUP_UNSUBSCRIBE_SECRET
+            STUDY_GROUP_EMAIL_ALLOWLIST
+        env:
+          STUDY_GROUP_SES_ACCESS_KEY_ID: ${{ secrets.STUDY_GROUP_SANDBOX_SES_ACCESS_KEY_ID }}
+          STUDY_GROUP_SES_SECRET_ACCESS_KEY: ${{ secrets.STUDY_GROUP_SANDBOX_SES_SECRET_ACCESS_KEY }}
+          STUDY_GROUP_UNSUBSCRIBE_SECRET: ${{ secrets.STUDY_GROUP_UNSUBSCRIBE_SECRET }}
+          STUDY_GROUP_EMAIL_ALLOWLIST: ${{ secrets.STUDY_GROUP_EMAIL_ALLOWLIST }}
       - name: Deploy sandbox study group API Worker
         uses: cloudflare/wrangler-action@v4
         with:
@@ -100,11 +150,16 @@ jobs:
           accountId: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: workers/study-group-api
           wranglerVersion: '4'
+          environment: sandbox
           secrets: |
-            STUDY_GROUP_ADMIN_EMAIL
-            STUDY_GROUP_ADMIN_PASSWORD_HASH
+            GOOGLE_OAUTH_CLIENT_ID
+            GOOGLE_OAUTH_CLIENT_SECRET
+            STUDY_GROUP_PLATFORM_ADMIN_EMAILS
             STUDY_GROUP_SESSION_SECRET
+            STUDY_GROUP_UNSUBSCRIBE_SECRET
         env:
-          STUDY_GROUP_ADMIN_EMAIL: ${{ secrets.STUDY_GROUP_ADMIN_EMAIL }}
-          STUDY_GROUP_ADMIN_PASSWORD_HASH: ${{ secrets.STUDY_GROUP_ADMIN_PASSWORD_HASH }}
+          GOOGLE_OAUTH_CLIENT_ID: ${{ secrets.GOOGLE_OAUTH_CLIENT_ID }}
+          GOOGLE_OAUTH_CLIENT_SECRET: ${{ secrets.GOOGLE_OAUTH_CLIENT_SECRET }}
+          STUDY_GROUP_PLATFORM_ADMIN_EMAILS: ${{ secrets.STUDY_GROUP_PLATFORM_ADMIN_EMAILS }}
           STUDY_GROUP_SESSION_SECRET: ${{ secrets.STUDY_GROUP_SESSION_SECRET }}
+          STUDY_GROUP_UNSUBSCRIBE_SECRET: ${{ secrets.STUDY_GROUP_UNSUBSCRIBE_SECRET }}

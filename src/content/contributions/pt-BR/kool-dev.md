@@ -2,14 +2,19 @@
 title: "Kool Dev"
 repository: "ecossistema kool-dev"
 repositoryUrl: "https://github.com/kool-dev"
-description: "Ampliei o suporte multiplataforma, imagens Docker, integração com Compose e charts de Kubernetes em diferentes projetos do ecossistema."
-period: "2020-2025"
+description: "Adicionei ao CLI do Kool presets de Java e Spring Boot com automação via API, depois de anos contribuindo com suporte multiplataforma, imagens Docker e charts de Kubernetes no ecossistema."
+period: "2020-2026"
 tags:
-  - Docker
   - Go
+  - Java
+  - Spring Boot
+  - Gradle
+  - Docker
   - Kubernetes
   - Helm
 evidence:
+  - label: "Presets de Java e Spring Boot"
+    url: "https://github.com/kool-dev/kool/pull/542"
   - label: "Suporte a Windows"
     url: "https://github.com/kool-dev/kool/pull/43"
   - label: "Profiles do Compose"
@@ -19,8 +24,14 @@ evidence:
   - label: "Imagens Java"
     url: "https://github.com/kool-dev/docker-java/pull/1"
 featured: true
-order: 4
+order: 1
 ---
+
+## Presets de Java e Spring Boot
+
+Minha maior contribuição para o CLI do Kool ([kool-dev/kool#542](https://github.com/kool-dev/kool/pull/542), integrada em novembro de 2026, cerca de 1.700 linhas em 41 arquivos) adiciona presets para criar projetos Java com Gradle e aplicações Spring Boot em Java ou Kotlin, nas JDKs 17, 21 e 25, usando as imagens oficiais do Gradle.
+
+A mesma mudança traz receitas de banco de dados e cache (H2, SQLite, PostgreSQL 16, MongoDB, Redis e Memcached) e ações de automação por input e via API, para que um projeto possa ser criado sem perguntas interativas. Tudo foi validado de ponta a ponta: os projetos gerados compilam, passam nos testes e sobem com status saudável, com testes de race, CodeQL e govulncheck no CI.
 
 ## Ferramentas de desenvolvimento multiplataforma
 

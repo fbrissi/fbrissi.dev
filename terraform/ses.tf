@@ -70,3 +70,50 @@ resource "aws_iam_user_policy" "gmail_smtp" {
 resource "aws_iam_access_key" "gmail_smtp" {
   user = aws_iam_user.gmail_smtp.name
 }
+
+# Study group notifications: each mailer Worker calls SES v2 SendEmail with its own key, which can send only from
+# notifications@fbrissi.dev through the fbrissi.dev identity. The deploy workflows push the keys to the mailers;
+# rotate-credentials.yml replaces them in automatic mode. The sandbox key exists only while the sandbox is enabled.
+data "aws_iam_policy_document" "study_group_mailer" {
+  statement {
+    actions   = ["ses:SendEmail"]
+    resources = [aws_sesv2_email_identity.domain.arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "ses:FromAddress"
+      values   = [local.notifications_email_from]
+    }
+  }
+}
+
+resource "aws_iam_user" "study_group_mailer" {
+  name = "${local.project_name}-study-group-mailer"
+}
+
+resource "aws_iam_user_policy" "study_group_mailer" {
+  name   = aws_iam_user.study_group_mailer.name
+  user   = aws_iam_user.study_group_mailer.name
+  policy = data.aws_iam_policy_document.study_group_mailer.json
+}
+
+resource "aws_iam_access_key" "study_group_mailer" {
+  user = aws_iam_user.study_group_mailer.name
+}
+
+resource "aws_iam_user" "study_group_mailer_sandbox" {
+  count = local.sandbox_count
+  name  = "${local.project_name}-sandbox-study-group-mailer"
+}
+
+resource "aws_iam_user_policy" "study_group_mailer_sandbox" {
+  count  = local.sandbox_count
+  name   = aws_iam_user.study_group_mailer_sandbox[0].name
+  user   = aws_iam_user.study_group_mailer_sandbox[0].name
+  policy = data.aws_iam_policy_document.study_group_mailer.json
+}
+
+resource "aws_iam_access_key" "study_group_mailer_sandbox" {
+  count = local.sandbox_count
+  user  = aws_iam_user.study_group_mailer_sandbox[0].name
+}

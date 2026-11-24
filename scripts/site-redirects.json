@@ -1,0 +1,8 @@
+[
+  { "source": "/open-source", "destination": "/projects#open-source" },
+  { "source": "/pt-br/open-source", "destination": "/pt-br/projects#open-source" },
+  { "source": "/study-groups/privacy", "destination": "/privacy" },
+  { "source": "/pt-br/study-groups/privacy", "destination": "/pt-br/privacy" },
+  { "source": "/pt-br/articles/registry-lookup-with-digital-certificates", "destination": "/pt-br/articles/consulta-de-cadastros-com-certificacao-digital" },
+  { "source": "/articles/consulta-de-cadastros-com-certificacao-digital", "destination": "/articles/registry-lookup-with-digital-certificates" }
+]

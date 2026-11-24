@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render as renderComponent, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render as renderComponent, screen, within } from '@testing-library/react';
 import React from 'react';
 import axios from 'axios';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -47,8 +47,9 @@ describe('content components', () => {
     );
 
     expect(screen.getByRole('link', { name: /project/i })).toHaveAttribute('href', '/pt-br/projects/project');
-    expect(screen.getByRole('img', { name: /prévia do projeto project/i })).toHaveAttribute('src', expect.stringContaining('portifolio.png'));
+    expect(screen.queryByRole('img', { name: /project/i })).not.toBeInTheDocument();
     expect(screen.getByRole('link', { name: /company/i })).toHaveAttribute('href', '/works/work');
+    expect(screen.getByText('2024 · Full-time')).toBeInTheDocument();
     expect(container.querySelector('a[href="/articles/article"]')).toBeInTheDocument();
     expect(screen.getByRole('img', { name: 'Secure article' })).toHaveAttribute('src', '/article.svg');
     expect(container.querySelector('img[src="/altless.svg"]')).toHaveAttribute('alt', '');
@@ -63,7 +64,7 @@ describe('content components', () => {
   it('renders markdown, sections, structured data, and view-all links', () => {
     const { container } = render(
       <>
-        <Markdown content={'## Heading\n\n[Link](https://example.com)\n\n```ts\nconst value = 1;\n```'} />
+        <Markdown content={'## Heading\n\n[Link](https://example.com) [Internal](/about)\n\n- item\n\n```ts\nconst value = 1;\n```'} />
         <StructuredData data={{ '@type': 'Person', name: 'Filipe' }} />
         <ViewAllLink href="/articles" label="All articles" />
       </>
@@ -71,6 +72,11 @@ describe('content components', () => {
 
     expect(screen.getByRole('heading', { name: 'Heading' })).toHaveAttribute('id', 'heading');
     expect(screen.getByRole('link', { name: 'Link' })).toHaveAttribute('href', 'https://example.com');
+    expect(screen.getByRole('link', { name: 'Link' })).toHaveAttribute('target', '_blank');
+    expect(screen.getByRole('link', { name: 'Link' })).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(screen.getByRole('link', { name: 'Internal' })).not.toHaveAttribute('target');
+    expect(screen.getByRole('link', { name: 'Heading' })).toHaveClass('heading-anchor');
+    expect(screen.getByRole('link', { name: 'Heading' })).toHaveAttribute('href', '#heading');
     expect(screen.getByRole('link', { name: /all articles/i })).toHaveAttribute('href', '/articles');
     expect(container.querySelector('script[type="application/ld+json"]')).toHaveTextContent('"name":"Filipe"');
   });
@@ -90,24 +96,57 @@ describe('site shell environment label', () => {
 });
 
 describe('interactive components', () => {
-  it('downloads either localized resume from the resume menu', () => {
+  it('downloads either localized resume from a keyboard-operable menu button, own language first (QA-F1, R7)', () => {
+    const { unmount } = render(<ResumeDownloadMenu locale="en" />);
+    fireEvent.click(screen.getByRole('button', { name: 'Baixar currículo' }));
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['EnglishEN PDF', 'PortuguêsPT PDF']);
+    unmount();
+
     render(<ResumeDownloadMenu locale="pt-BR" />);
     const button = screen.getByRole('button', { name: 'Baixar currículo' });
 
     fireEvent.click(button);
     expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('menuitem', { name: /english/i })).toHaveAttribute('href', '/resume/filipe-bojikian-rissi-resume-en.pdf');
-    expect(screen.getByRole('menuitem', { name: /português/i })).toHaveAttribute('href', '/resume/filipe-bojikian-rissi-curriculo-pt-br.pdf');
+    const portuguese = screen.getByRole('menuitem', { name: /português/i });
+    const english = screen.getByRole('menuitem', { name: /english/i });
+    expect(screen.getAllByRole('menuitem')[0]).toBe(portuguese);
+    expect(english).toHaveAttribute('href', '/resume/filipe-bojikian-rissi-resume-en.pdf');
+    expect(portuguese).toHaveAttribute('href', '/resume/filipe-bojikian-rissi-curriculo-pt-br.pdf');
+    expect(portuguese).toHaveFocus();
 
-    const englishResume = screen.getByRole('menuitem', { name: /english/i });
-    englishResume.addEventListener('click', (event) => event.preventDefault(), { once: true });
-    fireEvent.click(englishResume);
-    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
-
-    fireEvent.click(button);
-    fireEvent.keyDown(document, { key: 'Enter' });
+    const menu = screen.getByRole('menu', { name: 'Baixar currículo' });
+    for (const [key, focused] of [['ArrowDown', english], ['ArrowDown', portuguese], ['ArrowUp', english], ['ArrowUp', portuguese], ['End', english], ['Home', portuguese]] as const) {
+      fireEvent.keyDown(menu, { key });
+      expect(focused).toHaveFocus();
+    }
+    fireEvent.keyDown(menu, { key: 'Enter' });
     expect(screen.getByRole('menu')).toBeInTheDocument();
-    fireEvent.keyDown(document, { key: 'Escape' });
+
+    const escape = new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true });
+    act(() => { menu.dispatchEvent(escape); });
+    expect(escape.defaultPrevented).toBe(true);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+
+    fireEvent.keyDown(button, { key: 'ArrowUp' });
+    expect(screen.getByRole('menuitem', { name: /english/i })).toHaveFocus();
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Tab' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+
+    // Choosing an item closes the menu and returns focus to the button.
+    fireEvent.keyDown(button, { key: 'ArrowDown' });
+    const firstItem = screen.getByRole('menuitem', { name: /português/i });
+    expect(firstItem).toHaveFocus();
+    firstItem.addEventListener('click', (event) => event.preventDefault(), { once: true });
+    fireEvent.click(firstItem);
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(button).toHaveFocus();
+
+    fireEvent.keyDown(button, { key: 'Enter' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    fireEvent.click(button);
+    fireEvent.click(button);
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
 
     fireEvent.click(button);
@@ -119,26 +158,20 @@ describe('interactive components', () => {
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 
-  it('opens, closes, and follows the alternate locale in both switcher variants', () => {
+  it('links straight to the other locale, labelled in that language, and remembers the choice (L-6)', () => {
     const { rerender } = render(<LanguageSwitcher locale="en" alternatePath="/pt-br/articles" />);
-    const button = screen.getByRole('button', { name: 'Select language' });
+    const portuguese = screen.getByRole('link', { name: 'Português' });
 
-    fireEvent.click(button);
-    expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('link', { name: /português/i })).toHaveAttribute('href', '/pt-br/articles');
-    fireEvent.click(screen.getByRole('link', { name: /português/i }));
-    expect(screen.queryByRole('link', { name: /português/i })).not.toBeInTheDocument();
-    fireEvent.click(button);
-    fireEvent.mouseDown(button);
-    expect(screen.getByRole('link', { name: /português/i })).toBeInTheDocument();
-    fireEvent.mouseDown(document.body);
-    expect(screen.queryByRole('link', { name: /português/i })).not.toBeInTheDocument();
+    expect(portuguese).toHaveAttribute('href', '/pt-br/articles');
+    expect(portuguese).toHaveAttribute('hreflang', 'pt-BR');
+    expect(portuguese).toHaveAttribute('lang', 'pt-BR');
+    portuguese.addEventListener('click', (event) => event.preventDefault(), { once: true });
+    fireEvent.click(portuguese);
+    expect(localStorage.getItem('fbrissi.dev:preferred-locale')).toBe('pt-BR');
 
     rerender(<LanguageSwitcher locale="pt-BR" alternatePath="/" compact />);
-    fireEvent.click(screen.getByRole('button', { name: 'Select language' }));
-    expect(screen.getByRole('link', { name: /english/i })).toHaveAttribute('href', '/');
-    fireEvent.click(screen.getByRole('link', { name: /english/i }));
-    expect(screen.queryByRole('link', { name: /english/i })).not.toBeInTheDocument();
+    // The visible code starts the accessible name (WCAG 2.5.3).
+    expect(screen.getByRole('link', { name: 'EN English' })).toHaveAttribute('href', '/');
   });
 
   it('submits a verified contact form and shows the success state', async () => {
@@ -185,6 +218,8 @@ describe('interactive components', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Send message' }));
 
     expect(await screen.findByRole('heading', { name: 'Something went wrong' })).toBeInTheDocument();
+    // The error state points back to the contact form, never to a mailto link.
+    expect(screen.getByRole('link', { name: 'Reload the contact form' })).toHaveAttribute('href', '/contact');
     fireEvent.click(screen.getByRole('button', { name: 'Try again' }));
     expect(screen.getByRole('button', { name: 'Send message' })).toBeEnabled();
   });
@@ -263,8 +298,17 @@ describe('site chrome', () => {
     const { unmount } = render(<SiteShell locale="en" activePage="projects"><p>Page content</p></SiteShell>);
 
     expect(screen.getAllByRole('link', { name: 'Home' }).every((link) => link.getAttribute('href') === '/')).toBe(true);
-    expect(screen.getAllByRole('link', { name: 'Projects' }).every((link) => link.getAttribute('href') === '/projects')).toBe(true);
-    expect(screen.getAllByRole('link', { name: 'Open Source' }).every((link) => link.getAttribute('href') === '/open-source')).toBe(true);
+    expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute('href', '/projects');
+    expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.getByRole('link', { name: 'Experience' })).not.toHaveAttribute('aria-current');
+    expect(screen.queryByRole('link', { name: 'Open Source' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: 'Articles' })).not.toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Skip to content' })).toHaveAttribute('href', '#main');
+    expect(screen.getByRole('main')).toHaveAttribute('id', 'main');
+    const footerLinks = screen.getByRole('navigation', { name: 'Site links' });
+    expect(within(footerLinks).getByRole('link', { name: 'English groups' })).toHaveAttribute('href', '/study-groups');
+    expect(within(footerLinks).getByRole('link', { name: 'Privacy Policy' })).toHaveAttribute('href', '/privacy');
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
     expect(screen.getByText('Page content')).toBeInTheDocument();
     fireEvent.mouseMove(window, { clientX: 100, clientY: 100 });
     expect(document.body).toHaveClass('mouse-active');
@@ -280,17 +324,85 @@ describe('site chrome', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context as unknown as CanvasRenderingContext2D);
     vi.stubGlobal('requestAnimationFrame', vi.fn(() => 1));
     vi.stubGlobal('cancelAnimationFrame', vi.fn());
-    const { container, unmount } = render(<><SiteHeader locale="pt-BR" activePage="contact" /><GridBackground /></>);
+    const { container, unmount } = render(<><SiteHeader locale="pt-BR" activePage="contact" showArticles /><GridBackground /></>);
 
-    expect(screen.getAllByRole('link', { name: 'Início' }).every((link) => link.getAttribute('href') === '/pt-br')).toBe(true);
-    expect(screen.getAllByRole('link', { name: 'Sobre mim' }).every((link) => link.getAttribute('href') === '/pt-br/about')).toBe(true);
-    expect(screen.getAllByRole('link', { name: 'Contato' }).every((link) => link.getAttribute('href') === '/pt-br/contact')).toBe(true);
-    expect(screen.getAllByRole('img', { name: 'Filipe Bojikian Rissi' }).every((image) => image.getAttribute('src')?.includes('profile.png'))).toBe(true);
+    expect(screen.getByRole('link', { name: 'Início' })).toHaveAttribute('href', '/pt-br');
+    expect(screen.getByRole('link', { name: 'Sobre' })).toHaveAttribute('href', '/pt-br/about');
+    expect(screen.getByRole('link', { name: 'Experiência' })).toHaveAttribute('href', '/pt-br/works');
+    expect(screen.getByRole('link', { name: 'Artigos' })).toHaveAttribute('href', '/pt-br/articles');
+    expect(screen.getByRole('link', { name: 'Contato' })).toHaveAttribute('href', '/pt-br/contact');
+    expect(screen.queryByRole('link', { name: 'Grupos de estudo' })).not.toBeInTheDocument();
+    const navLabels = within(screen.getAllByRole('navigation', { name: 'Navegação principal' })[0]).getAllByRole('link').map((link) => link.textContent);
+    expect(navLabels).toEqual(['Início', 'Sobre', 'Experiência', 'Projetos', 'Grupos de inglês', 'Artigos', 'Contato']);
+    expect(screen.getByRole('link', { name: 'Grupos de inglês' })).toHaveAttribute('href', '/pt-br/grupos-de-estudo-de-ingles');
+    expect(screen.getAllByRole('img', { name: 'Filipe Bojikian Rissi' }).every((image) => image.getAttribute('src')?.includes('profile.webp'))).toBe(true);
+    expect(container.querySelector('.site-header-compact')).not.toBeNull();
     expect(container.querySelector('canvas[aria-hidden="true"]')).toBeInTheDocument();
     expect(context.stroke).toHaveBeenCalled();
     expect(context.arc).toHaveBeenCalled();
     unmount();
     expect(cancelAnimationFrame).toHaveBeenCalledWith(1);
+  });
+
+  it('opens a mobile menu with 44px rows, closes it on navigation or Escape, and links the alternate article (L-1)', () => {
+    render(<SiteHeader locale="en" activePage="articles" currentPath="/articles/one" alternatePath="/articles/um" showArticles />);
+    const toggle = screen.getByRole('button', { name: 'Menu' });
+
+    expect(screen.getAllByRole('link', { name: /Português/ }).every((link) => link.getAttribute('href') === '/pt-br/articles/um')).toBe(true);
+    expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(toggle);
+    expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    expect(toggle).toHaveAccessibleName('Close menu');
+    const mobile = document.getElementById('mobile-navigation')!;
+    expect(within(mobile).getByRole('link', { name: 'About' })).toHaveClass('min-h-11');
+    // A detail page marks its section, not the page (QA-F4).
+    expect(within(mobile).getByRole('link', { name: 'Articles' })).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByText('Filipe Rissi')).toBeInTheDocument();
+    expect(document.querySelector('a[href="/"] img[alt=""]')).not.toBeNull();
+    expect(within(mobile).getByRole('button', { name: 'Resume' })).toHaveClass('min-h-11');
+    fireEvent.click(within(mobile).getByRole('link', { name: 'About' }));
+    expect(document.getElementById('mobile-navigation')).toBeNull();
+
+    fireEvent.click(toggle);
+    fireEvent.keyDown(document, { key: 'Enter' });
+    expect(document.getElementById('mobile-navigation')).not.toBeNull();
+
+    // Escape inside the resume menu closes only that menu (QA-F1).
+    const resume = within(document.getElementById('mobile-navigation')!).getByRole('button', { name: 'Resume' });
+    fireEvent.click(resume);
+    fireEvent.keyDown(screen.getByRole('menu'), { key: 'Escape' });
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+    expect(document.getElementById('mobile-navigation')).not.toBeNull();
+    expect(resume).toHaveFocus();
+
+    // Escape closes the mobile menu and returns focus to its toggle (F6).
+    fireEvent.keyDown(document, { key: 'Escape' });
+    expect(document.getElementById('mobile-navigation')).toBeNull();
+    expect(toggle).toHaveFocus();
+  });
+
+  it('links the study groups program from the header, marking the landing as the page and its subpages as the section', () => {
+    const { rerender } = render(<SiteHeader locale="en" activePage="studyGroups" currentPath="/study-groups" />);
+    expect(screen.getByRole('link', { name: 'English groups' })).toHaveAttribute('href', '/study-groups');
+    expect(screen.getByRole('link', { name: 'English groups' })).toHaveAttribute('aria-current', 'page');
+    rerender(<SiteHeader locale="en" activePage="studyGroups" currentPath="/study-groups/terms" />);
+    expect(screen.getByRole('link', { name: 'English groups' })).toHaveAttribute('aria-current', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    expect(within(document.getElementById('mobile-navigation')!).getByRole('link', { name: 'English groups' })).toHaveClass('min-h-11');
+  });
+
+  it('marks the exact page with aria-current="page" and renders the desktop name only on home (F4)', () => {
+    const { rerender } = render(<SiteHeader locale="en" activePage="projects" />);
+    expect(screen.getByRole('link', { name: 'Projects' })).toHaveAttribute('aria-current', 'page');
+    expect(screen.queryByText('Filipe Bojikian Rissi', { selector: 'p' })).not.toBeInTheDocument();
+    rerender(<SiteHeader locale="en" activePage="home" />);
+    expect(screen.getByText('Filipe Bojikian Rissi', { selector: 'p' })).toBeInTheDocument();
+  });
+
+  it('starts with the scrolled background when the page loads already scrolled (L-4)', () => {
+    Object.defineProperty(window, 'scrollY', { configurable: true, value: 300 });
+    const { container } = render(<SiteHeader locale="en" activePage="about" />);
+    expect(container.querySelector('header')).toHaveClass('site-header-shell-fixed');
   });
 
   it('adds a background only after the sticky header is scrolled', () => {
@@ -337,7 +449,9 @@ describe('site chrome', () => {
     vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     const { unmount } = render(<><SiteHeader locale="en" activePage="home" /><SiteShell locale="en" activePage="home"><p>Page content</p></SiteShell></>);
 
-    expect(screen.getAllByRole('button', { name: 'Select language' }).some((button) => button.parentElement?.querySelector('span')?.textContent === '🇺🇸')).toBe(true);
+    expect(screen.getAllByRole('link', { name: /Português/ }).every((link) => link.getAttribute('href') === '/pt-br')).toBe(true);
+    expect(screen.getAllByRole('link', { name: 'Filipe Bojikian Rissi' }).length).toBeGreaterThan(0);
+    expect(document.querySelector('.site-header-compact')).toBeNull();
     fireEvent.mouseMove(window, { clientX: 100, clientY: 100 });
     act(() => vi.advanceTimersByTime(3000));
     expect(document.body).not.toHaveClass('mouse-active');

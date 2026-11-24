@@ -1,8 +1,46 @@
 import type { NextConfig } from 'next';
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants';
 
-const nextConfig: NextConfig = {
+import localizedSlugs from './scripts/localized-slugs.json';
+import siteRedirects from './scripts/site-redirects.json';
+
+const baseConfig: NextConfig = {
   output: 'export',
   images: { unoptimized: true }
 };
 
-export default nextConfig;
+/**
+ * `next dev` mirrors what Cloudflare serves in production: the group page rewrite, the moved pages and the old board
+ * redirect from `public/_redirects`, and the same-origin study group API (a Worker route in production) proxied to the local API.
+ */
+function developmentConfig(): NextConfig {
+  const apiProxyUrl = process.env.STUDY_GROUP_API_PROXY_URL ?? 'http://localhost:8788';
+  const slug = process.env.STUDY_GROUP_SLUG?.trim();
+
+  return {
+    ...baseConfig,
+    async rewrites() {
+      return [
+        { source: '/study-groups/g/:id/settings', destination: '/study-groups/group/settings' },
+        { source: '/study-groups/g/:id', destination: '/study-groups/group' },
+        { source: '/api/study-group/:path*', destination: `${apiProxyUrl}/api/study-group/:path*` }
+      ];
+    },
+    async redirects() {
+      return [
+        ...siteRedirects.map((redirect) => ({ ...redirect, permanent: true })),
+        ...Object.entries(localizedSlugs).map(([english, portuguese]) => ({ source: `/pt-br${english}`, destination: `/pt-br${portuguese}`, permanent: true })),
+        ...(slug
+          ? [
+              { source: `/study-group/${slug}/settings`, destination: '/study-groups/g/devtalk/settings', permanent: true },
+              { source: `/study-group/${slug}`, destination: '/study-groups/g/devtalk', permanent: true }
+            ]
+          : [])
+      ];
+    }
+  };
+}
+
+export default function config(phase: string): NextConfig {
+  return phase === PHASE_DEVELOPMENT_SERVER ? developmentConfig() : baseConfig;
+}

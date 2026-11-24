@@ -4,6 +4,7 @@ import { SiteShell } from '@/components/layout/site-shell';
 import { localizedPath, type Locale } from '@/lib/i18n';
 import { absoluteUrl } from '@/lib/seo';
 import { getMessages } from '@/lib/site';
+import { breadcrumbList, pageUrl, personId } from '@/lib/structured-data';
 import { getWork } from '@/lib/works';
 
 export function WorkPage({ locale, slug }: { locale: Locale; slug: string }) {
@@ -14,36 +15,32 @@ export function WorkPage({ locale, slug }: { locale: Locale; slug: string }) {
   return (
     <SiteShell locale={locale} activePage="works" pathname={`/works/${slug}`}>
       <StructuredData
-        data={{
-          '@context': 'https://schema.org',
-          '@type': 'ProfilePage',
-          mainEntity: {
-            '@type': 'Person',
-            name: 'Filipe Bojikian Rissi',
-            url: absoluteUrl(localizedPath(locale, `/works/${slug}`)),
-            hasOccupation: {
-              '@type': 'Occupation',
-              name: work.title,
-              description: work.summary,
-              skills: work.skills.join(', '),
-              occupationLocation: { '@type': 'Place', name: work.location }
-            },
-            affiliation: {
+        data={[
+          {
+            '@context': 'https://schema.org',
+            '@type': 'WebPage',
+            url: pageUrl(locale, `/works/${slug}`),
+            name: `${work.title} · ${work.company}`,
+            description: work.summary,
+            inLanguage: locale,
+            about: { '@id': personId },
+            mentions: {
               '@type': 'Organization',
               name: work.company,
               url: work.companyUrl,
               logo: absoluteUrl(work.logo)
             }
-          }
-        }}
+          },
+          breadcrumbList(locale, [{ name: messages.nav.works, path: '/works' }, { name: work.company, path: `/works/${slug}` }])
+        ]}
       />
       <section className="mb-16">
         <Link className="mb-6 inline-flex items-center gap-2 text-sm font-light tracking-wide text-accent transition-colors duration-250 hover:text-accent-hover" href={localizedPath(locale, '/works')}>
           {messages.labels.backToWorks}
         </Link>
-        <p className="mb-4 text-xs font-light uppercase tracking-widest text-text-muted">{work.dateRange}</p>
+        <p className="mb-4 text-sm text-text-muted">{work.dateRange} · {work.employmentType}</p>
         <div className="mb-6 flex items-center gap-5">
-          <img className="h-20 w-20 rounded-xl bg-white object-contain p-2" src={work.logo} alt={`${work.company} logo`} />
+          <img className="h-20 w-20 rounded-xl bg-white object-contain p-2" src={work.logo} alt={`${work.company} logo`} width={80} height={80} />
           <div>
             <h1 className="text-3xl font-normal tracking-tight sm:text-5xl">{work.company}</h1>
             <a className="mt-2 inline-block text-sm text-accent hover:text-accent-hover" href={work.companyUrl} target="_blank" rel="noreferrer">

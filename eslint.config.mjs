@@ -11,5 +11,5 @@ export default defineConfig([
       globals: { ...globals.browser, ...globals.node }
     }
   },
-  globalIgnores(['coverage/**', 'dist/**', '.next/**', 'out/**'])
+  globalIgnores(['coverage/**', 'dist/**', '.next/**', 'out/**', 'playwright-report/**', 'test-results/**'])
 ]);

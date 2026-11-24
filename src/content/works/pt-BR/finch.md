@@ -1,5 +1,5 @@
 ---
-company: "Finch | a big.legal.tech do Brasil"
+company: "Finch"
 title: "Tech Lead - Java"
 dateRange: "ago de 2017 - dez de 2018"
 summary: "Suporte a entregas de IA e Data Science, seguido pela liderança de microsserviços Java que processavam milhões de mensagens de automação jurídica."

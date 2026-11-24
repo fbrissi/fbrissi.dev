@@ -1,6 +1,5 @@
  'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { getAlternateLocale, setPreferredLocale, type Locale } from '@/lib/i18n';
 
@@ -11,103 +10,32 @@ type LanguageSwitcherProps = {
 };
 
 const languages = {
-  'en': { label: 'English', flag: '🇺🇸' },
-  'pt-BR': { label: 'Português', flag: '🇧🇷' }
+  en: { label: 'English', short: 'EN' },
+  'pt-BR': { label: 'Português', short: 'PT' }
 } as const;
 
+/**
+ * A direct link to the same page in the other locale, labelled in that locale's own language. The compact variant shows
+ * the language code and keeps it at the start of the accessible name (WCAG 2.5.3).
+ */
 export function LanguageSwitcher({ locale, alternatePath, compact = false }: LanguageSwitcherProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    }
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const currentLang = languages[locale];
   const alternateLocale = getAlternateLocale(locale);
   const alternateLang = languages[alternateLocale];
 
-  const selectAlternateLocale = () => {
-    setPreferredLocale(alternateLocale);
-    setIsOpen(false);
-  };
-
-  if (compact) {
-    // Compact version: flag only
-    return (
-      <div className="relative" ref={dropdownRef}>
-        <button
-          className="flex items-center justify-center rounded-lg border border-line bg-bg-soft p-2 transition-all duration-200 hover:border-line-bright hover:shadow-md"
-          onClick={() => setIsOpen(!isOpen)}
-          aria-label="Select language"
-          aria-expanded={isOpen}
-        >
-          <span className="text-xl leading-none">{currentLang.flag}</span>
-        </button>
-
-        {isOpen && (
-          <div className="absolute right-0 top-full mt-2 min-w-[140px] animate-fadeIn rounded-lg border border-line bg-bg-card shadow-lg">
-            <Link
-              href={alternatePath}
-              className="flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-200 hover:bg-bg-soft hover:text-accent"
-              onClick={selectAlternateLocale}
-            >
-              <span className="text-base leading-none">{alternateLang.flag}</span>
-              <span className="font-light">{alternateLang.label}</span>
-            </Link>
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        className="flex items-center gap-2 rounded-lg border border-line bg-bg-soft px-3 py-2 text-sm transition-all duration-200 hover:border-line-bright hover:shadow-md"
-        onClick={() => setIsOpen(!isOpen)}
-        aria-label="Select language"
-        aria-expanded={isOpen}
-      >
-        <span className="text-base leading-none">{currentLang.flag}</span>
-        <span className="font-light tracking-wide">{locale === 'en' ? 'EN' : 'PT'}</span>
-        <svg
-          className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
-          width="12"
-          height="12"
-          viewBox="0 0 12 12"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-        >
-          <path
-            d="M3 4.5L6 7.5L9 4.5"
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-
-      {isOpen && (
-        <div className="absolute right-0 top-full mt-2 min-w-[140px] animate-fadeIn rounded-lg border border-line bg-bg-card shadow-lg">
-          <Link
-            href={alternatePath}
-            className="flex items-center gap-3 px-4 py-3 text-sm transition-colors duration-200 hover:bg-bg-soft hover:text-accent"
-            onClick={selectAlternateLocale}
-          >
-            <span className="text-base leading-none">{alternateLang.flag}</span>
-            <span className="font-light">{alternateLang.label}</span>
-          </Link>
-        </div>
-      )}
-    </div>
+    <Link
+      href={alternatePath}
+      hrefLang={alternateLocale}
+      lang={alternateLocale}
+      className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg border border-line bg-bg-soft px-3 text-sm tracking-wide text-text-secondary transition-all duration-200 hover:border-line-bright hover:text-accent"
+      onClick={() => setPreferredLocale(alternateLocale)}
+    >
+      {compact ? (
+        <>
+          {alternateLang.short}{' '}
+          <span className="sr-only">{alternateLang.label}</span>
+        </>
+      ) : alternateLang.label}
+    </Link>
   );
 }

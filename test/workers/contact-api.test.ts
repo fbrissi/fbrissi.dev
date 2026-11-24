@@ -1,5 +1,7 @@
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import contactApi from '@/workers/contact-api';
+import { contactApi } from '@/workers/contact-api';
 
 const corsHeaders = {
   'access-control-allow-origin': 'https://fbrissi.dev',
@@ -205,5 +207,18 @@ describe('contact API worker', () => {
       'Unable to queue contact form submission:',
       _description === 'the request body cannot be parsed' ? expect.any(SyntaxError) : error
     );
+  });
+});
+
+describe('contact Worker configuration', () => {
+  it('keeps the sandbox in its own Workers, so the production Workers never bind a sandbox queue or route', () => {
+    for (const worker of ['contact-api', 'contact-email-consumer']) {
+      const config = readFileSync(path.resolve(__dirname, `../../workers/${worker}/wrangler.toml`), 'utf8');
+      const [production, sandbox] = config.split('\n[env.sandbox]\n');
+      expect(production).not.toMatch(/sandbox\.fbrissi\.dev|sandbox-contact-form/);
+      expect(sandbox).toContain(`name = "fbrissi-dev-${worker}-sandbox"`);
+      expect(sandbox).toContain('"fbrissi-dev-sandbox-contact-form"');
+      expect(sandbox).not.toMatch(/"fbrissi-dev-contact-form"|"fbrissi\.dev\/|"www\./);
+    }
   });
 });

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import contactEmailConsumer, { sendConfirmationEmail } from '@/workers/contact-email-consumer';
+import { contactEmailConsumer, sendConfirmationEmail } from '@/workers/contact-email-consumer';
 
 interface MockEmailMessage {
   from: string;
@@ -52,7 +52,7 @@ describe('contact email consumer worker', () => {
     expect(ownerEmail.raw).toContain('Content-Type: text/plain; charset=UTF-8');
     expect(ownerEmail.raw).toContain('New contact form submission from fbrissi.dev');
     expect(ownerEmail.raw).toContain('Content-Type: text/html; charset=UTF-8');
-    expect(ownerEmail.raw).toMatch(/<h2[^>]*>New Contact Form Submission <\/h2>/);
+    expect(ownerEmail.raw).toMatch(/<h2[^>]*>New Contact Form Submission<\/h2>/);
     expect(ownerEmail.raw).toContain('--contact-form-boundary-id--');
 
   });

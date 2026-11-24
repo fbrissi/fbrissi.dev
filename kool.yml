@@ -3,6 +3,10 @@ scripts:
   npm: kool docker kooldev/node:24 npm
   audit: kool docker kooldev/node:24 env npm_config_userconfig=/dev/null npm audit --audit-level=high --no-package-lock
   actionlint: sh -c 'kool docker rhysd/actionlint:latest .github/workflows/*.yml'
+  # Playwright E2E against the running local stack (kool start); resets the local study group database.
+  e2e: bash e2e/run.sh
+  # Runs the hourly meeting reminder scan of the local study group API now; the emails land in Mailpit.
+  meeting-reminders: kool exec study-group-api curl -fsS -X POST http://localhost:8788/__local/meeting-reminders
 
   setup:
     - kool run yarn install

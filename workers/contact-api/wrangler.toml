@@ -1,21 +1,20 @@
 name = "fbrissi-dev-contact-api"
 main = "../contact-api.ts"
 compatibility_date = "2024-01-01"
+# @sentry/cloudflare needs AsyncLocalStorage (node:async_hooks).
+compatibility_flags = ["nodejs_compat"]
 observability.enabled = true
 
+# Production Worker: only the production hosts and queue. The sandbox contact API is its own Worker ([env.sandbox]
+# below), deployed only by .github/workflows/sandbox.yml while the sandbox is enabled (terraform/locals.tf).
 routes = [
   { pattern = "fbrissi.dev/api/contact", zone_name = "fbrissi.dev" },
-  { pattern = "www.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" },
-  { pattern = "sandbox.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" }
+  { pattern = "www.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" }
 ]
 
 [[queues.producers]]
 binding = "CONTACT_FORM_QUEUE"
 queue = "fbrissi-dev-contact-form"
-
-[[queues.producers]]
-binding = "CONTACT_FORM_SANDBOX_QUEUE"
-queue = "fbrissi-dev-sandbox-contact-form"
 
 [[ratelimits]]
 name = "CONTACT_FORM_IP_RATE_LIMITER"
@@ -30,5 +29,37 @@ name = "CONTACT_FORM_EMAIL_RATE_LIMITER"
 namespace_id = "1002"
 
   [ratelimits.simple]
+  limit = 3
+  period = 60
+
+# Sandbox Worker (fbrissi-dev-contact-api-sandbox). Both bindings point at the sandbox queue, so a sandbox request can
+# never reach the production inbox. Bindings and routes aren't inherited, so each one is repeated here.
+[env.sandbox]
+name = "fbrissi-dev-contact-api-sandbox"
+routes = [
+  { pattern = "sandbox.fbrissi.dev/api/contact", zone_name = "fbrissi.dev" }
+]
+
+[[env.sandbox.queues.producers]]
+binding = "CONTACT_FORM_QUEUE"
+queue = "fbrissi-dev-sandbox-contact-form"
+
+[[env.sandbox.queues.producers]]
+binding = "CONTACT_FORM_SANDBOX_QUEUE"
+queue = "fbrissi-dev-sandbox-contact-form"
+
+[[env.sandbox.ratelimits]]
+name = "CONTACT_FORM_IP_RATE_LIMITER"
+namespace_id = "1011"
+
+  [env.sandbox.ratelimits.simple]
+  limit = 5
+  period = 60
+
+[[env.sandbox.ratelimits]]
+name = "CONTACT_FORM_EMAIL_RATE_LIMITER"
+namespace_id = "1012"
+
+  [env.sandbox.ratelimits.simple]
   limit = 3
   period = 60

@@ -2,6 +2,9 @@
 title: "Consulta de cadastros em web service utilizando certificação digital para criptografia dos dados"
 description: "Trabalho de conclusão de curso de 2010 sobre uma proposta de consulta segura a cadastros centralizados por SOAP, XML e certificados digitais."
 date: "2010-12-01"
+seoTitle: "Consulta de cadastros com certificação digital (TCC de 2010)"
+translationKey: "digital-certificates-thesis"
+socialImage: "/images/og/tcc-digital-certificates.png"
 image: "/images/articles/tcc-digital-certificates.svg"
 imageAlt: "Dois cadastros trocando dados por um web service protegido por certificado digital"
 tags:

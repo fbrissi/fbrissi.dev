@@ -1,5 +1,5 @@
 ---
-company: "exlink.us"
+company: "Exlink"
 title: "Full Stack Engineer"
 dateRange: "Sep 2024 - May 2026"
 summary: "Built multi-tenant exchange-program workflows, messaging, AI sentiment analysis, document rendering, and secure multi-party e-signatures with Laravel and Vue.js."
