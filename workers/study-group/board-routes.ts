@@ -12,7 +12,7 @@ import {
   type RoundResponse,
 } from './contract';
 import { adminLog, requireId } from './group-routes';
-import { HttpError, now, parseBody, type GroupContext, type RouteResult } from './http';
+import { enqueueNotifications, HttpError, now, parseBody, type GroupContext, type RouteResult } from './http';
 import { isUniqueConstraintError } from './repository';
 
 const listStatusSchema = z.enum([...materialStatuses, 'all']).default('all');
@@ -103,7 +103,8 @@ export async function createRound(context: GroupContext): Promise<RouteResult> {
   if (mode === 'vote' && openMaterialIds.length < 2) throw new HttpError(422, 'A vote needs at least 2 open materials');
 
   try {
-    const round = await repository.createRound(groupId, mode, now(context), mode === 'draw' ? pick(openMaterialIds) : null);
+    const { round, notifications } = await repository.createRound(groupId, mode, now(context), mode === 'draw' ? pick(openMaterialIds) : null);
+    await enqueueNotifications(context, notifications);
     return { status: 201, body: await roundResponse(context, round) };
   } catch (error) {
     rethrowDuplicate(error, 'A round is already open');
@@ -160,5 +161,6 @@ export async function cancelRound(context: GroupContext): Promise<RouteResult> {
 async function finishRound(context: GroupContext, roundId: number, winnerMaterialId: number | null): Promise<RouteResult> {
   const closed = await context.app.repository.closeRound(context.group.id, roundId, now(context), winnerMaterialId);
   if (!closed) throw new HttpError(409, 'This round is already closed');
-  return { status: 200, body: await roundResponse(context, closed) };
+  await enqueueNotifications(context, closed.notifications);
+  return { status: 200, body: await roundResponse(context, closed.round) };
 }

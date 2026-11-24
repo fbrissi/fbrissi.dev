@@ -3,9 +3,9 @@ import { environmentBadge, renderEmailHtml, renderEmailText, type EmailContent }
 import type { StudyGroupEnvironment } from '../study-group/environment';
 
 /**
- * English-only service emails of the study groups program (E1–E5). User-written text (group names) is escaped and
- * never turned into a link; the one owner-set link is the group's http(s) meeting link, in the members' reminders
- * (E5). Requester names and join messages are never included.
+ * English-only service emails of the study groups program (E1–E6). User-written text (group names and the picked
+ * material's title) is escaped and never turned into a link; the one owner-set link is the group's http(s) meeting
+ * link, in the members' reminders (E5). Requester names, join messages and material links are never included.
  */
 export interface StudyGroupEmailInput {
   kind: NotificationKind;
@@ -13,6 +13,8 @@ export interface StudyGroupEmailInput {
   groupName: string;
   /** E1: pending requests counted at send time. */
   pendingCount?: number;
+  /** E6: the title of the material a round picked, read at send time. */
+  materialTitle?: string;
   /** E4: the platform admin's reason. */
   reason?: string;
   /** E5: the meeting a reminder is about, read from the group at send time. */
@@ -124,6 +126,24 @@ function content(input: StudyGroupEmailInput): Content {
         action: meeting.url ? { label: 'Join the meeting', url: meeting.url } : { label: 'Open the group', url: board },
       };
     }
+    case 'round_started':
+      return {
+        subject: `A vote is open in ${groupName}`,
+        paragraphs: [`The owner of ${groupName} opened a vote to pick the next topic.`, 'Open the group board to vote for the material you want to discuss.'],
+        action: { label: 'Vote now', url: `${appOrigin}${groupPath(input.groupId)}` },
+      };
+    case 'round_picked':
+      return {
+        subject: `Next topic for ${groupName}: ${input.materialTitle ?? ''}`,
+        paragraphs: [`The next topic for ${groupName} is: ${input.materialTitle ?? ''}`, 'Open the group board to see the material and get ready for the meeting.'],
+        action: { label: 'Open the group', url: `${appOrigin}${groupPath(input.groupId)}` },
+      };
+    case 'round_cancelled':
+      return {
+        subject: `The vote in ${groupName} ended without a topic`,
+        paragraphs: [`The vote in ${groupName} was closed without picking a topic.`, 'Check the group board for news from the owner.'],
+        action: { label: 'Open the group', url: `${appOrigin}${groupPath(input.groupId)}` },
+      };
     case 'icon_removed':
       return {
         subject: `The icon of your group ${groupName} was removed`,

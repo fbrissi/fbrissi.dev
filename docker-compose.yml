@@ -103,7 +103,7 @@ services:
     environment:
       SERVICES: sqs
     ports:
-      - "4566:4566"
+      - "4567:4566"
     networks:
       - kool_local
     healthcheck:
@@ -114,12 +114,12 @@ services:
 
   # Mailpit - Local email testing (like Mailtrap/MailHog)
   # Web UI: http://localhost:8025
-  # SMTP: localhost:1025
+  # SMTP: localhost:1026
   mailpit:
     image: axllent/mailpit:latest
     ports:
       - "8025:8025"  # Web UI
-      - "1025:1025"  # SMTP server
+      - "1026:1025"  # SMTP server
     volumes:
       - mailpit_data:/data
     environment:

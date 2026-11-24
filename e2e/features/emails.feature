@@ -71,3 +71,19 @@ Feature: Service emails
     Given a member of my group turned service emails off, and my other group meets in 2 hours with reminders off
     When the hourly reminder scan runs
     Then the member with emails off and the other group's members get no reminder
+
+  Scenario: members get an email when the owner opens a vote and when a topic is picked, and the owner gets none (E6)
+    Given my group has members and open materials
+    When I open a vote and then close it
+    Then each member gets one "vote open" email and one "next topic" email with the topic's title as text, not a link
+    And I get no round email
+
+  Scenario: members who got the vote email are told when the vote is cancelled
+    Given a member of my group got the "vote open" email
+    When I cancel the vote
+    Then the member gets one email saying the vote ended without a topic
+
+  Scenario: a draw sends only the picked topic, and a member who turned emails off gets no round email
+    Given a member of my group turned service emails off
+    When I draw a topic
+    Then the other members get only the "next topic" email, and the member with emails off gets nothing

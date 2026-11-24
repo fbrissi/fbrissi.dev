@@ -6,7 +6,7 @@ z.config({ jitless: true });
 export const STUDY_GROUP_API_PREFIX = '/api/study-group';
 
 /** Current versions (dates) of the program documents, shown on the pages and recorded when a user accepts them. */
-export const POLICY_VERSIONS = { terms: '2026-11-27', privacy: '2026-11-27' } as const;
+export const POLICY_VERSIONS = { terms: '2026-11-28', privacy: '2026-11-28' } as const;
 export type PolicyDocument = keyof typeof POLICY_VERSIONS;
 
 /**
@@ -17,7 +17,8 @@ export type PolicyDocument = keyof typeof POLICY_VERSIONS;
  * the groups@fbrissi.dev channel, the 2026-11-24 versions show listed groups' icons on the public page, and the 2026-11-25
  * versions add meeting reminders to the service emails (all minor). The 2026-11-26 privacy policy is material: it adds
  * Sentry (error monitoring, a new processor with a transfer to the United States). The 2026-11-27 versions (minor) show the
- * meeting time and whether a code is required on the public page, and make the access code optional.
+ * meeting time and whether a code is required on the public page, and make the access code optional. The 2026-11-28
+ * versions (minor) add round emails (a vote opened, a topic picked, a vote closed without a topic) to the service emails.
  */
 export const MATERIAL_POLICY_VERSIONS: Record<PolicyDocument, string> = { terms: '2026-11-22', privacy: '2026-11-26' };
 
@@ -86,7 +87,7 @@ export const ICON_LIMITS = {
 } as const;
 export type IconContentType = (typeof ICON_LIMITS.contentTypes)[number];
 
-export const notificationKinds = ['join_request', 'join_approved', 'join_rejected', 'group_deleted', 'icon_removed', 'account_banned', 'account_restored', 'meeting_reminder'] as const;
+export const notificationKinds = ['join_request', 'join_approved', 'join_rejected', 'group_deleted', 'icon_removed', 'account_banned', 'account_restored', 'meeting_reminder', 'round_started', 'round_picked', 'round_cancelled'] as const;
 export type NotificationKind = (typeof notificationKinds)[number];
 /** Notices about the account itself (ban and restore): sent even to users who turned service emails off. */
 export const accountNoticeKinds: readonly NotificationKind[] = ['account_banned', 'account_restored'];

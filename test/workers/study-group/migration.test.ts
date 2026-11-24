@@ -199,3 +199,31 @@ describe('0007 migration (optional access code)', () => {
     await expect(db.prepare("UPDATE groups SET require_access_code = 2 WHERE id = 'b'").run()).rejects.toThrow(/CHECK/);
   });
 });
+
+describe('0008 migration (round notifications)', () => {
+  it('keeps the outbox while allowing the round kinds', async () => {
+    workDir = mkdtempSync(path.join(os.tmpdir(), 'study-group-migration-'));
+    const dir = path.join(workDir, 'migrations');
+    mkdirSync(dir);
+    const file = path.join(workDir, 'db.sqlite');
+    const before = ['0001_init.sql', '0002_groups_and_accounts.sql', '0003_notifications.sql', '0004_hard_delete.sql', '0005_icons_and_bans.sql', '0006_meeting_reminders.sql', '0007_optional_access_code.sql'];
+    for (const name of before) copyFileSync(path.join(migrationsDir, name), path.join(dir, name));
+    const v7 = openD1Sqlite(file, dir);
+    await v7.batch([
+      v7.prepare("INSERT INTO users (id, google_sub, email, display_name, created_at, updated_at) VALUES ('owner001', 's', 'o@example.test', 'O', 'x', 'x')"),
+      v7.prepare("INSERT INTO notifications (user_id, kind, group_id, payload, dedupe_key, status, attempts, created_at, send_after, sent_at) VALUES ('owner001', 'meeting_reminder', 'a', '{}', 'k1', 'sent', 1, 'x', 'y', 'z')"),
+    ]);
+    copyFileSync(path.join(migrationsDir, '0008_round_notifications.sql'), path.join(dir, '0008_round_notifications.sql'));
+    const db = openD1Sqlite(file, dir);
+
+    expect(await db.prepare('SELECT id, kind, dedupe_key, status, attempts, sent_at FROM notifications').first())
+      .toEqual({ id: 1, kind: 'meeting_reminder', dedupe_key: 'k1', status: 'sent', attempts: 1, sent_at: 'z' });
+    for (const [index, kind] of ['round_started', 'round_picked', 'round_cancelled'].entries()) {
+      await db.prepare("INSERT INTO notifications (user_id, kind, group_id, dedupe_key, created_at, send_after) VALUES ('owner001', ?, 'a', ?, 'x', 'y')").bind(kind, `r${index}`).run();
+    }
+    expect((await db.prepare('SELECT COUNT(*) AS count FROM notifications').first())).toEqual({ count: 4 });
+    await expect(db.prepare("INSERT INTO notifications (user_id, kind, dedupe_key, created_at, send_after) VALUES ('owner001', 'other', 'k3', 'x', 'y')").run()).rejects.toThrow(/CHECK/);
+    expect((await db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'notifications' AND name NOT LIKE 'sqlite_%' ORDER BY name").all()).results.map((row) => row.name))
+      .toEqual(['notifications_created_at', 'notifications_group_kind', 'notifications_status_created', 'notifications_user_sent']);
+  });
+});

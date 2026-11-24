@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.5.0
+
+### Added
+
+- Email the members of a group (never the owner, who runs the rounds) when the owner opens a vote, when a topic is picked by a vote or a draw, with its title as plain text, and when a vote closes without a topic (migration `0008`). The mailer drops a "vote open" email once the round closed, a "next topic" email when the topic was deleted, and a "no topic" email for members who never got the "vote open" one; users with service emails off and banned users get none.
+
+### Changed
+
+- Make the call-to-action button of every email dark green with white text.
+- Update the Terms of Use and the Privacy Policy (`2026-11-28`, minor: no one is asked to accept them again) to list the round emails among the service emails.
+
 ## v0.4.4
 
 ### Added

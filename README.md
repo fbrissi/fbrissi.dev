@@ -406,6 +406,13 @@ notices use the contact form card (green header with the avatar) with the orange
   mailer drops the reminder if the owner turned reminders off, the recipient left the group or was banned, the
   schedule changed or the meeting already started. Groups saved before the weekday and time zone became selects get
   no reminders until the owner picks a valid day and zone.
+- Round emails (E6): when the owner opens a vote, closes it with a topic (or draws one) or closes it without one,
+  the same D1 batch writes one row per member, leaving out the owner (`<kind>:<round>:<user>` dedupe key; kinds
+  `round_started`, `round_picked`, `round_cancelled`, migration `0008`). Users with emails off and banned users get
+  no row. The row holds only the group name and round ID; at send time the mailer reads the round and the picked
+  title, and drops the email if the recipient left the group or was banned, the round is gone, a "vote open" round
+  already closed, the picked topic was deleted or its author is banned, or, for "no topic", the member never got the
+  "vote open" email for that round.
 - Users turn emails off or on in `/study-groups/account`, or with the one-click unsubscribe link
   (`List-Unsubscribe` and `List-Unsubscribe-Post`, an HMAC token signed with `STUDY_GROUP_UNSUBSCRIBE_SECRET` for one
   environment, valid for a year). `POST /api/study-group/unsubscribe` is the only route without the Origin and JSON
