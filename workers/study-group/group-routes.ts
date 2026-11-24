@@ -68,6 +68,7 @@ async function groupProfile(context: GroupContext, group: GroupRecord): Promise<
     moderationMode: group.moderationMode,
     listed: group.listed,
     meetingReminders: group.meetingReminders,
+    requiresAccessCode: group.requiresAccessCode,
   };
 }
 
@@ -127,7 +128,17 @@ export async function previewGroup(context: GroupContext): Promise<RouteResult> 
   else if (isMember) membership = 'member';
   else if (await app.repository.hasPendingRequest(group.id, user.id)) membership = 'pending';
   const body: GroupPreviewResponse = {
-    group: { id: group.id, name: group.name, summary: group.summary, iconUrl: await iconUrl(context, group.icon) },
+    group: {
+      id: group.id,
+      name: group.name,
+      summary: group.summary,
+      meetingDay: group.meetingDay,
+      meetingStart: group.meetingStart,
+      meetingEnd: group.meetingEnd,
+      timezone: group.timezone,
+      requiresAccessCode: group.requiresAccessCode,
+      iconUrl: await iconUrl(context, group.icon),
+    },
     membership,
     canAskAgainAt: membership === 'none' ? await canAskAgainAt(context) : null,
   };
@@ -142,7 +153,8 @@ export async function joinGroup(context: GroupContext): Promise<RouteResult> {
   if (await app.repository.hasPendingRequest(group.id, user.id)) throw new HttpError(409, 'You already asked to join this group');
   const again = await canAskAgainAt(context);
   if (again) throw new HttpError(409, `Your request to join this group was not approved. You can ask again after ${formatAskAgainAt(again)}.`);
-  if (!timingSafeEqual(input.code, group.accessCode)) throw new HttpError(403, 'invalid_code');
+  // An open group ignores any code sent; the owner approves every request either way.
+  if (group.requiresAccessCode && !timingSafeEqual(input.code ?? '', group.accessCode)) throw new HttpError(403, 'invalid_code');
   if ((await app.repository.countPendingRequestsByUser(user.id)) >= LIMITS.pendingRequestsPerUser) {
     throw new HttpError(409, `You can have at most ${LIMITS.pendingRequestsPerUser} pending requests`);
   }

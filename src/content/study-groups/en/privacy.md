@@ -1,7 +1,7 @@
 ---
 title: Privacy Policy
 description: How fbrissi.dev, its contact form and the English study groups program collect, use and protect personal data under the Brazilian General Data Protection Law (LGPD).
-version: '2026-11-26'
+version: '2026-11-27'
 ---
 
 This policy explains how `fbrissi.dev` handles personal data under the Brazilian General Data Protection Law (Law 13,709/2018, "LGPD"): the contact form (section 2) and the English study groups program at `fbrissi.dev/study-groups` (sections 3 to 5, 7 and 11); section 6 covers both, and the error monitoring of the whole site. Browsing the rest of the site doesn't require any personal data. Users in Brazil: the [Portuguese version](/pt-br/privacy) prevails.
@@ -50,7 +50,7 @@ Consent is not the main legal basis. We record your acceptance of the Terms and 
 
 - Members of your groups see your display name, your suggestions and your votes, and the group's icon. Anyone signed in who opens a group's join link sees its name, summary and icon.
 - Group owners see the display name and the optional message in your join request. They are told by email that requests are waiting, without your name, message or email. **Your email is never shown** to members or owners.
-- The public program page shows each listed group's name, summary and icon. Unlisted groups, and their icons, are never listed there. The meeting link is visible only to members. Icons are served through signed links that expire within 2 hours; until then, anyone who has the link can open the icon.
+- The public program page shows each listed group's name, summary, icon, weekly meeting day and time, and whether it requires an access code. Unlisted groups, and their icons, are never listed there. The meeting link is visible only to members. Icons are served through signed links that expire within 2 hours; until then, anyone who has the link can open the icon.
 - While an account is banned, its suggestions, votes, memberships and join requests are hidden from other users.
 - The platform admin can access any group to moderate it.
 - We don't sell or share your data with third parties for marketing.

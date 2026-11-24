@@ -57,7 +57,8 @@ export const group: GroupInfo = {
   meetingUrl: 'https://meet.example.com/abc',
   moderationMode: 'free',
   listed: true,
-  meetingReminders: true
+  meetingReminders: true,
+  requiresAccessCode: true
 };
 
 export function material(id: number, overrides: Partial<Material> = {}): Material {

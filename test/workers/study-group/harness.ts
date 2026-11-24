@@ -152,6 +152,7 @@ export const groupInput = {
   meetingUrl: 'https://meet.example.com/abc',
   moderationMode: 'free' as const,
   listed: true,
+  requiresAccessCode: true,
 };
 
 export interface World {

@@ -64,7 +64,7 @@ describe('program pages', () => {
   it.each([['en', 'Terms of Use'], ['pt-BR', 'Termos de Uso']] as const)('renders the %s terms page', (locale, title) => {
     const { container } = render(<StudyGroupsPolicyPage locale={locale} document="terms" />);
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(screen.getByText(/2026-11-25/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-11-27/)).toBeInTheDocument();
     expect(container.querySelector('[data-path]')).toHaveAttribute('data-path', '/study-groups/terms');
     expect(container.querySelector('#content-policy')).not.toBeNull();
   });
@@ -72,7 +72,7 @@ describe('program pages', () => {
   it.each([['en', 'Privacy Policy', /Contact form/], ['pt-BR', 'Política de Privacidade', /Formulário de contato/]] as const)('renders the site-wide %s privacy policy with the contact form and cookie sections (D-7)', (locale, title, contactSection) => {
     const { container } = render(<PrivacyPage locale={locale} />);
     expect(screen.getByRole('heading', { level: 1, name: title })).toBeInTheDocument();
-    expect(screen.getByText(/2026-11-26/)).toBeInTheDocument();
+    expect(screen.getByText(/2026-11-27/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { level: 2, name: contactSection })).toBeInTheDocument();
     expect(container.querySelector('[data-page="privacy"]')).toHaveAttribute('data-path', '/privacy');
     expect(container.querySelector('#cookies')).not.toBeNull();

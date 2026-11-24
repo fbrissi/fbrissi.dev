@@ -51,10 +51,20 @@ describe('groups', () => {
     const body = await expectJson(response, 200);
     expect(body.groups).toHaveLength(2);
     expect(body.groups).toEqual(expect.arrayContaining([
-      { id: w.groupId, name: 'Go Talk', summary: groupInput.summary, iconUrl: null },
-      { id: 'devtalk', name: 'DevTalk', summary: expect.stringContaining('improve our English'), iconUrl: null },
+      { id: w.groupId, name: 'Go Talk', summary: groupInput.summary, meetingDay: 'Tuesday', meetingStart: '19:00', meetingEnd: '20:00', timezone: 'America/Sao_Paulo', requiresAccessCode: true, iconUrl: null },
+      {
+        id: 'devtalk', name: 'DevTalk', summary: expect.stringContaining('improve our English'),
+        meetingDay: expect.any(String), meetingStart: expect.any(String), meetingEnd: expect.any(String), timezone: expect.any(String), requiresAccessCode: true, iconUrl: null,
+      },
     ]));
     expect(body.nextCursor).toBeNull();
+    // The schedule is public for listed groups; the meeting link and the access code never are.
+    for (const group of body.groups) {
+      expect(group).not.toHaveProperty('meetingUrl');
+      expect(group).not.toHaveProperty('accessCode');
+    }
+    expect(JSON.stringify(body)).not.toContain(groupInput.meetingUrl);
+    expect(JSON.stringify(body)).not.toContain(w.accessCode);
 
     for (let index = 0; index < 2; index += 1) {
       const owner = await signIn(h, { email: `owner${index}@example.test`, name: `Owner ${index}` });
@@ -132,16 +142,49 @@ describe('groups', () => {
     await expectJson(await call('POST', '/groups', w.outsider, { ...groupInput, acceptContentPolicy: true }), 409, { error: 'You can own at most 3 groups' });
   });
 
+  it('creates open groups by default: anyone signed in asks to join without a code, and the owner still approves', async () => {
+    const { group } = await expectJson(await call('POST', '/groups', w.owner, { ...groupInput, requiresAccessCode: undefined, name: 'Open Talk', acceptContentPolicy: true }), 201);
+    expect(group.requiresAccessCode).toBe(false);
+    expect(group.accessCode).toMatch(/^[a-z0-9]{12}$/);
+    expect((await expectJson(await call('GET', `/groups/${group.id}/preview`, w.outsider), 200)).group.requiresAccessCode).toBe(false);
+    await expectJson(await call('POST', `/groups/${group.id}/join`, w.outsider, { message: 'Hi!' }), 201, { status: 'pending' });
+    // A code sent anyway is ignored, even a wrong one.
+    await expectJson(await call('POST', `/groups/${group.id}/join`, w.member, { code: 'wrong-code' }), 201, { status: 'pending' });
+    const { requests } = await expectJson(await call('GET', `/groups/${group.id}/requests`, w.owner), 200);
+    expect(requests).toHaveLength(2);
+    await expectJson(await call('GET', `/groups/${group.id}`, w.outsider), 403, { error: 'Forbidden' });
+
+    // Saving without the field keeps the setting; the owner can turn the code on and off.
+    const update = (body: object) => call('PUT', `/groups/${group.id}/settings`, w.owner, { ...groupInput, name: 'Open Talk', ...body });
+    expect((await expectJson(await update({ requiresAccessCode: undefined }), 200)).settings.requiresAccessCode).toBe(false);
+    expect((await expectJson(await update({ requiresAccessCode: true }), 200)).settings.requiresAccessCode).toBe(true);
+    expect((await expectJson(await update({ requiresAccessCode: undefined }), 200)).settings.requiresAccessCode).toBe(true);
+    const listed = (await expectJson(await call('GET', '/groups'), 200)).groups.find((item: { id: string }) => item.id === group.id);
+    expect(listed.requiresAccessCode).toBe(true);
+    const latecomer = await signIn(h, { email: 'latecomer@example.test', name: 'Lea Latecomer' });
+    await expectJson(await call('POST', `/groups/${group.id}/join`, latecomer, {}), 403, { error: 'invalid_code' });
+    await expectJson(await call('POST', `/groups/${group.id}/join`, latecomer, { code: group.accessCode }), 201, { status: 'pending' });
+    expect((await expectJson(await update({ requiresAccessCode: false }), 200)).settings.requiresAccessCode).toBe(false);
+  });
+
   it('shows the join screen data and handles join requests (D5, Q10)', async () => {
-    await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.outsider), 200, {
-      group: { id: w.groupId, name: 'Go Talk', summary: groupInput.summary, iconUrl: null },
+    const outsiderPreview = await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.outsider), 200, {
+      group: { id: w.groupId, name: 'Go Talk', summary: groupInput.summary, meetingDay: 'Tuesday', meetingStart: '19:00', meetingEnd: '20:00', timezone: 'America/Sao_Paulo', requiresAccessCode: true, iconUrl: null },
       membership: 'none',
       canAskAgainAt: null,
     });
+    // The join screen shows the schedule, never the meeting link or the access code.
+    expect(outsiderPreview.group).not.toHaveProperty('meetingUrl');
+    expect(outsiderPreview.group).not.toHaveProperty('accessCode');
+    expect(JSON.stringify(outsiderPreview)).not.toContain(groupInput.meetingUrl);
+    expect(JSON.stringify(outsiderPreview)).not.toContain(w.accessCode);
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.member), 200, expect.objectContaining({ membership: 'member' }));
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.owner), 200, expect.objectContaining({ membership: 'owner' }));
 
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: 'wrong-code' }), 403, { error: 'invalid_code' });
+    // A group that requires the code refuses a request without one, or with an empty one.
+    await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, {}), 403, { error: 'invalid_code' });
+    await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: '  ' }), 403, { error: 'invalid_code' });
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: w.accessCode, message: 'x'.repeat(201) }), 400);
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: ` ${w.accessCode} `, message: 'Hi! I am Oscar.' }), 201, { status: 'pending' });
     await expectJson(await call('GET', `/groups/${w.groupId}/preview`, w.outsider), 200, expect.objectContaining({ membership: 'pending' }));

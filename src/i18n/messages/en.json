@@ -163,15 +163,15 @@
     "howTitle": "How it works",
     "how": [
       "Sign in with Google and accept the Terms of Use and the Privacy Policy.",
-      "Create a group with a name, a short public summary, rules and a meeting schedule, or ask to join an existing one with its access code.",
+      "Create a group with a name, a short public summary, rules and a meeting schedule, or ask to join an existing one (with its access code, if it requires one).",
       "The group owner approves each request, so only approved members open the board.",
       "Members suggest videos, articles, books or podcasts; the owner picks the weekly topic by a random draw or a vote.",
       "Meet on your own call and talk about it in English. Mistakes are part of the practice."
     ],
     "startTitle": "Start your own group",
-    "startText": "You don't need to be a teacher to start a group. You need a few people, a fixed time and a topic. Create the group here, write a short public summary and your rules, then share the access code with the people you want to invite: friends, coworkers, classmates or a community you already belong to. Members suggest videos, articles or talks during the week, and the board picks the next topic by a random draw or a vote. Meet on whatever call tool you already use.",
+    "startText": "You don't need to be a teacher to start a group. You need a few people, a fixed time and a topic. Create the group here, write a short public summary and your rules, then invite the people you want, and share the access code with them if you require one: friends, coworkers, classmates or a community you already belong to. Members suggest videos, articles or talks during the week, and the board picks the next topic by a random draw or a vote. Meet on whatever call tool you already use.",
     "groupsTitle": "Open groups you can join",
-    "groupsIntro": "Each card shows the group's name, icon and the summary its creator wrote. Ask the group for its access code before you request to join, or start your own group if none fits your schedule.",
+    "groupsIntro": "Each card shows the group's name, icon, the summary its creator wrote and its weekly meeting time in your time zone. Some groups also require an access code: ask the group for it before you request to join. Start your own group if none fits your schedule.",
     "groupsNoScript": "Turn on JavaScript to see the open groups.",
     "groupsEmpty": "No groups are listed yet. Be the first to create one.",
     "groupsError": "Couldn't load the groups. Please try again later.",
@@ -179,6 +179,7 @@
     "loadMore": "Load more groups",
     "openGroup": "Open group",
     "signInToJoin": "Sign in to join",
+    "accessCodeRequired": "Access code required",
     "signInFailed": "Sign-in didn't work. Please try again.",
     "signInBanned": "This Google account is banned from the study groups for breaking the content policy. If you think this is a mistake, write to groups@fbrissi.dev.",
     "faqTitle": "Frequently asked questions",
@@ -201,7 +202,7 @@
       },
       {
         "q": "Can I create a private group for my team or community?",
-        "a": "Yes. Only people with the access code can ask to join, and the owner approves each request."
+        "a": "Yes. Require an access code so only people you share it with can ask to join; either way, the owner approves each request."
       },
       {
         "q": "Why is the group app in English?",

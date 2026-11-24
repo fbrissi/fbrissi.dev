@@ -6,7 +6,7 @@ z.config({ jitless: true });
 export const STUDY_GROUP_API_PREFIX = '/api/study-group';
 
 /** Current versions (dates) of the program documents, shown on the pages and recorded when a user accepts them. */
-export const POLICY_VERSIONS = { terms: '2026-11-25', privacy: '2026-11-26' } as const;
+export const POLICY_VERSIONS = { terms: '2026-11-27', privacy: '2026-11-27' } as const;
 export type PolicyDocument = keyof typeof POLICY_VERSIONS;
 
 /**
@@ -16,7 +16,8 @@ export type PolicyDocument = keyof typeof POLICY_VERSIONS;
  * Amazon SES and Cloudflare R2, service emails, icons, bans and the transfer grounds. The 2026-11-23 versions only add
  * the groups@fbrissi.dev channel, the 2026-11-24 versions show listed groups' icons on the public page, and the 2026-11-25
  * versions add meeting reminders to the service emails (all minor). The 2026-11-26 privacy policy is material: it adds
- * Sentry (error monitoring, a new processor with a transfer to the United States).
+ * Sentry (error monitoring, a new processor with a transfer to the United States). The 2026-11-27 versions (minor) show the
+ * meeting time and whether a code is required on the public page, and make the access code optional.
  */
 export const MATERIAL_POLICY_VERSIONS: Record<PolicyDocument, string> = { terms: '2026-11-22', privacy: '2026-11-26' };
 
@@ -192,6 +193,8 @@ export const groupProfileSchema = z.object({
   listed: z.boolean(),
   /** Reminder emails to the members before each meeting. Optional so a page loaded before this field existed keeps the setting. */
   meetingReminders: z.boolean().optional(),
+  /** Whether a join request needs the access code. Optional so a page loaded before this field existed keeps the setting. */
+  requiresAccessCode: z.boolean().optional(),
 });
 
 export const createGroupSchema = groupProfileSchema.extend({
@@ -199,7 +202,8 @@ export const createGroupSchema = groupProfileSchema.extend({
 });
 
 export const joinGroupSchema = z.object({
-  code: z.string().trim().min(1).max(100),
+  /** Checked only when the group requires the access code; otherwise ignored. */
+  code: z.string().trim().max(100).optional(),
   message: z.string().trim().max(LIMITS.joinMessage).optional(),
 });
 
@@ -304,6 +308,14 @@ export interface GroupCard {
   summary: string;
 }
 
+/** A group's weekly meeting as stored: wall-clock values in its IANA time zone. Never carries the meeting link. */
+export interface GroupSchedule {
+  meetingDay: string;
+  meetingStart: string;
+  meetingEnd: string;
+  timezone: string;
+}
+
 export interface GroupInfo extends GroupCard {
   /** Short-lived signed URL of the group icon, or null. */
   iconUrl: string | null;
@@ -316,6 +328,7 @@ export interface GroupInfo extends GroupCard {
   moderationMode: ModerationMode;
   listed: boolean;
   meetingReminders: boolean;
+  requiresAccessCode: boolean;
 }
 
 export interface GroupSettings extends GroupInfo {
@@ -383,9 +396,12 @@ export interface MyGroupsResponse {
   notices: ModerationNotice[];
 }
 
+/** What anyone may see of a group before joining: never the access code or the meeting link. */
+export type PublicGroup = GroupCard & GroupSchedule & { requiresAccessCode: boolean; iconUrl: string | null };
+
 export interface GroupListResponse {
-  /** Listed groups only, each with its signed icon URL (or null); the response is cached for a minute. */
-  groups: (GroupCard & { iconUrl: string | null })[];
+  /** Listed groups only, each with its schedule and signed icon URL (or null); the response is cached for a minute. */
+  groups: PublicGroup[];
   nextCursor: string | null;
 }
 
@@ -421,7 +437,7 @@ export interface ModerationLogResponse {
 }
 
 export interface GroupPreviewResponse {
-  group: GroupCard & { iconUrl: string | null };
+  group: PublicGroup;
   membership: Membership;
   /** Set while a rejected request's cooldown runs: the user can ask again from then. */
   canAskAgainAt: string | null;

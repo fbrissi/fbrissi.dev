@@ -45,7 +45,7 @@ function CreateGroupForm() {
     <section className="mx-auto max-w-3xl">
       <p className={eyebrowClass}>English study groups</p>
       <h1 className="mb-3 mt-2 text-3xl font-normal tracking-tight sm:text-5xl">Create a group</h1>
-      <p className="mb-8 text-text-secondary">You become the owner: you share the access code, approve who joins, and moderate the board. You can own up to {LIMITS.ownedGroupsPerUser} groups with up to {LIMITS.membersPerGroup} members each.</p>
+      <p className="mb-8 text-text-secondary">You become the owner: you approve who joins, share the access code if you require one, and moderate the board. You can own up to {LIMITS.ownedGroupsPerUser} groups with up to {LIMITS.membersPerGroup} members each.</p>
       <form noValidate onSubmit={submit} className={`${cardClass} flex flex-col gap-5 p-6 sm:p-8`}>
         <GroupProfileFields values={values} errors={errors} onChange={(next) => { setValues((previous) => ({ ...previous, ...next })); setErrors({}); setError(''); }} />
         <label className="flex items-start gap-2 text-sm">

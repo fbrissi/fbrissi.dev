@@ -1,7 +1,7 @@
 ---
 title: Terms of Use
 description: Terms of Use and content policy of the free English study groups program.
-version: '2026-11-25'
+version: '2026-11-27'
 ---
 
 These Terms of Use govern the English study groups program available at `fbrissi.dev/study-groups` (the "program"). By creating an account you agree to them. Users in Brazil: the [Portuguese version](/pt-br/study-groups/terms) prevails.
@@ -50,7 +50,7 @@ Group icons must be a PNG, JPEG or WebP image of at most 256 KB and 512 × 512 p
 When you create a group you become its owner. As the owner you:
 
 - write an accurate public summary, without personal data or the meeting link;
-- share the access code only with people you want to invite, and approve each join request;
+- if your group requires an access code, share it only with people you want to invite; and approve each join request;
 - moderate the board: run draws and votes, review suggestions if you turn on review mode, and delete content that breaks this policy;
 - use members' information only to run the group;
 - answer for the meeting link you add and for the meetings you run outside the program.

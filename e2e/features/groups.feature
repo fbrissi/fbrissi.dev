@@ -9,9 +9,9 @@ Feature: Groups and membership
     When I create a group and confirm the content policy
     Then the group exists and I own it
 
-  Scenario: the landing page card shows only the name, the icon or its placeholder, and the summary (D3)
+  Scenario: the landing page card shows only the name, the icon or its placeholder, the meeting time, the access code badge and the summary (D3)
     When a visitor opens the landing page
-    Then each group card shows only its name, its icon (or the first letter of its name) and its summary
+    Then each group card shows only its name, its icon (or the first letter of its name), its meeting time, whether it requires an access code and its summary
 
   Scenario: signed-out users clicking a card sign in first and land on the join screen (1.2, 3.2)
     Given I am signed out
@@ -116,3 +116,18 @@ Feature: Groups and membership
     Given I own a group
     When I choose another day and time zone from the lists and turn meeting reminders off in the settings
     Then the settings keep the day, the time zone and reminders off
+
+  Scenario: the landing card and the join screen show the meeting time in the viewer's time zone and never the meeting link
+    Given a listed group meets on Tuesdays from 11 PM to 12:30 AM in São Paulo
+    When a visitor in Tokyo opens the landing page and a signed-in user in Tokyo opens its join screen
+    Then both show "Wednesdays, 11 AM – 12:30 PM your time" with the group time below, and never the meeting link
+
+  Scenario: a signed-in user asks to join an open group without an access code
+    Given a group that doesn't require an access code
+    When a signed-in user opens its join screen and sends a request with a message
+    Then there is no access code field, the request is pending and the owner still approves it
+
+  Scenario: a group that requires an access code shows the notice on the join screen and the badge on its landing card
+    Given a listed group that requires an access code and an open listed group
+    When a visitor opens the landing page and a signed-in user opens the first group's join screen
+    Then only the first group's card shows "Access code required", and its join screen explains the code is required by its creator's choice

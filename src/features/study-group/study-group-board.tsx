@@ -249,14 +249,14 @@ export function StudyGroupBoard({ api, group, role, user, canParticipate }: Boar
           {canParticipate ? <SuggestForm authorName={user.displayName} onCreate={createMaterial} /> : (
             <p className={`${cardClass} p-6 text-sm text-text-secondary`}>You manage this group as the platform admin. Only members suggest materials and vote.</p>
           )}
-          <MembersPanel api={api} groupId={groupId} role={role} />
+          <MembersPanel api={api} groupId={groupId} role={role} requiresAccessCode={group.requiresAccessCode} />
         </aside>
       </div>
     </>
   );
 }
 
-function MembersPanel({ api, groupId, role }: { api: StudyGroupApi; groupId: string; role: GroupRole }) {
+function MembersPanel({ api, groupId, role, requiresAccessCode }: { api: StudyGroupApi; groupId: string; role: GroupRole; requiresAccessCode: boolean }) {
   const [members, setMembers] = useState<Member[] | null>(null);
   const [error, setError] = useState('');
   const { dialog, confirm } = useReasonDialog();
@@ -269,7 +269,7 @@ function MembersPanel({ api, groupId, role }: { api: StudyGroupApi; groupId: str
     setError('');
     const confirmed = await confirm({
       title: 'Leave this group?',
-      text: 'You will need the access code and the owner’s approval to come back.',
+      text: requiresAccessCode ? 'You will need the access code and the owner’s approval to come back.' : 'You will need the owner’s approval to come back.',
       confirmLabel: 'Leave group',
       destructive: true,
     });

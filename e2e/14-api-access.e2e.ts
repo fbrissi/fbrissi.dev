@@ -203,14 +203,14 @@ test.describe('API access control', () => {
     expect((await call(cookies['the platform admin'], 'GET', `/admin/users?q=${encodeURIComponent(people.member.email)}`)).text).toContain(memberId);
   });
 
-  test('the public groups list is cacheable and holds only id, name, summary and a signed icon link', async () => {
+  test('the public groups list is cacheable and holds only id, name, summary, the meeting schedule, whether it requires an access code and a signed icon link', async () => {
     const response = await fetch(`${baseUrl}/api/study-group/groups`);
     expect(response.headers.get('cache-control')).toBe('public, max-age=60');
     expect(response.headers.get('x-robots-tag')).toBe('noindex, nofollow');
     const { groups } = (await response.json()) as { groups: Record<string, unknown>[] };
     expect(groups.length).toBeGreaterThan(0);
     for (const group of groups) {
-      expect(Object.keys(group).sort()).toEqual(['iconUrl', 'id', 'name', 'summary']);
+      expect(Object.keys(group).sort()).toEqual(['iconUrl', 'id', 'meetingDay', 'meetingEnd', 'meetingStart', 'name', 'requiresAccessCode', 'summary', 'timezone']);
       if (group.iconUrl !== null) expect(group.iconUrl).toMatch(/^\/api\/study-group\/icons\/[^/]+\/[^/?]+\?exp=\d+&sig=[\w-]+$/);
     }
   });

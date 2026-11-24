@@ -1,7 +1,7 @@
 ---
 title: Política de Privacidade
 description: Como o fbrissi.dev, o formulário de contato e o programa de grupos de estudo de inglês coletam, usam e protegem dados pessoais conforme a Lei Geral de Proteção de Dados (LGPD).
-version: '2026-11-26'
+version: '2026-11-27'
 ---
 
 Esta política explica como o `fbrissi.dev` trata dados pessoais conforme a Lei Geral de Proteção de Dados Pessoais (Lei 13.709/2018, "LGPD"): o formulário de contato (seção 2) e o programa de grupos de estudo de inglês em `fbrissi.dev/study-groups` (seções 3 a 5, 7 e 11); a seção 6 vale para os dois e para o monitoramento de erros de todo o site. Navegar pelo restante do site não exige nenhum dado pessoal. Para usuários no Brasil, esta versão em português prevalece sobre a [versão em inglês](/privacy).
@@ -50,7 +50,7 @@ O consentimento não é a base legal principal. Registramos o seu aceite dos Ter
 
 - Os membros dos seus grupos veem o seu nome de exibição, as suas sugestões e os seus votos, e o ícone do grupo. Qualquer pessoa conectada que abrir o link de entrada de um grupo vê o nome, o resumo e o ícone dele.
 - Os donos de grupos veem o nome de exibição e a mensagem opcional do seu pedido de entrada. Eles são avisados por e-mail de que há pedidos aguardando, sem o seu nome, a sua mensagem ou o seu e-mail. **O seu e-mail nunca é mostrado** a membros ou donos.
-- A página pública do programa mostra o nome, o resumo e o ícone de cada grupo listado. Grupos não listados, e os seus ícones, nunca aparecem nela. O link da reunião é visível somente para os membros. Os ícones são servidos por links assinados que expiram em até 2 horas; até lá, quem tiver o link pode abrir o ícone.
+- A página pública do programa mostra o nome, o resumo, o ícone, o dia e o horário da reunião semanal de cada grupo listado, e se ele exige código de acesso. Grupos não listados, e os seus ícones, nunca aparecem nela. O link da reunião é visível somente para os membros. Os ícones são servidos por links assinados que expiram em até 2 horas; até lá, quem tiver o link pode abrir o ícone.
 - Enquanto uma conta está banida, as suas sugestões, votos, participações e pedidos de entrada ficam ocultos para os outros usuários.
 - O administrador da plataforma pode acessar qualquer grupo para moderá-lo.
 - Não vendemos nem compartilhamos os seus dados com terceiros para marketing.

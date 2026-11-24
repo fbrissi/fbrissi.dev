@@ -125,6 +125,7 @@ export interface GroupInput {
   meetingEnd?: string;
   timezone?: string;
   meetingReminders?: boolean;
+  requiresAccessCode?: boolean;
 }
 
 export function groupInput(label: string, overrides: Partial<GroupInput> = {}): GroupInput {
@@ -140,7 +141,7 @@ export function groupInput(label: string, overrides: Partial<GroupInput> = {}): 
   };
 }
 
-/** Creates a group through the API as the signed-in user and returns its ID and access code. */
+/** Creates a group through the API as the signed-in user and returns its ID and access code; it requires the code unless `input` says otherwise. */
 export async function createGroupViaApi(page: Page, input: GroupInput): Promise<{ id: string; accessCode: string }> {
   const result = await api<{ group: { id: string } }>(page, 'POST', '/groups', {
     meetingDay: 'Monday',
@@ -151,6 +152,7 @@ export async function createGroupViaApi(page: Page, input: GroupInput): Promise<
     meetingUrl: null,
     moderationMode: 'free',
     listed: true,
+    requiresAccessCode: true,
     ...input,
     acceptContentPolicy: true
   });

@@ -97,7 +97,7 @@ describe('join screen (D5)', () => {
   it('asks for the code, explains wrong codes and sends the request with an optional message', async () => {
     let attempt = 0;
     const fetchMock = join({
-      [`GET ${base}/preview`]: { group: { id: group.id, name: group.name, summary: group.summary }, membership: 'none' },
+      [`GET ${base}/preview`]: { group: { id: group.id, name: group.name, summary: group.summary, requiresAccessCode: true }, membership: 'none' },
       [`POST ${base}/join`]: () => [
         apiError(403, 'invalid_code'),
         apiError(409, 'Your request to join this group was not approved. You can ask again after November 29, 2026 at 9:00 AM (Brasília time).'),
@@ -107,6 +107,7 @@ describe('join screen (D5)', () => {
     render(<SessionProvider><GroupBoardView /></SessionProvider>);
     expect(await screen.findByRole('heading', { name: 'Go Talk' })).toBeInTheDocument();
     expect(screen.getByText(group.summary)).toBeInTheDocument();
+    expect(screen.getByText("This group only accepts requests with an access code, by its creator's choice. Ask the group for it.")).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
     expect(screen.getByRole('alert')).toHaveTextContent('Please enter the access code.');
@@ -124,8 +125,24 @@ describe('join screen (D5)', () => {
     fireEvent.change(screen.getByLabelText(/Message to the owner/), { target: { value: ' Hi! ' } });
     fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
     expect(await screen.findByText('Your request was sent.')).toBeInTheDocument();
+    expect(screen.getByText(/this page opens the board; you won.t need the code again\./)).toBeInTheDocument();
     expect(bodyOf(fetchMock, `POST ${base}/join`)).toEqual({ code: 'wrong' });
     expect(JSON.parse((fetchMock.mock.calls.filter(([url]) => String(url).endsWith('/join')).at(-1)![1] as RequestInit).body as string)).toEqual({ code: 'wrong', message: 'Hi!' });
+  });
+
+  it('sends a request without a code to a group that does not require one', async () => {
+    const fetchMock = join({
+      [`GET ${base}/preview`]: { group: { ...group, requiresAccessCode: false }, membership: 'none', canAskAgainAt: null },
+      [`POST ${base}/join`]: { status: 'pending' },
+    });
+    render(<SessionProvider><GroupBoardView /></SessionProvider>);
+    expect(await screen.findByRole('heading', { name: 'Ask to join' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Access code')).not.toBeInTheDocument();
+    expect(screen.queryByText(/only accepts requests with an access code/)).not.toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText(/Message to the owner/), { target: { value: ' Hi! ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
+    expect(await screen.findByText('The owner reviews each request. Once approved, this page opens the board.')).toBeInTheDocument();
+    expect(bodyOf(fetchMock, `POST ${base}/join`)).toEqual({ message: 'Hi!' });
   });
 
   it('shows a pending request and preview errors', async () => {
@@ -173,7 +190,9 @@ describe('board for members', () => {
     setup({ role: 'member', routes: { [`POST ${base}/leave`]: () => leaveResult } });
     const leave = await screen.findByRole('button', { name: 'Leave group' });
     fireEvent.click(leave);
-    expect(await answerConfirm(false)).toHaveTextContent('Leave this group?');
+    const dialog = await answerConfirm(false);
+    expect(dialog).toHaveTextContent('Leave this group?');
+    expect(dialog).toHaveTextContent('You will need the access code and the owner’s approval to come back.');
     expect(navigation.navigate).not.toHaveBeenCalled();
     fireEvent.click(leave);
     await answerConfirm(true);
@@ -182,6 +201,12 @@ describe('board for members', () => {
     fireEvent.click(leave);
     await answerConfirm(true);
     await waitFor(() => expect(navigation.navigate).toHaveBeenCalledWith('/study-groups/my'));
+  });
+
+  it('does not mention the access code when a member leaves a group that does not require one', async () => {
+    setup({ role: 'member', routes: { [`GET ${base}`]: { group: { ...group, requiresAccessCode: false }, role: 'member', canParticipate: true } } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Leave group' }));
+    expect(await answerConfirm(false)).toHaveTextContent('You will need the owner’s approval to come back.');
   });
 
   it('shows member list errors', async () => {

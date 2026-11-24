@@ -3,6 +3,17 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.4.4
+
+### Added
+
+- Show each group's weekly meeting day and time in the viewer's own time zone on the public landing cards and the join screen, with the group's own time below when it differs, so people can check they can attend before asking to join. The public groups list and the join preview now return the schedule (never the meeting link or the access code).
+- Let group owners choose whether a join request needs the access code (migration `0007`): new groups are open by default, so anyone signed in can ask to join without a code, and the owner still approves every request; groups created before keep requiring their code. The settings show the code and its rotation only while it is required, the join screen explains when a group requires one, and the landing cards show an "Access code required" badge.
+
+### Changed
+
+- Update the Terms of Use and the Privacy Policy (`2026-11-27`, minor: no one is asked to accept them again): the public program page also shows each listed group's meeting time and whether it requires an access code, and owners share an access code only when their group requires one.
+
 ## v0.4.3
 
 ### Added
