@@ -32,7 +32,7 @@ describe('study group emails', () => {
     expect(html).toContain('href="https://fbrissi.dev/study-groups/unsubscribe?t=abc"');
     expect(html).toContain('src="https://fbrissi.dev/images/avatar.png"');
     expect(html).not.toMatch(/sandbox|local development/i);
-    expect(html).toContain('background:#f97316;color:#111111;');
+    expect(html).toContain('background:#166534;color:#ffffff;');
     // The shared layout: the contact form card with the avatar header and the title.
     expect(html).toContain('<div class="header">');
     expect(html).toContain('New requests to join Go &lt;b&gt;Talk&lt;/b&gt; &amp; &quot;friends&quot;</h2>');
@@ -48,6 +48,25 @@ describe('study group emails', () => {
     expect(studyGroupEmailText(rejected)).toContain('Your request to join Go Talk was not approved.');
     expect(studyGroupEmailText(rejected)).toContain('You can ask to join this group again after 7 days');
     expect(studyGroupEmailHtml(rejected)).toContain('href="https://fbrissi.dev/study-groups"');
+  });
+
+  it('tells members about the vote, the picked topic, escaped and never a link, and a vote without a topic (E6)', () => {
+    const started = { ...base, kind: 'round_started' as const, groupName: 'Go Talk' };
+    expect(studyGroupEmailSubject(started)).toBe('A vote is open in Go Talk');
+    expect(studyGroupEmailText(started)).toContain('Vote now: https://fbrissi.dev/study-groups/g/gotalk1234');
+    expect(studyGroupEmailText(started)).toContain('Unsubscribe from these emails');
+
+    const picked = { ...base, kind: 'round_picked' as const, groupName: 'Go Talk', materialTitle: 'Read <a href="https://evil.test">this</a>' };
+    expect(studyGroupEmailSubject(picked)).toBe('Next topic for Go Talk: Read <a href="https://evil.test">this</a>');
+    expect(studyGroupEmailText(picked)).toContain('The next topic for Go Talk is: Read <a href="https://evil.test">this</a>');
+    expect(studyGroupEmailText(picked)).toContain('Open the group: https://fbrissi.dev/study-groups/g/gotalk1234');
+    expect(studyGroupEmailHtml(picked)).toContain('Read &lt;a href=&quot;https://evil.test&quot;&gt;this&lt;/a&gt;');
+    expect(studyGroupEmailHtml(picked)).not.toContain('href="https://evil.test"');
+    expect(studyGroupEmailSubject({ ...picked, materialTitle: 'Line\nbreak' })).toBe('Next topic for Go Talk: Line break');
+
+    const cancelled = { ...base, kind: 'round_cancelled' as const, groupName: 'Go Talk' };
+    expect(studyGroupEmailSubject(cancelled)).toBe('The vote in Go Talk ended without a topic');
+    expect(studyGroupEmailText(cancelled)).toContain('The vote in Go Talk was closed without picking a topic.');
   });
 
   it('tells the owner the admin deleted the group, with the reason (E4)', () => {

@@ -17,7 +17,7 @@ LocalStack SQS, and a separate TypeScript consumer sends the resulting email to
 **Mailpit** over SMTP.
 
 - **Web UI**: http://localhost:8025
-- **LocalStack endpoint**: http://localhost:4566
+- **LocalStack endpoint**: http://localhost:4567
 - **Contact API endpoint**: http://localhost:8787/api/contact
 - **No configuration needed** - all services start with `kool start`
 - Uses Turnstile test key (always passes validation)

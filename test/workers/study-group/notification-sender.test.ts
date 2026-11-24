@@ -275,3 +275,68 @@ describe('notification sender', () => {
     });
   });
 });
+
+describe('round emails (E6)', () => {
+  let roundId: number;
+  const roundPayload = () => JSON.stringify({ groupName: 'Old name', roundId });
+  const setRound = (status: string, winner: number | null) =>
+    db.prepare('UPDATE rounds SET status = ?, winner_material_id = ? WHERE id = ?').bind(status, winner, roundId).run();
+  const startedRow = (statusValue: string) => db.prepare("INSERT INTO notifications (user_id, kind, group_id, payload, dedupe_key, status, created_at, send_after) VALUES ('member01', 'round_started', 'gotalk', '{}', ?, ?, ?, ?)")
+    .bind(`round_started:${roundId}:member01`, statusValue, iso(-MINUTE), iso(-MINUTE)).run();
+
+  beforeEach(async () => {
+    await db.batch([
+      db.prepare("INSERT INTO group_members (group_id, user_id, joined_at) VALUES ('gotalk', 'member01', 'x')"),
+      db.prepare("INSERT INTO materials (id, group_id, user_id, suggested_by, type, title, status, created_at) VALUES (7, 'gotalk', 'owner001', 'Olivia', 'article', 'Clean <code>', 'open', 'x')"),
+    ]);
+    roundId = (await db.prepare("INSERT INTO rounds (group_id, mode, status, created_at) VALUES ('gotalk', 'vote', 'open', 'x') RETURNING id").first<{ id: number }>())!.id;
+  });
+
+  it('sends the open vote while the round is open, reading the group name now', async () => {
+    expect(await sender()(await insert('round_started', 'member01', roundPayload()))).toBe('sent');
+    const email = send.mock.calls[0][0];
+    expect(email.to).toBe('member@example.test');
+    expect(email.subject).toBe('A vote is open in Go Talk');
+    expect(email.text).toContain('Vote now: https://fbrissi.dev/study-groups/g/gotalk');
+    expect(email.headers['List-Unsubscribe-Post']).toBe('List-Unsubscribe=One-Click');
+
+    await setRound('closed', null);
+    expect(await sender()(await insert('round_started', 'member01', roundPayload()))).toBe('skipped');
+  });
+
+  it('sends the picked topic with its title, and drops it when the topic is gone or its author is banned', async () => {
+    await setRound('closed', 7);
+    expect(await sender()(await insert('round_picked', 'member01', roundPayload()))).toBe('sent');
+    expect(send.mock.calls[0][0].subject).toBe('Next topic for Go Talk: Clean <code>');
+    expect(send.mock.calls[0][0].html).toContain('Clean &lt;code&gt;');
+
+    await db.prepare("INSERT INTO bans (user_id, google_sub, email, reason, created_at, expires_at) VALUES ('owner001', 'o', 'Owner@Example.test', 'Reason text', 'x', '2999-01-01T00:00:00.000Z')").run();
+    expect(await sender()(await insert('round_picked', 'member01', roundPayload()))).toBe('skipped');
+    await db.prepare('DELETE FROM bans').run();
+    await setRound('closed', null);
+    expect(await sender()(await insert('round_picked', 'member01', roundPayload()))).toBe('skipped');
+  });
+
+  it('sends "no topic" only to members who got the open vote email', async () => {
+    await setRound('closed', null);
+    expect(await sender()(await insert('round_cancelled', 'member01', roundPayload()))).toBe('skipped');
+    await startedRow('skipped');
+    expect(await sender()(await insert('round_cancelled', 'member01', roundPayload()))).toBe('skipped');
+    await db.prepare("UPDATE notifications SET status = 'sent' WHERE dedupe_key = ?").bind(`round_started:${roundId}:member01`).run();
+    expect(await sender()(await insert('round_cancelled', 'member01', roundPayload()))).toBe('sent');
+    expect(send.mock.calls[0][0].subject).toBe('The vote in Go Talk ended without a topic');
+  });
+
+  it('drops a round email when the recipient left the group or was banned, or the round is gone', async () => {
+    await db.prepare("INSERT INTO bans (user_id, google_sub, email, reason, created_at, expires_at) VALUES ('member01', 'm', 'member@example.test', 'Reason text', 'x', '2999-01-01T00:00:00.000Z')").run();
+    expect(await sender()(await insert('round_started', 'member01', roundPayload()))).toBe('skipped');
+    await db.prepare('DELETE FROM bans').run();
+    await db.prepare('DELETE FROM group_members').run();
+    expect(await sender()(await insert('round_started', 'member01', roundPayload()))).toBe('skipped');
+    await db.prepare("INSERT INTO group_members (group_id, user_id, joined_at) VALUES ('gotalk', 'member01', 'x')").run();
+    expect(await sender()(await insert('round_started', 'member01', '{}'))).toBe('skipped');
+    await db.prepare('DELETE FROM rounds').run();
+    expect(await sender()(await insert('round_started', 'member01', roundPayload()))).toBe('skipped');
+    expect(send).not.toHaveBeenCalled();
+  });
+});

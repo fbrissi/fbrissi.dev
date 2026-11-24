@@ -254,6 +254,20 @@ export function createRepository(db: D1Like) {
       groupId, groupId, now, now, now, ownerId, groupId, windowStart
     ),
   ];
+  /**
+   * One round notice per member of the round's group, leaving out the owner (who ran the round), users who turned
+   * service emails off and banned users. The payload holds only the group name and the round ID; the mailer reads the
+   * round and the picked title at send time.
+   */
+  const roundNoticeStatement = (kindSql: string, roundWhere: string, roundValues: unknown[], now: string) => statement(
+    `INSERT INTO notifications (user_id, kind, group_id, payload, dedupe_key, created_at, send_after)
+     SELECT u.id, ${kindSql}, g.id, json_object('groupName', g.name, 'roundId', r.id), ${kindSql} || ':' || r.id || ':' || u.id, ?, ?
+     FROM rounds r JOIN groups g ON g.id = r.group_id
+       JOIN group_members gm ON gm.group_id = g.id JOIN users u ON u.id = gm.user_id
+     WHERE ${roundWhere} AND u.id <> COALESCE(g.owner_id, '') AND ${emailOn} AND ${notBanned('u.id')}
+     ON CONFLICT (dedupe_key) DO NOTHING RETURNING id, send_after`,
+    now, now, ...roundValues
+  );
   const withNotices = async (statements: D1StatementLike[], notices: D1StatementLike[]): Promise<QueuedNotification[]> =>
     queued((await db.batch([...statements, ...notices])).slice(statements.length));
 
@@ -691,21 +705,36 @@ export function createRepository(db: D1Like) {
       return row ? toRound(row) : null;
     },
 
-    async createRound(groupId: string, mode: RoundMode, now: string, winnerMaterialId: number | null): Promise<Round> {
+    /** Opens a vote, or draws a topic at once; the members are told in the same batch (a vote opened or a topic picked). */
+    async createRound(groupId: string, mode: RoundMode, now: string, winnerMaterialId: number | null): Promise<{ round: Round; notifications: QueuedNotification[] }> {
       const closed = mode === 'draw';
-      const row = await one<RoundRow>(
-        'INSERT INTO rounds (group_id, mode, status, created_at, closed_at, winner_material_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING *',
-        groupId, mode, closed ? 'closed' : 'open', now, closed ? now : null, winnerMaterialId
-      );
-      return toRound(row!);
+      const [inserted, notices] = await db.batch([
+        statement(
+          'INSERT INTO rounds (group_id, mode, status, created_at, closed_at, winner_material_id) VALUES (?, ?, ?, ?, ?, ?) RETURNING *',
+          groupId, mode, closed ? 'closed' : 'open', now, closed ? now : null, winnerMaterialId
+        ),
+        roundNoticeStatement("CASE r.mode WHEN 'vote' THEN 'round_started' ELSE 'round_picked' END", 'r.group_id = ? AND r.created_at = ?', [groupId, now], now),
+      ]) as [{ results: RoundRow[] }, unknown];
+      return { round: toRound(inserted.results[0]), notifications: queued([notices]) };
     },
 
-    async closeRound(groupId: string, id: number, now: string, winnerMaterialId: number | null): Promise<Round | null> {
-      const row = await one<RoundRow>(
-        "UPDATE rounds SET status = 'closed', closed_at = ?, winner_material_id = ? WHERE group_id = ? AND id = ? AND status = 'open' RETURNING *",
-        now, winnerMaterialId, groupId, id
-      );
-      return row ? toRound(row) : null;
+    /**
+     * Closes an open round with its winner, or with none (cancelled, or no material left to pick); the members are told
+     * in the same batch. The notices match only a round this call closed (its `closed_at`), so a repeated call writes none.
+     */
+    async closeRound(groupId: string, id: number, now: string, winnerMaterialId: number | null): Promise<{ round: Round; notifications: QueuedNotification[] } | null> {
+      const [updated, notices] = await db.batch([
+        statement(
+          "UPDATE rounds SET status = 'closed', closed_at = ?, winner_material_id = ? WHERE group_id = ? AND id = ? AND status = 'open' RETURNING *",
+          now, winnerMaterialId, groupId, id
+        ),
+        roundNoticeStatement(
+          "CASE WHEN r.winner_material_id IS NULL THEN 'round_cancelled' ELSE 'round_picked' END",
+          "r.group_id = ? AND r.id = ? AND r.status = 'closed' AND r.closed_at = ?", [groupId, id, now], now
+        ),
+      ]) as [{ results: RoundRow[] }, unknown];
+      const row = updated.results[0];
+      return row ? { round: toRound(row), notifications: queued([notices]) } : null;
     },
 
     /** One vote per user per round; voting again moves the vote. */

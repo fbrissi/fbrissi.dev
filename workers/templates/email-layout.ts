@@ -29,7 +29,7 @@ export type EmailBlock =
   | { kind: 'fields'; rows: { label: string; value: string; href?: string }[] }
   /** A quoted, multi-line text (the contact message), line breaks kept. */
   | { kind: 'message'; label: string; text: string }
-  /** The call to action: an orange button, "Label: URL" in the text part. */
+  /** The call to action: a dark green button, "Label: URL" in the text part. */
   | { kind: 'button'; label: string; url: string }
   | { kind: 'signature'; avatarSize: number; lines: EmailSignatureLine[]; links?: EmailLink[] }
   /** A small muted note, "(note)" in the text part. */
@@ -62,6 +62,7 @@ export interface EmailContent {
 const ACCENT = '#f97316';
 const ACCENT_TEXT_LINK = '#c2410c';
 const HEADER = '#139a00';
+const BUTTON = '#166534';
 const FONT = "-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif";
 
 export function escapeHtml(text: string): string {
@@ -95,7 +96,7 @@ function blockHtml(block: EmailBlock, content: EmailContent): string {
     case 'message':
       return `<div class="message"><strong>${escapeHtml(block.label)}:</strong><p>${escapeHtml(block.text).replace(/\n/g, '<br>')}</p></div>`;
     case 'button':
-      return `<p style="margin:8px 0 28px;"><a href="${escapeHtml(block.url)}" style="display:inline-block;padding:10px 18px;border-radius:8px;background:${ACCENT};color:#111111;text-decoration:none;font-size:14px;">${escapeHtml(block.label)}</a></p>`;
+      return `<p style="margin:8px 0 28px;"><a href="${escapeHtml(block.url)}" style="display:inline-block;padding:10px 18px;border-radius:8px;background:${BUTTON};color:#ffffff;text-decoration:none;font-size:14px;">${escapeHtml(block.label)}</a></p>`;
     case 'signature': {
       const lines = block.lines.map((line) => `<p style="${signatureStyles[line.style]}">${escapeHtml(line.text)}</p>`).join('\n              ');
       const links = block.links?.length

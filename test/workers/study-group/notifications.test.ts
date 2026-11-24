@@ -140,6 +140,55 @@ describe('service email triggers', () => {
   });
 });
 
+describe('round emails (E6)', () => {
+  const board = (method: string, path: string, cookie: string, body?: unknown) => call(method, `/groups/${w.groupId}${path}`, cookie, body);
+  const roundRows = async () => (await rows()).filter((row) => row.kind.startsWith('round_'));
+  let outsiderId: string;
+
+  beforeEach(async () => {
+    await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: w.accessCode }), 201);
+    expect((await call('POST', `/groups/${w.groupId}/requests/${await pendingId()}/approve`, w.owner)).status).toBe(204);
+    outsiderId = await userId(w.outsider);
+    for (const title of ['Clean code', 'Go tips']) await expectJson(await board('POST', '/materials', w.member, { type: 'article', title }), 201);
+  });
+
+  it('tells each member, never the owner, when a vote opens, a topic is picked or a vote closes without one', async () => {
+    const { round } = await expectJson(await board('POST', '/rounds', w.owner, { mode: 'vote' }), 201);
+    const started = await roundRows();
+    expect(started.map((row) => row.user_id).sort()).toEqual([w.memberId, outsiderId].sort());
+    for (const row of started) {
+      expect(row).toMatchObject({ kind: 'round_started', group_id: w.groupId, payload: JSON.stringify({ groupName: 'Go Talk', roundId: round.id }), dedupe_key: `round_started:${round.id}:${row.user_id}`, send_after: row.created_at });
+    }
+    expect(notify).toHaveBeenLastCalledWith(started.map((row) => ({ id: row.id, sendAfter: row.send_after })));
+
+    await expectJson(await board('POST', `/rounds/${round.id}/close`, w.owner), 200);
+    const picked = (await roundRows()).filter((row) => row.kind === 'round_picked');
+    expect(picked.map((row) => row.dedupe_key).sort()).toEqual([w.memberId, outsiderId].map((id) => `round_picked:${round.id}:${id}`).sort());
+    // A repeated close writes nothing.
+    await expectJson(await board('POST', `/rounds/${round.id}/close`, w.owner), 409);
+    expect(await roundRows()).toHaveLength(4);
+
+    const { round: cancelled } = await expectJson(await board('POST', '/rounds', w.owner, { mode: 'vote' }), 201);
+    await expectJson(await board('POST', `/rounds/${cancelled.id}/cancel`, w.owner), 200);
+    expect((await roundRows()).filter((row) => row.kind === 'round_cancelled').map((row) => row.dedupe_key).sort())
+      .toEqual([w.memberId, outsiderId].map((id) => `round_cancelled:${cancelled.id}:${id}`).sort());
+
+    // A draw picks the topic at once: no "vote open" email.
+    const before = (await roundRows()).length;
+    const { round: drawn } = await expectJson(await board('POST', '/rounds', w.owner, { mode: 'draw' }), 201);
+    expect((await roundRows()).slice(before).map((row) => `${row.kind}:${row.user_id}`).sort())
+      .toEqual([w.memberId, outsiderId].map((id) => `round_picked:${id}`).sort());
+    expect((await roundRows()).slice(before).every((row) => row.dedupe_key.startsWith(`round_picked:${drawn.id}:`))).toBe(true);
+  });
+
+  it('leaves out members who turned emails off and banned members', async () => {
+    await expectJson(await call('PUT', '/me/notifications', w.member, { emailEnabled: false }), 200, { emailEnabled: false });
+    await h.db.prepare("INSERT INTO bans (user_id, google_sub, email, reason, created_at, expires_at) VALUES (?, 'fake-outsider', 'x@example.test', 'Spam', 'x', '2999-01-01T00:00:00.000Z')").bind(outsiderId).run();
+    await expectJson(await board('POST', '/rounds', w.owner, { mode: 'draw' }), 201);
+    expect(await roundRows()).toEqual([]);
+  });
+});
+
 describe('rejected request cooldown', () => {
   it('blocks a new request to the same group for 7 days after a rejection, not to other groups', async () => {
     await expectJson(await call('POST', `/groups/${w.groupId}/join`, w.outsider, { code: w.accessCode }), 201);

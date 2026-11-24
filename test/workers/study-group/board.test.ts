@@ -270,7 +270,7 @@ function hideOpenRound(db: Db): Db {
 }
 
 function failClose(db: Db): Db {
-  return wrap(db, (query) => query.startsWith("UPDATE rounds SET status = 'closed'"), () => ({ first: async () => null }) as never);
+  return wrap(db, (query) => query.startsWith("UPDATE rounds SET status = 'closed'"), () => ({ first: async () => null, all: async () => ({ results: [] }) }) as never);
 }
 
 function failQuery(db: Db, pattern: RegExp, error: Error): Db {

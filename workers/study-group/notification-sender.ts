@@ -44,7 +44,18 @@ interface Payload {
   /** Meeting reminders: which reminder, and when the meeting starts. */
   lead?: MeetingReminderLead;
   meetingAt?: string;
+  /** Round notices: the round they are about. */
+  roundId?: number;
 }
+
+interface RoundNoticeRow {
+  name: string;
+  status: string;
+  title: string | null;
+  started_sent: number;
+}
+
+const roundKinds: readonly NotificationKind[] = ['round_started', 'round_picked', 'round_cancelled'];
 
 interface ReminderGroupRow {
   name: string;
@@ -151,6 +162,27 @@ export function createNotificationSender(deps: NotificationSenderDeps) {
       if (!isMeetingAt(schedule, new Date(meetingAt))) return skip();
       input.groupName = group.name;
       input.meeting = { lead, startsAt: meetingAt, start: group.meeting_start, end: group.meeting_end, timezone: group.timezone, url: group.meeting_url || null };
+    }
+
+    // A round notice reads the round now: it is dropped when the recipient left the group or was banned, or the round
+    // is gone. "Vote open" is dropped once the round closed; "topic picked" when the topic was deleted or its author is
+    // banned; "no topic" goes only to members who got the "vote open" email for the same round.
+    if (roundKinds.includes(row.kind)) {
+      const round = await db.prepare(
+        `SELECT g.name, r.status, m.title,
+           EXISTS (SELECT 1 FROM notifications n WHERE n.dedupe_key = 'round_started:' || r.id || ':' || ? AND n.status = 'sent') AS started_sent
+         FROM rounds r JOIN groups g ON g.id = r.group_id
+           LEFT JOIN materials m ON m.id = r.winner_material_id AND NOT EXISTS (SELECT 1 FROM bans b WHERE b.user_id = m.user_id AND ${BAN_IN_FORCE})
+         WHERE r.id = ? AND r.group_id = ?
+           AND EXISTS (SELECT 1 FROM group_members gm WHERE gm.group_id = g.id AND gm.user_id = ?)
+           AND NOT EXISTS (SELECT 1 FROM bans b WHERE b.user_id = ? AND ${BAN_IN_FORCE})`
+      ).bind(row.user_id, payload.roundId ?? null, row.group_id, row.user_id, row.user_id).first<RoundNoticeRow>();
+      if (!round) return skip();
+      if (row.kind === 'round_started' && round.status !== 'open') return skip();
+      if (row.kind === 'round_picked' && !round.title) return skip();
+      if (row.kind === 'round_cancelled' && !round.started_sent) return skip();
+      input.groupName = round.name;
+      input.materialTitle = round.title ?? undefined;
     }
 
     const urls = unsubscribeUrls(deps.appOrigin, await createUnsubscribeToken(row.user_id, deps.environment, deps.unsubscribeSecret, now));
