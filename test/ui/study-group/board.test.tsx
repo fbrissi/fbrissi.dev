@@ -145,6 +145,21 @@ describe('join screen (D5)', () => {
     expect(bodyOf(fetchMock, `POST ${base}/join`)).toEqual({ message: 'Hi!' });
   });
 
+  it('asks for the code when the preview does not say whether the group requires one', async () => {
+    const fetchMock = join({
+      [`GET ${base}/preview`]: { group: { id: group.id, name: group.name, summary: group.summary }, membership: 'none' },
+      [`POST ${base}/join`]: { status: 'pending' },
+    });
+    render(<SessionProvider><GroupBoardView /></SessionProvider>);
+    expect(await screen.findByText("This group only accepts requests with an access code, by its creator's choice. Ask the group for it.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
+    expect(screen.getByRole('alert')).toHaveTextContent('Please enter the access code.');
+    fireEvent.change(screen.getByLabelText('Access code'), { target: { value: ' code ' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Send request' }));
+    expect(await screen.findByText('Your request was sent.')).toBeInTheDocument();
+    expect(bodyOf(fetchMock, `POST ${base}/join`)).toEqual({ code: 'code' });
+  });
+
   it('shows a pending request and preview errors', async () => {
     join({ [`GET ${base}/preview`]: { group, membership: 'pending' } });
     const { unmount } = render(<SessionProvider><GroupBoardView /></SessionProvider>);

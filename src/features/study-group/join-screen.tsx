@@ -28,9 +28,10 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
   if (loadError) return <Banner tone="error" title="Couldn't load this group. Check the link and try again." />;
   if (!preview) return <p role="status" className="text-text-secondary">Loading…</p>;
 
+  const requiresCode = preview.group.requiresAccessCode !== false;
+
   const submit = async (event: FormEvent) => {
     event.preventDefault();
-    const requiresCode = preview.group.requiresAccessCode;
     if (requiresCode && !code.trim()) {
       setError('Please enter the access code.');
       return;
@@ -63,7 +64,7 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
       <div className="mb-6"><MeetingTime schedule={preview.group} /></div>
       {waiting ? (
         <Banner tone="success" title="Your request was sent.">
-          <p className="text-text-secondary">The owner reviews each request. Once approved, this page opens the board{preview.group.requiresAccessCode ? <>; you won&apos;t need the code again</> : null}.</p>
+          <p className="text-text-secondary">The owner reviews each request. Once approved, this page opens the board{requiresCode ? <>; you won&apos;t need the code again</> : null}.</p>
         </Banner>
       ) : rejectedUntil ? (
         <Banner tone="error" title="The owner didn’t approve your request to join this group.">
@@ -72,7 +73,7 @@ export function JoinScreen({ api, groupId }: { api: StudyGroupApi; groupId: stri
       ) : (
         <form noValidate onSubmit={submit} className={`${cardClass} flex flex-col gap-4 p-6`}>
           <h2 className="text-xl font-normal">Ask to join</h2>
-          {preview.group.requiresAccessCode ? (
+          {requiresCode ? (
             <>
               <p className="text-sm text-text-secondary">This group only accepts requests with an access code, by its creator&apos;s choice. Ask the group for it.</p>
               <label htmlFor="join-code" className="text-sm tracking-wide text-text-secondary">Access code</label>
