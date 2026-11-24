@@ -24,7 +24,7 @@ The program started as the board of DevTalk, a single study group where members 
 ## How a group works
 
 1. Sign in with Google and accept the Terms of Use and the Privacy Policy.
-2. Create a group with a name, a short public summary, rules and a meeting schedule, or ask to join one with its access code.
+2. Create a group with a name, a short public summary, rules and a meeting schedule, or ask to join one (with its access code, if it requires one).
 3. The owner approves each request, so only approved members see the board.
 4. Members suggest materials; the owner picks the weekly topic by random draw or by vote.
 5. The group meets on its own call and talks about the topic in English.
