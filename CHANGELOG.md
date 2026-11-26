@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.5.2
+
+### Changed
+
+- AI dependency updates keep waiting for a `release/*` branch you open: the profile (`docs/ai/dependency-updates.md`) sets `Open release for bugfixes: no`, since newer ai-skills versions would otherwise open a release (milestone and branch) that only delivery orchestration, which this repository does not run, can complete. No site change.
+
 ## v0.5.1
 
 ### Added
