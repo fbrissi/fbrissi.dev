@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.5.1
+
+### Added
+
+- Added a weekly AI dependency update run (`.github/workflows/ai-dependency-update.yml`, Monday 15:00 UTC after Dependabot, or on demand): the shared `dependency-update` task reads the release notes of each update in the Dependabot PR, adapts the code, runs the checks and a review and QA cycle, and opens one release PR that supersedes it. Profile in `docs/ai/dependency-updates.md`; the run skips while the `AGENT_APP_CLIENT_ID` variable is empty.
+
 ## v0.5.0
 
 ### Added

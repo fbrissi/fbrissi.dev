@@ -1,0 +1,53 @@
+name: AI Dependency Update
+
+# Weekly, after the grouped Dependabot run (Monday 09:00 America/Sao_Paulo, 12:00 UTC): the dependency-updater agent
+# brings the open Dependabot PR into one reviewed PR that supersedes it (profile docs/ai/dependency-updates.md). It
+# stops at the PR; there is no PR Fix or Merge Decision here, so a person reviews and merges it.
+on:
+  schedule:
+    - cron: "0 15 * * 1"
+  workflow_dispatch:
+    inputs:
+      requested_by:
+        description: GitHub login to mention when the flow needs a person. Empty uses whoever ran it.
+        required: false
+        type: string
+      instructions:
+        description: Extra instructions for this run only, appended to the agent prompt.
+        required: false
+        type: string
+
+permissions: {}
+
+concurrency:
+  group: ai-dependency-update
+  cancel-in-progress: false
+
+jobs:
+  dependency-update:
+    name: AI Dependency Update
+    # Skipped until the agent App is configured (AGENT_APP_CLIENT_ID variable and AGENT_APP_PRIVATE_KEY secret).
+    if: github.ref == 'refs/heads/main' && vars.AGENT_APP_CLIENT_ID != ''
+    uses: fbrissi/github-actions/.github/workflows/ai-task.yml@v1
+    permissions:
+      contents: read
+    with:
+      task: dependency-update
+      harness: ${{ vars.AI_HARNESS }}
+      opencode-model: ${{ vars.OPENCODE_MODEL }}
+      opencode-variant: ${{ vars.OPENCODE_VARIANT }}
+      claude-model: ${{ vars.CLAUDE_MODEL }}
+      claude-effort: ${{ vars.CLAUDE_EFFORT }}
+      ai-skills-ref: v0.8.0
+      requested-by: ${{ inputs.requested_by }}
+      instructions: ${{ inputs.instructions }}
+      base-branch: main
+      node-version: "24"
+      node-cache: yarn
+      install-command: yarn install --frozen-lockfile
+      timeout-minutes: 40
+    secrets:
+      AGENT_APP_PRIVATE_KEY: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+      OPEN_AI_TOKEN: ${{ secrets.OPEN_AI_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
