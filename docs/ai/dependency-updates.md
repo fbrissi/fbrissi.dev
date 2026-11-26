@@ -12,6 +12,7 @@ Profile of the fbrissi/ai-skills `dependency-updates` skill for this repository,
 - Base branch: main
 - Security updates (high or critical advisory, or a `severity:critical` label) go to `hotfix/dependency-updates-{date}` with a PR into `main` and its `CHANGELOG.md` release: **merging it releases and deploys**.
 - The rest go to `bugfix/dependency-updates-{date}` with a PR into the oldest open `release/*` branch (the release you opened; the App cannot push `release/*`, but it can open a `bugfix/*` PR into it) and no `CHANGELOG.md` change: they ship with that release. With no open `release/*` branch they wait for a later run, and the run report says since when.
+- Open release for bugfixes: no   # this repository runs no delivery orchestration (no ai-orchestrate or orchestrate-on-merge workflow) to complete a release the run would open, so keep waiting for a release you open
 - Labels: dependencies
 
 ## Never update
