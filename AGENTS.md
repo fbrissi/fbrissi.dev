@@ -93,7 +93,8 @@ Every release must add exactly one `CHANGELOG.md` entry headed `## vMAJOR.MINOR.
 - Deploys use the Terraform-managed `CLOUDFLARE_DEPLOY_API_TOKEN`; `CLOUDFLARE_API_TOKEN` is only the Terraform credential.
 - Production deploys only Semantic Versioning tags reachable from `main`.
 - `.github/workflows/rotate-credentials.yml` copies the manual Cloudflare token to Terraform Cloud (`bootstrap` and `manual` modes), and twice a year also replaces the deployment token and Turnstile widget and redeploys the latest tag (`automatic` mode).
-- Dependabot groups all updates into one pull request on the default branch, assigned to `fbrissi` (Terraform provider and TypeScript majors are ignored and upgraded manually); bring its changes into a `release/*` pull request, since pull requests into `main` require a new `CHANGELOG.md` release.
+- Dependabot groups all updates into one pull request on the default branch, assigned to `fbrissi` (Terraform provider and TypeScript majors are ignored and upgraded manually); bring its changes into a pull request into `main` that adds a new `CHANGELOG.md` release (merging it releases and deploys).
+- `.github/workflows/ai-dependency-update.yml` runs the shared `dependency-update` AI task weekly (profile `docs/ai/dependency-updates.md`): security fixes from the Dependabot pull request go to a `hotfix/dependency-updates-<date>` pull request into `main` with its `CHANGELOG.md` release (merging it releases and deploys), the rest to a `bugfix/dependency-updates-<date>` pull request into the open `release/*` branch, or wait for one. A person reviews and merges them.
 
 ## Terraform Credentials
 
