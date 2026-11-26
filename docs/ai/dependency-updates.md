@@ -10,7 +10,7 @@ Profile of the fbrissi/ai-skills `dependency-updates` skill for this repository,
 
 ## Branch and PR
 - Base branch: main
-- Branch template: release/dependency-updates-{date}   # pull requests into main are releases (AGENTS.md, Releases)
+- Branch template: chore/dependency-updates-{date}   # the App cannot create `release/*` branches (protected-branches ruleset); every PR into main is a release anyway
 - Labels: dependencies
 
 ## Never update

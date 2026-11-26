@@ -26,7 +26,7 @@ concurrency:
 jobs:
   dependency-update:
     name: AI Dependency Update
-    # Skipped until the agent App is configured (AGENT_APP_CLIENT_ID variable and AGENT_APP_PRIVATE_KEY secret).
+    # Skipped while the client-id variable is empty; a missing private key fails the run (AGENT_APP_CLIENT_ID variable and AGENT_APP_PRIVATE_KEY secret).
     if: github.ref == 'refs/heads/main' && vars.AGENT_APP_CLIENT_ID != ''
     uses: fbrissi/github-actions/.github/workflows/ai-task.yml@v1
     permissions:
