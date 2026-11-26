@@ -1,8 +1,8 @@
 name: AI Dependency Update
 
 # Weekly, after the grouped Dependabot run (Monday 09:00 America/Sao_Paulo, 12:00 UTC): the dependency-updater agent
-# brings the open Dependabot PR into one reviewed PR that supersedes it (profile docs/ai/dependency-updates.md). It
-# stops at the PR; there is no PR Fix or Merge Decision here, so a person reviews and merges it.
+# sends security updates from the open Dependabot PR as a hotfix/ PR into main and the rest as a bugfix/ PR into the
+# open release/* branch (they wait when there is none), profile docs/ai/dependency-updates.md. It stops at the PRs; there is no PR Fix or Merge Decision here, so a person reviews and merges it.
 on:
   schedule:
     - cron: "0 15 * * 1"

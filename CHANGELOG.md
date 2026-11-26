@@ -7,7 +7,7 @@ All notable changes to this project are documented here. Release versions follow
 
 ### Added
 
-- Added a weekly AI dependency update run (`.github/workflows/ai-dependency-update.yml`, Monday 15:00 UTC after Dependabot, or on demand): the shared `dependency-update` task reads the release notes of each update in the Dependabot PR, adapts the code, runs the checks and a review and QA cycle, and opens one PR into `main` (with its release) that supersedes it. Profile in `docs/ai/dependency-updates.md`; the run is skipped while the `AGENT_APP_CLIENT_ID` variable is empty (a missing private key fails the run).
+- Added a weekly AI dependency update run (`.github/workflows/ai-dependency-update.yml`, Monday 15:00 UTC after Dependabot, or on demand): the shared `dependency-update` task reads the release notes of each update in the Dependabot PR, adapts the code, runs the checks and a review and QA cycle, and supersedes it with a `hotfix/` PR into `main` for security fixes (a release) and a `bugfix/` PR into the open `release/*` branch for the rest (they wait when there is none). Profile in `docs/ai/dependency-updates.md`; the run is skipped while the `AGENT_APP_CLIENT_ID` variable is empty (a missing private key fails the run).
 
 ## v0.5.0
 
