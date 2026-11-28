@@ -1,0 +1,49 @@
+name: Merge Decision
+
+# Dispatched by the quality join (PR Feedback, QA, and Code Review) on the default branch, so a pull request cannot
+# change its own merger. It rates the risk and holds: a person merges.
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to decide on
+        required: true
+        type: string
+      instructions:
+        description: Extra instructions for this run only, appended to the agent prompt.
+        required: false
+        type: string
+
+permissions: {}
+
+jobs:
+  merge-decision:
+    name: Merge Decision
+    if: github.ref == 'refs/heads/main'
+    uses: fbrissi/github-actions/.github/workflows/merge-decision.yml@v1
+    permissions:
+      actions: read
+      checks: read
+      contents: read
+      issues: read
+      pull-requests: read
+      statuses: read
+    with:
+      pr-number: ${{ inputs.pr_number }}
+      instructions: ${{ inputs.instructions }}
+      auto-merge: false
+      # The same pull requests as PR Fix (pr-fix.yml), so the gate only waits for a pass the pull request could get.
+      branch-prefixes: release/ hotfix/ bugfix/
+      fix-branch-prefixes: release/ hotfix/ bugfix/
+      environment: code-review
+      ai-skills-ref: v0.15.0
+      harness: ${{ vars.AI_HARNESS }}
+      opencode-model: ${{ vars.OPENCODE_MODEL }}
+      opencode-variant: ${{ vars.OPENCODE_VARIANT }}
+      claude-model: ${{ vars.CLAUDE_MODEL }}
+      claude-effort: ${{ vars.CLAUDE_EFFORT }}
+    secrets:
+      AGENT_APP_PRIVATE_KEY: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+      OPEN_AI_TOKEN: ${{ secrets.OPEN_AI_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
