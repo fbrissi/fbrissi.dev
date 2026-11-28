@@ -297,15 +297,21 @@ jobs:
             // The default branch runs the callers, so a pull request cannot change its own reviewer or QA. They run in
             // parallel, and PR Feedback, QA, and Code Review join their verdicts for the head commit.
             for (const workflow of ['code-review.yml', 'qa.yml']) {
-              await github.rest.actions.createWorkflowDispatch({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                workflow_id: workflow,
-                ref: context.payload.repository.default_branch,
-                inputs: {
-                  pr_number: String(pullRequest.number),
-                },
-              });
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: workflow,
+                  ref: context.payload.repository.default_branch,
+                  inputs: {
+                    pr_number: String(pullRequest.number),
+                  },
+                });
+              } catch (error) {
+                // A caller that is not on the default branch yet (the pull request that adds it) is not an error.
+                if (error.status !== 404) throw error;
+                core.warning(`${workflow} is not on ${context.payload.repository.default_branch} yet; it was not dispatched.`);
+              }
             }
 
   release-note:
