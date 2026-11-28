@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.5.4
+
+### Added
+
+- `/ai-complement <request>` comment command (`.github/workflows/ai-complement.yml`, `fbrissi/github-actions` v1.27.0, also `/ai-complemente`): someone with write access asks the agent for a change or an action on an issue or pull request; code changes are committed to the pull request branch and go through the AI pull-request loop. No site change.
+
 ## v0.5.3
 
 ### Changed
