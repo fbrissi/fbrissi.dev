@@ -1,0 +1,52 @@
+name: QA
+
+# Dispatched by Quality Checks on the default branch next to Code Review, so a pull request cannot change its own QA.
+# QA runs apart from the developer and the reviewer (fbrissi/github-actions README, Review and QA in separate jobs):
+# its verdict is the AI QA check run, joined with the code review of the same head commit.
+on:
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Pull request number to test
+        required: true
+        type: string
+      instructions:
+        description: Extra instructions for this run only, appended to the agent prompt.
+        required: false
+        type: string
+
+permissions: {}
+
+jobs:
+  qa:
+    name: QA
+    if: github.ref == 'refs/heads/main'
+    uses: fbrissi/github-actions/.github/workflows/qa.yml@v1
+    permissions:
+      actions: write
+      checks: write
+      contents: read
+      pull-requests: write
+    with:
+      pr-number: ${{ inputs.pr_number }}
+      instructions: ${{ inputs.instructions }}
+      # The environment of the Code Review job (the default of the shared Code Review workflow).
+      environment: code-review
+      ai-skills-ref: v0.15.0
+      harness: ${{ vars.AI_HARNESS }}
+      opencode-model: ${{ vars.OPENCODE_MODEL }}
+      opencode-variant: ${{ vars.OPENCODE_VARIANT }}
+      claude-model: ${{ vars.CLAUDE_MODEL }}
+      claude-effort: ${{ vars.CLAUDE_EFFORT }}
+      node-version: "24"
+      node-cache: yarn
+      install-command: yarn install --frozen-lockfile
+      dependency-cache-path: node_modules
+      dependency-cache-prefix: code-review-deps-v1-node24
+      dependency-cache-files: yarn.lock
+      # No setup-command: the E2E stack starts inline in the Quality / e2e job, so QA uses targeted validation.
+    secrets:
+      AGENT_APP_PRIVATE_KEY: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+      OPEN_AI_TOKEN: ${{ secrets.OPEN_AI_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

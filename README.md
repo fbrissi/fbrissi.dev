@@ -124,10 +124,17 @@ Configured manually:
   the `fbrissi-dev` team, project and client key in `terraform/sentry.tf`.
   Organization auth tokens only have the `org:ci` scope and can't create them
 - Variable `AGENT_APP_CLIENT_ID` and secret `AGENT_APP_PRIVATE_KEY`: the
-  `rissi-agent-ai` GitHub App that publishes the shared
-  [Code Review](https://github.com/fbrissi/github-actions#code-review), with
-  Contents write, Pull requests write, and Issues read; the shared workflow
-  scopes its token to reading code and writing reviews
+  `rissi-agent-ai` GitHub App of the AI pull-request loop (the shared
+  [Code Review](https://github.com/fbrissi/github-actions#code-review),
+  [QA](https://github.com/fbrissi/github-actions#review-and-qa-in-separate-jobs),
+  [PR Fix](https://github.com/fbrissi/github-actions#pr-fix),
+  [Merge Decision](https://github.com/fbrissi/github-actions#merge-decision),
+  and the dependency updates), with Contents write, Pull requests write,
+  Issues read, Checks read, Actions read, and Commit statuses read;
+  each shared workflow scopes its token to what it needs. Its jobs run in the
+  `code-review` environment. Labels `ai:auto-fix` (opts a pull request into PR
+  Fix), `ai:needs-human` (PR Fix escalation), and `ai:needs-approval` (a
+  sign-off before the merge decision) must exist
 - Variables `CLOUDFLARE_ACCOUNT_ID`, `CLOUDFLARE_PAGES_PROJECT_NAME`, and
   `NEXT_PUBLIC_OG_IMAGE`
 - Variable `CI_RUNNER`: optional runner label for every workflow job (defaults

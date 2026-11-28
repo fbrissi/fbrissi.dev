@@ -2,7 +2,9 @@ name: AI Dependency Update
 
 # Weekly, after the grouped Dependabot run (Monday 09:00 America/Sao_Paulo, 12:00 UTC): the dependency-updater agent
 # sends security updates from the open Dependabot PR as a hotfix/ PR into main and the rest as a bugfix/ PR into the
-# open release/* branch (they wait when there is none), profile docs/ai/dependency-updates.md. It stops at the PRs; there is no PR Fix or Merge Decision here, so a person reviews and merges it.
+# open release/* branch (they wait when there is none), profile docs/ai/dependency-updates.md. It only develops and
+# opens the PRs: Code Review and QA run on each push, PR Fix fixes their findings, and Merge Decision rates the risk and
+# holds, so a person merges.
 on:
   schedule:
     - cron: "0 15 * * 1"
@@ -38,14 +40,16 @@ jobs:
       opencode-variant: ${{ vars.OPENCODE_VARIANT }}
       claude-model: ${{ vars.CLAUDE_MODEL }}
       claude-effort: ${{ vars.CLAUDE_EFFORT }}
-      ai-skills-ref: v0.8.0
+      ai-skills-ref: v0.15.0
       requested-by: ${{ inputs.requested_by }}
       instructions: ${{ inputs.instructions }}
       base-branch: main
       node-version: "24"
       node-cache: yarn
       install-command: yarn install --frozen-lockfile
-      timeout-minutes: 40
+      # The developer only: the review and QA run in their own workflows after the push.
+      quality-mode: separate
+      timeout-minutes: 50
     secrets:
       AGENT_APP_PRIVATE_KEY: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
       OPEN_AI_TOKEN: ${{ secrets.OPEN_AI_TOKEN }}

@@ -3,6 +3,12 @@
 All notable changes to this project are documented here. Release versions follow
 [Semantic Versioning](https://semver.org/).
 
+## v0.5.3
+
+### Changed
+
+- AI pull-request loop with review and QA in separate jobs (`fbrissi/github-actions` v1.20.0, `fbrissi/ai-skills` v0.15.0): Quality Checks dispatches Code Review and the new QA workflow (`.github/workflows/qa.yml`, the `AI QA` check) in parallel; `code-review.yml`, QA, and the new `.github/workflows/pr-feedback.yml` join both verdicts and dispatch the new PR Fix (`.github/workflows/pr-fix.yml`, `release/`, `hotfix/`, and `bugfix/` branches or the `ai:auto-fix` label) or Merge Decision (`.github/workflows/merge-decision.yml`, rates the risk and holds; a person merges). AI dependency updates only develop and open their pull requests (`quality-mode: separate`) and the loop follows up. No site change.
+
 ## v0.5.2
 
 ### Changed

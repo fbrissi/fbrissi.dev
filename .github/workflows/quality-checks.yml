@@ -288,22 +288,31 @@ jobs:
             exit 1
           fi
 
-      - name: Dispatch Code Review
+      - name: Dispatch Code Review and QA
         if: ${{ success() && github.event_name == 'pull_request' && vars.CODE_REVIEW_ENABLED != 'false' }}
         uses: actions/github-script@v9
         with:
           script: |
             const pullRequest = context.payload.pull_request;
-            await github.rest.actions.createWorkflowDispatch({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              workflow_id: 'code-review.yml',
-              // The default branch runs the caller, so a pull request cannot change its own reviewer.
-              ref: context.payload.repository.default_branch,
-              inputs: {
-                pr_number: String(pullRequest.number),
-              },
-            });
+            // The default branch runs the callers, so a pull request cannot change its own reviewer or QA. They run in
+            // parallel, and PR Feedback, QA, and Code Review join their verdicts for the head commit.
+            for (const workflow of ['code-review.yml', 'qa.yml']) {
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: workflow,
+                  ref: context.payload.repository.default_branch,
+                  inputs: {
+                    pr_number: String(pullRequest.number),
+                  },
+                });
+              } catch (error) {
+                // A caller that is not on the default branch yet (the pull request that adds it) is not an error.
+                if (error.status !== 404) throw error;
+                core.warning(`${workflow} is not on ${context.payload.repository.default_branch} yet; it was not dispatched.`);
+              }
+            }
 
   release-note:
     name: Quality / release-note

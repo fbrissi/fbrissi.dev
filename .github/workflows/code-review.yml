@@ -32,3 +32,28 @@ jobs:
       OPEN_AI_TOKEN: ${{ secrets.OPEN_AI_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+
+  # Joins this review with the AI QA check of the same head once the Code Review check has completed (it completes
+  # after the review is published, so the review event alone can find it still running).
+  join:
+    name: Join the review with QA
+    needs: code-review
+    if: ${{ always() && !cancelled() }}
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    permissions:
+      actions: write
+      checks: read
+      pull-requests: write
+    concurrency:
+      group: quality-join-${{ github.repository }}-${{ inputs.pr_number }}
+      cancel-in-progress: false
+    steps:
+      # One App (AGENT_APP_*) reviews and fixes, so its bot is not ignored; replies to existing threads never ask for
+      # a fix.
+      - uses: fbrissi/github-actions/actions/pr-gate@v1
+        with:
+          command: quality-join
+          pr-number: ${{ inputs.pr_number }}
+          qa-check-name: AI QA
+          fix-workflow: pr-fix.yml
+          merge-workflow: merge-decision.yml
