@@ -1,0 +1,39 @@
+name: AI Complement
+
+# A new comment whose first line starts with `/ai-complement <request>` (or `/ai-complemente`), by an owner, member,
+# or collaborator, runs an agent on main with that request in the context of the issue or pull request: comments,
+# issue edits, and commits pushed to the PR head branch (never main), which then go through the AI pull-request loop.
+# The shared workflow also checks that the author has write access and never runs on fork pull requests.
+on:
+  issue_comment:
+    types: [created]
+
+permissions: {}
+
+jobs:
+  complement:
+    name: AI Complement
+    if: >-
+      startsWith(github.event.comment.body, '/ai-complement') &&
+      github.event.comment.user.type != 'Bot' &&
+      contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
+    uses: fbrissi/github-actions/.github/workflows/ai-complement.yml@v1
+    permissions: {}
+    with:
+      environment: code-review
+      ai-skills-ref: v0.18.0
+      harness: ${{ vars.AI_HARNESS }}
+      opencode-model: ${{ vars.OPENCODE_MODEL }}
+      opencode-variant: ${{ vars.OPENCODE_VARIANT }}
+      claude-model: ${{ vars.CLAUDE_MODEL }}
+      claude-effort: ${{ vars.CLAUDE_EFFORT }}
+      node-version: "24"
+      install-command: yarn install --frozen-lockfile
+      dependency-cache-path: node_modules
+      dependency-cache-prefix: code-review-deps-v1-node24
+      dependency-cache-files: yarn.lock
+    secrets:
+      AGENT_APP_PRIVATE_KEY: ${{ secrets.AGENT_APP_PRIVATE_KEY }}
+      OPEN_AI_TOKEN: ${{ secrets.OPEN_AI_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
